@@ -47,6 +47,32 @@ OrmAI is an ORM-native capability runtime that turns existing SQLAlchemy, Tortoi
 - Budgets for max rows, includes, selected fields, and statement timeouts; “broad query guard” blocks unfiltered scans.
 - Write controls such as primary-key-only updates, bulk-by-ids, reason requirements, and optional approval workflows.
 
+## Installation
+
+OrmAI uses [uv](https://docs.astral.sh/uv/) as its package manager.
+
+```bash
+# Install uv if you haven't already
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Install OrmAI
+uv add ormai
+
+# With specific adapter extras
+uv add ormai[sqlalchemy]    # SQLAlchemy support
+uv add ormai[tortoise]      # Tortoise ORM support
+uv add ormai[peewee]        # Peewee support
+uv add ormai[all]           # All adapters
+```
+
+For development:
+
+```bash
+git clone https://github.com/anthropics/ormai.git
+cd ormai
+uv sync --dev
+```
+
 ## Quickstart Flow
 
 1. Choose your adapter (`SQLAlchemyAdapter`, `TortoiseAdapter`, `PeeweeAdapter`) and provide the existing engine/DB handle.
@@ -59,8 +85,9 @@ Consult the docs in `docs/` for detailed guides on policy configuration, the uti
 
 ## Roadmap Snapshot
 
-- **Phase 1 (MVP)** – SQLAlchemy/Tortoise/Peewee adapters, read-only generic tools, policies for allowlists/scoping/redaction/budgets, base MCP server, audit logging.
-- **Phase 2 (Controlled writes)** – Create/update/delete tool family, approval gates, before/after auditing, stricter mutation policies.
-- **Phase 3 (DX & reliability)** – Generators for views/tools, advanced pagination/cursor stability, replay/eval harnesses, richer cost models, schema-aware utilities.
+- **Phase 1 (Read-Only MVP)** – SQLAlchemy/Tortoise/Peewee adapters, read-only generic tools, policies for allowlists/scoping/redaction/budgets, base MCP server, audit logging.
+- **Phase 2 (Controlled Writes)** – Create/update/delete tool family, approval gates, before/after auditing, stricter mutation policies.
+- **Phase 3 (DX & Reliability)** – Generators for views/tools, advanced pagination/cursor stability, replay/eval harnesses, richer cost models, schema-aware utilities.
+- **Phase 4 (TypeScript Edition)** – `ormai-ts` brings the same safety guarantees to Node.js, targeting Prisma, Drizzle, and TypeORM with Zod-based validation, identical MCP tool schemas, and first-class integrations for Vercel AI SDK, LangChain.js, LlamaIndex.ts, and Mastra.
 
-See `docs/roadmap.md` for detailed milestones and acceptance criteria.
+See `docs/roadmap.md` for detailed milestones and `docs/ormai-ts-specification.md` for the TypeScript edition design.
