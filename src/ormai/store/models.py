@@ -11,8 +11,9 @@ from pydantic import BaseModel, Field
 class ErrorInfo(BaseModel):
     """Error information for failed tool calls."""
 
-    code: str
+    type: str  # Error type/class name
     message: str
+    code: str | None = None  # Optional error code
     details: dict[str, Any] = Field(default_factory=dict)
 
     model_config = {"frozen": True}
@@ -36,15 +37,18 @@ class AuditRecord(BaseModel):
     tenant_id: str
 
     # Request tracking
-    request_id: str
+    request_id: str | None = None
     trace_id: str | None = None
 
     # Timing
     timestamp: datetime
-    duration_ms: float
+    duration_ms: float | None = None
 
     # Request details (sanitized - no sensitive data)
     inputs: dict[str, Any] = Field(default_factory=dict)
+
+    # Response data (sanitized)
+    outputs: dict[str, Any] | None = None
 
     # Policy decisions made during execution
     policy_decisions: list[str] = Field(default_factory=list)
@@ -59,6 +63,12 @@ class AuditRecord(BaseModel):
     # Optional before/after snapshots for write operations
     before_snapshot: dict[str, Any] | None = None
     after_snapshot: dict[str, Any] | None = None
+
+    # Reason for write operations
+    reason: str | None = None
+
+    # Additional metadata
+    metadata: dict[str, Any] | None = None
 
     model_config = {"frozen": True}
 

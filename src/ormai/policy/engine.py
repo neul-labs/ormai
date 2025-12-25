@@ -8,18 +8,25 @@ requests against policies and provides decisions for query compilation.
 from ormai.core.context import RunContext
 from ormai.core.dsl import (
     AggregateRequest,
+    BulkUpdateRequest,
+    CreateRequest,
+    DeleteRequest,
     FilterClause,
     GetRequest,
     IncludeClause,
     QueryRequest,
+    UpdateRequest,
 )
 from ormai.core.errors import (
     FieldNotAllowedError,
+    MaxAffectedRowsExceededError,
     ModelNotAllowedError,
     QueryBudgetExceededError,
     QueryTooBroadError,
     RelationNotAllowedError,
     TenantScopeRequiredError,
+    ValidationError,
+    WriteDisabledError,
 )
 from ormai.core.types import SchemaMetadata
 from ormai.policy.models import Budget, ModelPolicy, Policy, RowPolicy
@@ -408,3 +415,250 @@ class PolicyEngine:
                 model=request.model,
                 suggestion=f"Add at least {budget.min_filters_for_broad_query} filter(s) to narrow the query",
             )
+
+    # =========================================================================
+    # WRITE VALIDATION METHODS (Phase 2)
+    # =========================================================================
+
+    def validate_create(
+        self,
+        request: CreateRequest,
+        ctx: RunContext,
+    ) -> PolicyDecision:
+        """
+        Validate a create request against policies.
+
+        Checks:
+        - Model is writable
+        - Create operation is allowed
+        - Required reason is provided if policy requires it
+        - Fields being set are writable
+        - Tenant scope is auto-injected
+        """
+        decision = PolicyDecision()
+
+        # 1. Validate model access (writable)
+        model_policy = self._validate_model_access(request.model, writable=True)
+        decision.add_decision(f"Model '{request.model}' write access validated")
+
+        # 2. Check write policy
+        write_policy = model_policy.write_policy
+        if not write_policy.enabled:
+            raise WriteDisabledError(operation="create", model=request.model)
+        if not write_policy.allow_create:
+            raise WriteDisabledError(operation="create", model=request.model)
+        decision.add_decision("Create operation allowed by policy")
+
+        # 3. Check reason requirement
+        if write_policy.require_reason and not request.reason:
+            raise ValidationError(
+                message="A reason is required for this write operation",
+                field="reason",
+            )
+
+        # 4. Validate fields being written
+        schema_model = self.schema.get_model(request.model)
+        all_fields = list(schema_model.fields.keys()) if schema_model else []
+        writable_fields = self._get_writable_fields(all_fields, model_policy)
+
+        for field in request.data.keys():
+            if field in write_policy.readonly_fields:
+                raise FieldNotAllowedError(
+                    field=field,
+                    model=request.model,
+                    allowed_fields=writable_fields,
+                )
+        decision.add_decision(f"Validated {len(request.data)} fields for write")
+
+        # 5. Get return fields
+        if request.return_fields:
+            decision.allowed_fields = self._validate_fields(
+                request.return_fields, request.model, model_policy, all_fields
+            )
+        else:
+            decision.allowed_fields = model_policy.get_allowed_fields(all_fields)
+
+        # 6. Inject scope data (tenant_id to be set on created record)
+        row_policy = self.policy.get_row_policy(request.model)
+        decision.injected_filters = self._validate_and_get_scope_filters(
+            request.model, row_policy, ctx, None
+        )
+
+        decision.budget = self.policy.get_budget(request.model)
+        return decision
+
+    def validate_update(
+        self,
+        request: UpdateRequest,
+        ctx: RunContext,
+    ) -> PolicyDecision:
+        """
+        Validate an update request against policies.
+        """
+        decision = PolicyDecision()
+
+        # 1. Validate model access (writable)
+        model_policy = self._validate_model_access(request.model, writable=True)
+        decision.add_decision(f"Model '{request.model}' write access validated")
+
+        # 2. Check write policy
+        write_policy = model_policy.write_policy
+        if not write_policy.enabled:
+            raise WriteDisabledError(operation="update", model=request.model)
+        if not write_policy.allow_update:
+            raise WriteDisabledError(operation="update", model=request.model)
+        decision.add_decision("Update operation allowed by policy")
+
+        # 3. Check reason requirement
+        if write_policy.require_reason and not request.reason:
+            raise ValidationError(
+                message="A reason is required for this write operation",
+                field="reason",
+            )
+
+        # 4. Validate fields being updated
+        schema_model = self.schema.get_model(request.model)
+        all_fields = list(schema_model.fields.keys()) if schema_model else []
+        writable_fields = self._get_writable_fields(all_fields, model_policy)
+
+        for field in request.data.keys():
+            if field in write_policy.readonly_fields:
+                raise FieldNotAllowedError(
+                    field=field,
+                    model=request.model,
+                    allowed_fields=writable_fields,
+                )
+        decision.add_decision(f"Validated {len(request.data)} fields for update")
+
+        # 5. Get return fields
+        if request.return_fields:
+            decision.allowed_fields = self._validate_fields(
+                request.return_fields, request.model, model_policy, all_fields
+            )
+        else:
+            decision.allowed_fields = model_policy.get_allowed_fields(all_fields)
+
+        # 6. Inject scope filters (to ensure update is scoped)
+        row_policy = self.policy.get_row_policy(request.model)
+        decision.injected_filters = self._validate_and_get_scope_filters(
+            request.model, row_policy, ctx, None
+        )
+
+        decision.budget = self.policy.get_budget(request.model)
+        return decision
+
+    def validate_delete(
+        self,
+        request: DeleteRequest,
+        ctx: RunContext,
+    ) -> PolicyDecision:
+        """
+        Validate a delete request against policies.
+        """
+        decision = PolicyDecision()
+
+        # 1. Validate model access (writable)
+        model_policy = self._validate_model_access(request.model, writable=True)
+        decision.add_decision(f"Model '{request.model}' write access validated")
+
+        # 2. Check write policy
+        write_policy = model_policy.write_policy
+        if not write_policy.enabled:
+            raise WriteDisabledError(operation="delete", model=request.model)
+        if not write_policy.allow_delete:
+            raise WriteDisabledError(operation="delete", model=request.model)
+        decision.add_decision("Delete operation allowed by policy")
+
+        # 3. Check reason requirement
+        if write_policy.require_reason and not request.reason:
+            raise ValidationError(
+                message="A reason is required for this delete operation",
+                field="reason",
+            )
+
+        # 4. If hard delete requested, check if allowed
+        if request.hard and write_policy.soft_delete:
+            raise ValidationError(
+                message="Hard delete is not allowed; use soft delete instead",
+            )
+
+        # 5. Inject scope filters
+        row_policy = self.policy.get_row_policy(request.model)
+        decision.injected_filters = self._validate_and_get_scope_filters(
+            request.model, row_policy, ctx, None
+        )
+
+        decision.budget = self.policy.get_budget(request.model)
+        return decision
+
+    def validate_bulk_update(
+        self,
+        request: BulkUpdateRequest,
+        ctx: RunContext,
+    ) -> PolicyDecision:
+        """
+        Validate a bulk update request against policies.
+        """
+        decision = PolicyDecision()
+
+        # 1. Validate model access (writable)
+        model_policy = self._validate_model_access(request.model, writable=True)
+        decision.add_decision(f"Model '{request.model}' write access validated")
+
+        # 2. Check write policy
+        write_policy = model_policy.write_policy
+        if not write_policy.enabled:
+            raise WriteDisabledError(operation="bulk_update", model=request.model)
+        if not write_policy.allow_update:
+            raise WriteDisabledError(operation="bulk_update", model=request.model)
+        if not write_policy.allow_bulk:
+            raise WriteDisabledError(operation="bulk_update", model=request.model)
+        decision.add_decision("Bulk update operation allowed by policy")
+
+        # 3. Check max affected rows
+        if len(request.ids) > write_policy.max_affected_rows:
+            raise MaxAffectedRowsExceededError(
+                operation="bulk_update",
+                max_rows=write_policy.max_affected_rows,
+                affected_rows=len(request.ids),
+            )
+        decision.add_decision(f"Bulk update size validated: {len(request.ids)} rows")
+
+        # 4. Check reason requirement
+        if write_policy.require_reason and not request.reason:
+            raise ValidationError(
+                message="A reason is required for this bulk operation",
+                field="reason",
+            )
+
+        # 5. Validate fields being updated
+        schema_model = self.schema.get_model(request.model)
+        all_fields = list(schema_model.fields.keys()) if schema_model else []
+        writable_fields = self._get_writable_fields(all_fields, model_policy)
+
+        for field in request.data.keys():
+            if field in write_policy.readonly_fields:
+                raise FieldNotAllowedError(
+                    field=field,
+                    model=request.model,
+                    allowed_fields=writable_fields,
+                )
+
+        # 6. Inject scope filters
+        row_policy = self.policy.get_row_policy(request.model)
+        decision.injected_filters = self._validate_and_get_scope_filters(
+            request.model, row_policy, ctx, None
+        )
+
+        decision.budget = self.policy.get_budget(request.model)
+        return decision
+
+    def _get_writable_fields(
+        self,
+        all_fields: list[str],
+        model_policy: ModelPolicy,
+    ) -> list[str]:
+        """Get list of fields that can be written to."""
+        write_policy = model_policy.write_policy
+        readonly = set(write_policy.readonly_fields)
+        return [f for f in all_fields if f not in readonly]

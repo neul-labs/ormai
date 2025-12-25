@@ -13,11 +13,19 @@ from ormai.core.context import RunContext
 from ormai.core.dsl import (
     AggregateRequest,
     AggregateResult,
+    BulkUpdateRequest,
+    BulkUpdateResult,
+    CreateRequest,
+    CreateResult,
+    DeleteRequest,
+    DeleteResult,
     FilterClause,
     GetRequest,
     GetResult,
     QueryRequest,
     QueryResult,
+    UpdateRequest,
+    UpdateResult,
 )
 from ormai.core.types import SchemaMetadata
 from ormai.policy.models import Policy
@@ -170,6 +178,106 @@ class OrmAdapter(ABC):
         or rolled back if an exception is raised.
         """
         ...
+
+    # =========================================================================
+    # MUTATION METHODS (Phase 2)
+    # =========================================================================
+
+    def compile_create(
+        self,
+        request: CreateRequest,
+        ctx: RunContext,
+        policy: Policy,
+        schema: SchemaMetadata,
+    ) -> CompiledQuery:
+        """
+        Compile a create request.
+
+        Validates write permissions and prepares the insert statement.
+        """
+        raise NotImplementedError("Create not implemented for this adapter")
+
+    def compile_update(
+        self,
+        request: UpdateRequest,
+        ctx: RunContext,
+        policy: Policy,
+        schema: SchemaMetadata,
+    ) -> CompiledQuery:
+        """
+        Compile an update request.
+
+        Validates write permissions and prepares the update statement.
+        """
+        raise NotImplementedError("Update not implemented for this adapter")
+
+    def compile_delete(
+        self,
+        request: DeleteRequest,
+        ctx: RunContext,
+        policy: Policy,
+        schema: SchemaMetadata,
+    ) -> CompiledQuery:
+        """
+        Compile a delete request.
+
+        Validates delete permissions and prepares the delete statement.
+        """
+        raise NotImplementedError("Delete not implemented for this adapter")
+
+    def compile_bulk_update(
+        self,
+        request: BulkUpdateRequest,
+        ctx: RunContext,
+        policy: Policy,
+        schema: SchemaMetadata,
+    ) -> CompiledQuery:
+        """
+        Compile a bulk update request.
+
+        Validates bulk operation permissions and prepares the update statements.
+        """
+        raise NotImplementedError("Bulk update not implemented for this adapter")
+
+    async def execute_create(
+        self,
+        compiled: CompiledQuery,
+        ctx: RunContext,
+    ) -> CreateResult:
+        """
+        Execute a compiled create request.
+        """
+        raise NotImplementedError("Create not implemented for this adapter")
+
+    async def execute_update(
+        self,
+        compiled: CompiledQuery,
+        ctx: RunContext,
+    ) -> UpdateResult:
+        """
+        Execute a compiled update request.
+        """
+        raise NotImplementedError("Update not implemented for this adapter")
+
+    async def execute_delete(
+        self,
+        compiled: CompiledQuery,
+        ctx: RunContext,
+    ) -> DeleteResult:
+        """
+        Execute a compiled delete request.
+        """
+        raise NotImplementedError("Delete not implemented for this adapter")
+
+    async def execute_bulk_update(
+        self,
+        compiled: CompiledQuery,
+        ctx: RunContext,
+    ) -> BulkUpdateResult:
+        """
+        Execute a compiled bulk update request.
+        """
+        raise NotImplementedError("Bulk update not implemented for this adapter")
 
     def sync_introspect(self) -> SchemaMetadata:
         """
