@@ -1,0 +1,35 @@
+import { defineConfig } from 'tsup';
+
+export default defineConfig({
+  entry: {
+    index: 'src/index.ts',
+    'core/index': 'src/core/index.ts',
+    'policy/index': 'src/policy/index.ts',
+    'adapters/prisma/index': 'src/adapters/prisma/index.ts',
+    'adapters/drizzle/index': 'src/adapters/drizzle/index.ts',
+    'adapters/typeorm/index': 'src/adapters/typeorm/index.ts',
+    'tools/index': 'src/tools/index.ts',
+    'store/index': 'src/store/index.ts',
+    'mcp/index': 'src/mcp/index.ts',
+    'integrations/index': 'src/integrations/index.ts',
+    'utils/index': 'src/utils/index.ts',
+  },
+  format: ['esm'],
+  dts: true,
+  sourcemap: true,
+  clean: true,
+  splitting: false,
+  treeshake: true,
+  external: [
+    '@prisma/client',
+    'drizzle-orm',
+    'typeorm',
+    '@langchain/core',
+    'ai',
+    '@modelcontextprotocol/sdk',
+    'llamaindex',
+    '@mastra/core',
+    'openai',
+    '@anthropic-ai/sdk',
+  ],
+});

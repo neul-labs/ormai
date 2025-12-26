@@ -1,0 +1,147 @@
+{
+  "name": "ormai",
+  "version": "0.1.0",
+  "description": "Policy-governed, auditable database capabilities for TypeScript agents",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./core": {
+      "import": "./dist/core/index.js",
+      "types": "./dist/core/index.d.ts"
+    },
+    "./policy": {
+      "import": "./dist/policy/index.js",
+      "types": "./dist/policy/index.d.ts"
+    },
+    "./adapters/prisma": {
+      "import": "./dist/adapters/prisma/index.js",
+      "types": "./dist/adapters/prisma/index.d.ts"
+    },
+    "./adapters/drizzle": {
+      "import": "./dist/adapters/drizzle/index.js",
+      "types": "./dist/adapters/drizzle/index.d.ts"
+    },
+    "./adapters/typeorm": {
+      "import": "./dist/adapters/typeorm/index.js",
+      "types": "./dist/adapters/typeorm/index.d.ts"
+    },
+    "./tools": {
+      "import": "./dist/tools/index.js",
+      "types": "./dist/tools/index.d.ts"
+    },
+    "./store": {
+      "import": "./dist/store/index.js",
+      "types": "./dist/store/index.d.ts"
+    },
+    "./mcp": {
+      "import": "./dist/mcp/index.js",
+      "types": "./dist/mcp/index.d.ts"
+    },
+    "./integrations": {
+      "import": "./dist/integrations/index.js",
+      "types": "./dist/integrations/index.d.ts"
+    },
+    "./utils": {
+      "import": "./dist/utils/index.js",
+      "types": "./dist/utils/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "lint": "eslint src --ext .ts",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "keywords": [
+    "orm",
+    "ai",
+    "agent",
+    "prisma",
+    "drizzle",
+    "typeorm",
+    "mcp",
+    "langchain",
+    "vercel-ai",
+    "database",
+    "policy",
+    "audit"
+  ],
+  "author": "Anthropic",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/anthropics/ormai.git",
+    "directory": "packages/ormai-ts"
+  },
+  "dependencies": {
+    "zod": "^3.23.8",
+    "zod-to-json-schema": "^3.23.5"
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.10",
+    "tsup": "^8.3.5",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  },
+  "peerDependencies": {
+    "@prisma/client": "^5.0.0 || ^6.0.0",
+    "drizzle-orm": "^0.30.0 || ^0.36.0",
+    "typeorm": "^0.3.0",
+    "@langchain/core": "^0.2.0 || ^0.3.0",
+    "ai": "^3.0.0 || ^4.0.0",
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "llamaindex": "^0.6.0 || ^0.8.0",
+    "@mastra/core": "^0.1.0",
+    "openai": "^4.0.0",
+    "@anthropic-ai/sdk": "^0.30.0 || ^0.32.0"
+  },
+  "peerDependenciesMeta": {
+    "@prisma/client": {
+      "optional": true
+    },
+    "drizzle-orm": {
+      "optional": true
+    },
+    "typeorm": {
+      "optional": true
+    },
+    "@langchain/core": {
+      "optional": true
+    },
+    "ai": {
+      "optional": true
+    },
+    "@modelcontextprotocol/sdk": {
+      "optional": true
+    },
+    "llamaindex": {
+      "optional": true
+    },
+    "@mastra/core": {
+      "optional": true
+    },
+    "openai": {
+      "optional": true
+    },
+    "@anthropic-ai/sdk": {
+      "optional": true
+    }
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
