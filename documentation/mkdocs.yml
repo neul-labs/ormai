@@ -1,0 +1,95 @@
+site_name: OrmAI Documentation
+site_description: ORM-native capability runtime for AI agents
+site_url: https://ormai.dev
+repo_url: https://github.com/ormai/ormai
+repo_name: ormai/ormai
+
+theme:
+  name: material
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.code.annotate
+  icon:
+    repo: fontawesome/brands/github
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            show_source: true
+            show_root_heading: true
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - admonition
+  - pymdownx.details
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+
+nav:
+  - Home: index.md
+  - Getting Started:
+    - Installation: getting-started/installation.md
+    - Quick Start: getting-started/quickstart.md
+    - First Steps: getting-started/first-steps.md
+  - Concepts:
+    - Overview: concepts/overview.md
+    - Policies: concepts/policies.md
+    - Adapters: concepts/adapters.md
+    - Tools: concepts/tools.md
+    - Audit Logging: concepts/audit-logging.md
+    - Views: concepts/views.md
+  - API Reference:
+    - Core: api-reference/core.md
+    - Policy: api-reference/policy.md
+    - Adapters: api-reference/adapters.md
+    - Tools: api-reference/tools.md
+    - Store: api-reference/store.md
+    - MCP: api-reference/mcp.md
+  - Guides:
+    - Multi-Tenant Setup: guides/multi-tenant.md
+    - Write Operations: guides/write-operations.md
+    - Custom Tools: guides/custom-tools.md
+    - Code Generation: guides/code-generation.md
+    - Evaluation & Testing: guides/evaluation.md
+  - Integrations:
+    - FastAPI: integrations/fastapi.md
+    - LangGraph: integrations/langgraph.md
+    - TypeScript Edition: integrations/typescript.md
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/ormai/ormai
+  version:
+    provider: mike
