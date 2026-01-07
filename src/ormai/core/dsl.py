@@ -97,7 +97,7 @@ class IncludeClause(BaseModel):
         default=None, description="Filters to apply to the relation"
     )
     take: int | None = Field(
-        default=None, ge=1, le=100, description="Max items to include from relation"
+        default=None, ge=1, description="Max items to include from relation (limited by budget)"
     )
 
     model_config = {"frozen": True}
@@ -139,7 +139,7 @@ class QueryRequest(BaseModel):
         default=None, description="Sort order"
     )
     take: int = Field(
-        default=25, ge=1, le=100, description="Maximum number of rows to return"
+        default=25, ge=1, description="Maximum number of rows to return (limited by budget)"
     )
     cursor: str | None = Field(
         default=None, description="Pagination cursor from previous response"

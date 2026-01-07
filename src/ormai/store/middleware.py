@@ -12,6 +12,7 @@ from ormai.core.context import RunContext
 from ormai.core.errors import OrmAIError
 from ormai.store.base import AuditStore
 from ormai.store.models import AuditRecord, ErrorInfo
+from ormai.store.sanitize import sanitize_inputs
 
 T = TypeVar("T")
 
@@ -169,17 +170,8 @@ class AuditMiddleware:
                 error=error_info,
             )
 
-            # Store synchronously
-            import asyncio
-            try:
-                loop = asyncio.get_event_loop()
-                if loop.is_running():
-                    asyncio.create_task(self.store.store(record))
-                else:
-                    loop.run_until_complete(self.store.store(record))
-            except RuntimeError:
-                # No event loop, create a new one
-                asyncio.run(self.store.store(record))
+            # Store synchronously using the store's store_sync method
+            self.store.store_sync(record)
 
     async def wrap_mutation_async(
         self,
@@ -341,43 +333,9 @@ class AuditMiddleware:
                 after_snapshot=after_snapshot if self.capture_snapshots else None,
             )
 
-            # Store synchronously
-            import asyncio
-            try:
-                loop = asyncio.get_event_loop()
-                if loop.is_running():
-                    asyncio.create_task(self.store.store(record))
-                else:
-                    loop.run_until_complete(self.store.store(record))
-            except RuntimeError:
-                asyncio.run(self.store.store(record))
+            # Store synchronously using the store's store_sync method
+            self.store.store_sync(record)
 
     def _sanitize(self, inputs: dict[str, Any]) -> dict[str, Any]:
-        """Sanitize sensitive data from inputs."""
-        sensitive_patterns = [
-            "password",
-            "secret",
-            "token",
-            "api_key",
-            "apikey",
-            "auth",
-            "credential",
-        ]
-
-        result = {}
-        for key, value in inputs.items():
-            key_lower = key.lower()
-            is_sensitive = any(p in key_lower for p in sensitive_patterns)
-
-            if is_sensitive:
-                result[key] = "[REDACTED]"
-            elif isinstance(value, dict):
-                result[key] = self._sanitize(value)
-            elif isinstance(value, list):
-                result[key] = [
-                    self._sanitize(v) if isinstance(v, dict) else v for v in value
-                ]
-            else:
-                result[key] = value
-
-        return result
+        """Sanitize sensitive data from inputs using regex pattern matching."""
+        return sanitize_inputs(inputs)

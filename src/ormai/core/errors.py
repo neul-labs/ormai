@@ -51,6 +51,12 @@ class OrmAccessDeniedError(OrmAIError):
     code = "ORM_ACCESS_DENIED"
 
 
+class AuthenticationError(OrmAIError):
+    """Authentication is required but was not provided or failed."""
+
+    code = "AUTHENTICATION_REQUIRED"
+
+
 class ModelNotAllowedError(OrmAIError):
     """The requested model is not in the allowlist."""
 

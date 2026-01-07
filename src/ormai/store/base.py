@@ -2,10 +2,14 @@
 Abstract audit store interface.
 """
 
+import asyncio
+import logging
 from abc import ABC, abstractmethod
 from datetime import datetime
 
 from ormai.store.models import AuditRecord
+
+logger = logging.getLogger(__name__)
 
 
 class AuditStore(ABC):
@@ -52,16 +56,26 @@ class AuditStore(ABC):
         """
         ...
 
-    async def store_sync(self, record: AuditRecord) -> None:
+    def store_sync(self, record: AuditRecord) -> None:
         """
         Synchronous wrapper for store.
 
-        Default implementation runs async in event loop.
+        Default implementation runs async in a new event loop.
+        Note: This creates a new event loop for each call. For better performance
+        in high-throughput scenarios, consider using an async-aware storage backend.
         """
-        import asyncio
-        loop = asyncio.get_event_loop()
-        if loop.is_running():
-            # Create a task if we're in an async context
-            asyncio.create_task(self.store(record))
+        try:
+            # Try to get the running loop (for Jupyter, etc.)
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            # No running loop, safe to create a new one
+            asyncio.run(self.store(record))
         else:
-            loop.run_until_complete(self.store(record))
+            # We're in an async context - schedule the task with error handling
+            async def _store_and_log():
+                try:
+                    await self.store(record)
+                except Exception as e:
+                    logger.error(f"Failed to store audit record: {e}")
+
+            asyncio.create_task(_store_and_log())

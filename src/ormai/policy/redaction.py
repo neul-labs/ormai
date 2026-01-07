@@ -13,6 +13,13 @@ from typing import Any
 from ormai.policy.models import FieldAction, FieldPolicy, ModelPolicy
 
 
+def _mask_partial(value: str) -> str:
+    """Generic partial masking: show first and last char."""
+    if len(value) <= 2:
+        return "*" * len(value)
+    return value[0] + "*" * (len(value) - 2) + value[-1]
+
+
 class RedactionStrategy(str, Enum):
     """Built-in redaction strategies."""
 
@@ -22,6 +29,24 @@ class RedactionStrategy(str, Enum):
     MASK_CARD = "mask_card"  # 1234567890123456 -> ****3456
     MASK_PARTIAL = "mask_partial"  # Show first and last chars
     HASH_SHA256 = "hash_sha256"  # SHA256 hash
+
+
+def _mask_email_impl(email: str) -> str:
+    """Mask an email address: user@domain.com -> u***@domain.com"""
+    if "@" not in email:
+        return _mask_partial(email)
+    local, domain = email.rsplit("@", 1)
+    if len(local) <= 1:
+        return f"{local}***@{domain}"
+    return f"{local[0]}***@{domain}"
+
+
+def _mask_phone_impl(phone: str) -> str:
+    """Mask a phone number: +1234567890 -> +1******890"""
+    # Keep first 2 and last 3 chars
+    if len(phone) <= 5:
+        return "*" * len(phone)
+    return phone[:2] + "*" * (len(phone) - 5) + phone[-3:]
 
 
 class Redactor:
@@ -82,12 +107,12 @@ class Redactor:
 
         # Default masking based on value format
         if "@" in str_value:
-            return self._mask_email(str_value)
+            return _mask_email_impl(str_value)
         if str_value.replace("+", "").replace("-", "").replace(" ", "").isdigit():
             if len(str_value) > 10:
-                return self._mask_phone(str_value)
-            return self._mask_partial(str_value)
-        return self._mask_partial(str_value)
+                return _mask_phone_impl(str_value)
+            return _mask_partial(str_value)
+        return _mask_partial(str_value)
 
     def _apply_custom_mask(self, value: str, pattern: str) -> str:
         """Apply a custom mask pattern."""
@@ -107,28 +132,6 @@ class Redactor:
             result = result.replace(first_match.group(0), value[:n] if len(value) >= n else value)
 
         return result
-
-    def _mask_email(self, email: str) -> str:
-        """Mask an email address: user@domain.com -> u***@domain.com"""
-        if "@" not in email:
-            return self._mask_partial(email)
-        local, domain = email.rsplit("@", 1)
-        if len(local) <= 1:
-            return f"{local}***@{domain}"
-        return f"{local[0]}***@{domain}"
-
-    def _mask_phone(self, phone: str) -> str:
-        """Mask a phone number: +1234567890 -> +1******890"""
-        # Keep first 2 and last 3 chars
-        if len(phone) <= 5:
-            return "*" * len(phone)
-        return phone[:2] + "*" * (len(phone) - 5) + phone[-3:]
-
-    def _mask_partial(self, value: str) -> str:
-        """Generic partial masking: show first and last char."""
-        if len(value) <= 2:
-            return "*" * len(value)
-        return value[0] + "*" * (len(value) - 2) + value[-1]
 
     def _apply_hash(self, value: Any) -> str:
         """Hash a value using SHA256."""
@@ -151,14 +154,24 @@ def mask_value(value: Any, strategy: RedactionStrategy) -> Any:
         case RedactionStrategy.DENY:
             return None
         case RedactionStrategy.MASK_EMAIL:
-            return Redactor._mask_email(None, str_value)  # type: ignore
+            return _mask_email_impl(str_value)
         case RedactionStrategy.MASK_PHONE:
-            return Redactor._mask_phone(None, str_value)  # type: ignore
+            return _mask_phone_impl(str_value)
         case RedactionStrategy.MASK_CARD:
             return "*" * (len(str_value) - 4) + str_value[-4:] if len(str_value) > 4 else "****"
         case RedactionStrategy.MASK_PARTIAL:
-            return Redactor._mask_partial(None, str_value)  # type: ignore
+            return _mask_partial(str_value)
         case RedactionStrategy.HASH_SHA256:
             return hashlib.sha256(str_value.encode()).hexdigest()
 
     return value
+
+
+def _mask_email(email: str) -> str:
+    """Mask an email address: user@domain.com -> u***@domain.com"""
+    return _mask_email_impl(email)
+
+
+def _mask_phone(phone: str) -> str:
+    """Mask a phone number: +1234567890 -> +1******890"""
+    return _mask_phone_impl(phone)

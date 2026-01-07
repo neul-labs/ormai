@@ -3,12 +3,21 @@ MCP server factory.
 
 Creates MCP servers that expose OrmAI tools.
 """
+from __future__ import annotations
 
+import logging
 from collections.abc import Callable
 from typing import Any
 
 from ormai.core.context import Principal, RunContext
+from ormai.core.errors import AuthenticationError
 from ormai.tools.registry import ToolRegistry
+
+logger = logging.getLogger(__name__)
+
+# Default principal constants for development use
+DEFAULT_DEV_TENANT = "default"
+DEFAULT_DEV_USER = "anonymous"
 
 
 class McpServerFactory:
@@ -18,11 +27,17 @@ class McpServerFactory:
     The MCP server exposes all registered tools with their JSON schemas,
     handles authentication, and routes tool calls to implementations.
 
+    Security Note:
+        If no auth function is provided and enforce_auth is True, an
+        AuthenticationError will be raised. Set enforce_auth=False for
+        development only. Always provide an auth function in production.
+
     Example:
         server = McpServerFactory(
             toolset=toolset,
             auth=jwt_auth,
             context_builder=default_context_builder,
+            enforce_auth=True,
         ).build()
     """
 
@@ -31,6 +46,7 @@ class McpServerFactory:
         toolset: ToolRegistry,
         auth: Callable[[dict[str, Any]], Principal] | None = None,
         context_builder: Callable[[Principal, Any], RunContext] | None = None,
+        enforce_auth: bool = False,
     ) -> None:
         """
         Initialize the factory.
@@ -39,10 +55,12 @@ class McpServerFactory:
             toolset: The tool registry to expose
             auth: Optional auth function that extracts Principal from request
             context_builder: Optional function to build RunContext from Principal
+            enforce_auth: If True, require auth function or raise AuthenticationError
         """
         self.toolset = toolset
         self.auth = auth
         self.context_builder = context_builder
+        self.enforce_auth = enforce_auth
 
     def build(self) -> "McpServer":
         """
@@ -54,6 +72,7 @@ class McpServerFactory:
             toolset=self.toolset,
             auth=self.auth,
             context_builder=self.context_builder,
+            enforce_auth=self.enforce_auth,
         )
 
 
@@ -69,10 +88,12 @@ class McpServer:
         toolset: ToolRegistry,
         auth: Callable[[dict[str, Any]], Principal] | None = None,
         context_builder: Callable[[Principal, Any], RunContext] | None = None,
+        enforce_auth: bool = False,
     ) -> None:
         self.toolset = toolset
         self.auth = auth
         self.context_builder = context_builder
+        self.enforce_auth = enforce_auth
 
     def get_tools(self) -> list[dict[str, Any]]:
         """
@@ -102,10 +123,22 @@ class McpServer:
         if self.auth and context:
             principal = self.auth(context)
         else:
-            # Default principal for development
+            if self.enforce_auth:
+                raise AuthenticationError(
+                    "Authentication required but no auth function provided. "
+                    "Provide an auth function or set enforce_auth=False for development."
+                )
+            # Default principal for development - warn about security implications
+            logger.warning(
+                "No auth function provided. Using default development principal "
+                "(tenant_id=%r, user_id=%r). This is insecure for production use. "
+                "Provide an auth function or set enforce_auth=True to enforce authentication.",
+                DEFAULT_DEV_TENANT,
+                DEFAULT_DEV_USER,
+            )
             principal = Principal(
-                tenant_id="default",
-                user_id="anonymous",
+                tenant_id=DEFAULT_DEV_TENANT,
+                user_id=DEFAULT_DEV_USER,
             )
 
         # Build run context

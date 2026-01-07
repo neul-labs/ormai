@@ -4,8 +4,14 @@ Execution context for OrmAI tool calls.
 
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from uuid import uuid4
+
+if TYPE_CHECKING:
+    from sqlalchemy.orm import Session as SqlAlchemySession
+    from tortoise import Tortoise  # type: ignore
+    from peewee import Model as PeeweeModel  # type: ignore
+    from django.db import models  # type: ignore
 
 
 @dataclass(frozen=True)
@@ -31,7 +37,7 @@ class Principal:
         return bool(set(roles) & set(self.roles))
 
 
-@dataclass
+@dataclass(frozen=True)
 class RunContext:
     """
     Execution context for a single tool call.
@@ -41,10 +47,12 @@ class RunContext:
     - Request tracking for auditing
     - Database session for the operation
     - Timing information
+
+    Note: RunContext is immutable. Use the with_* methods to create modified copies.
     """
 
     principal: Principal
-    db: Any  # Database session (SQLAlchemy Session, Tortoise connection, etc.)
+    db: "SqlAlchemySession | Any"  # Database session (SQLAlchemy Session, Tortoise connection, etc.)
     request_id: str = field(default_factory=lambda: str(uuid4()))
     trace_id: str | None = None
     now: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
@@ -85,4 +93,48 @@ class RunContext:
             request_id=request_id or str(uuid4()),
             trace_id=trace_id,
             metadata=metadata or {},
+        )
+
+    def with_principal(self, principal: Principal) -> "RunContext":
+        """Create a new RunContext with a different principal."""
+        return RunContext(
+            principal=principal,
+            db=self.db,
+            request_id=self.request_id,
+            trace_id=self.trace_id,
+            now=self.now,
+            metadata=self.metadata,
+        )
+
+    def with_db(self, db: Any) -> "RunContext":
+        """Create a new RunContext with a different database session."""
+        return RunContext(
+            principal=self.principal,
+            db=db,
+            request_id=self.request_id,
+            trace_id=self.trace_id,
+            now=self.now,
+            metadata=self.metadata,
+        )
+
+    def with_trace_id(self, trace_id: str) -> "RunContext":
+        """Create a new RunContext with a different trace ID."""
+        return RunContext(
+            principal=self.principal,
+            db=self.db,
+            request_id=self.request_id,
+            trace_id=trace_id,
+            now=self.now,
+            metadata=self.metadata,
+        )
+
+    def with_metadata(self, metadata: dict[str, Any]) -> "RunContext":
+        """Create a new RunContext with merged metadata."""
+        return RunContext(
+            principal=self.principal,
+            db=self.db,
+            request_id=self.request_id,
+            trace_id=self.trace_id,
+            now=self.now,
+            metadata=metadata,
         )
