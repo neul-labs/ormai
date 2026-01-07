@@ -6,19 +6,31 @@ readme = "README.md"
 license = { text = "MIT" }
 requires-python = ">=3.10"
 authors = [
-    { name = "OrmAI Contributors" }
+    { name = "Dipankar Sarkar", email = "me@dipankar.name" }
 ]
-keywords = ["orm", "ai", "agents", "sqlalchemy", "mcp", "llm", "tools"]
+maintainers = [
+    { name = "Neul Labs" }
+]
+keywords = [
+    "orm", "ai", "agents", "sqlalchemy", "mcp", "llm", "tools",
+    "pydantic", "database", "security", "agent-tools", "capability-runtime",
+    "tenant-isolation", "audit", "access-control", "llm-tools", "tortoise",
+    "peewee", "multi-tenant", "data-governance", "privacy",
+]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Framework :: Pydantic",
     "Topic :: Database",
+    "Topic :: Database :: Access Controls",
+    "Topic :: Security",
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Typing :: Typed",
 ]
@@ -47,10 +59,10 @@ all = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/anthropics/ormai"
-Documentation = "https://github.com/anthropics/ormai#readme"
-Repository = "https://github.com/anthropics/ormai"
-Issues = "https://github.com/anthropics/ormai/issues"
+Homepage = "https://github.com/neul-labs/ormai"
+Documentation = "https://github.com/neul-labs/ormai#readme"
+Repository = "https://github.com/neul-labs/ormai"
+Issues = "https://github.com/neul-labs/ormai/issues"
 
 [build-system]
 requires = ["hatchling"]
