@@ -12,14 +12,124 @@ permissions:
 
 env:
   PYTHON_VERSION: "3.12"
+  NODE_VERSION: "20"
 
 jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync --extra all --dev
+
+      - name: Run pytest
+        run: uv run pytest
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./coverage.xml
+          fail_ci_if_error: false
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync --dev
+
+      - name: Run ruff
+        run: uv run ruff check .
+
+  type-check:
+    name: Type Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync --dev
+
+      - name: Run mypy
+        run: uv run mypy .
+
+  validate:
+    name: Validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+
+      - name: Install build
+        run: uv pip install build
+
+      - name: Validate package
+        run: |
+          python -m build --check
+          twine check dist/*
+
   version-check:
     name: Version Check
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     outputs:
       version_changed: ${{ steps.version-check.outputs.version_changed }}
-      current_version: ${{ steps.version-check.outputs.current_version }}
+      current_version: ${{ steps.current-version.outputs.current_version }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -76,107 +186,133 @@ jobs:
           git tag "v$VERSION" || echo "Tag already exists"
           git push origin "v$VERSION" || echo "Tag already pushed"
 
-  test:
-    name: Test
+  test-ormai-ts:
+    name: Test ormai-ts
     runs-on: ubuntu-latest
-    needs: version-check
+    timeout-minutes: 10
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          python-version: ${{ env.PYTHON_VERSION }}
-          cache: pip
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@v4
-        with:
-          enable-cache: true
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: ormai-ts/package-lock.json
 
       - name: Install dependencies
-        run: uv sync --extra all --dev
+        working-directory: ormai-ts
+        run: npm ci
 
-      - name: Run pytest
-        run: uv run pytest
+      - name: Run tests
+        working-directory: ormai-ts
+        run: npm run test:run
 
       - name: Upload coverage
-        uses: codecov/codecov-action@v4
-        with:
-          files: ./coverage.xml
-          fail_ci_if_error: false
+        working-directory: ormai-ts
+        run: npm run test:coverage
 
-  lint:
-    name: Lint
+  lint-ormai-ts:
+    name: Lint ormai-ts
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          python-version: ${{ env.PYTHON_VERSION }}
-          cache: pip
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@v4
-        with:
-          enable-cache: true
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: ormai-ts/package-lock.json
 
       - name: Install dependencies
-        run: uv sync --dev
+        working-directory: ormai-ts
+        run: npm ci
 
-      - name: Run ruff
-        run: uv run ruff check .
+      - name: Run lint
+        working-directory: ormai-ts
+        run: npm run lint
 
-  type-check:
-    name: Type Check
+  typecheck-ormai-ts:
+    name: Type Check ormai-ts
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          python-version: ${{ env.PYTHON_VERSION }}
-          cache: pip
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@v4
-        with:
-          enable-cache: true
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: ormai-ts/package-lock.json
 
       - name: Install dependencies
-        run: uv sync --dev
+        working-directory: ormai-ts
+        run: npm ci
 
-      - name: Run mypy
-        run: uv run mypy .
+      - name: Run typecheck
+        working-directory: ormai-ts
+        run: npm run typecheck
 
-  validate:
-    name: Validate
+  version-check-ormai-ts:
+    name: Version Check ormai-ts
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      version_changed: ${{ steps.version-check.outputs.version_changed }}
+      current_version: ${{ steps.current-version.outputs.current_version }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
         with:
-          python-version: ${{ env.PYTHON_VERSION }}
-          cache: pip
+          fetch-depth: 0
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          enable-cache: true
+          node-version: ${{ env.NODE_VERSION }}
 
-      - name: Install build
-        run: uv pip install build
-
-      - name: Validate package
+      - name: Get current version
+        id: current-version
+        working-directory: ormai-ts
         run: |
-          python -m build --check
-          twine check dist/*
+          VERSION=$(node -p "require('./package.json').version")
+          echo "current_version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Current version: $VERSION"
+
+      - name: Get previous version from latest tag
+        id: previous-version
+        run: |
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD~1 -- ormai-ts 2>/dev/null || echo "")
+          if [ -n "$PREV_TAG" ]; then
+            echo "Previous version: $PREV_TAG"
+            echo "previous_version=$PREV_TAG" >> $GITHUB_OUTPUT
+          else
+            echo "No previous tag found"
+            echo "previous_version=" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Check if version changed
+        id: version-check
+        run: |
+          CURRENT="${{ steps.current-version.outputs.current_version }}"
+          PREVIOUS="${{ steps.previous-version.outputs.previous_version }}"
+          if [ "$CURRENT" != "$PREVIOUS" ]; then
+            echo "version_changed=true" >> $GITHUB_OUTPUT
+            echo "Version changed from $PREVIOUS to $CURRENT"
+          else
+            echo "version_changed=false" >> $GITHUB_OUTPUT
+            echo "Version unchanged at $CURRENT"
+          fi
+
+      - name: Create version tag if changed
+        if: steps.version-check.outputs.version_changed == 'true'
+        run: |
+          VERSION="${{ steps.current-version.outputs.current_version }}"
+          git tag "ormai-ts-v$VERSION" || echo "Tag already exists"
+          git push origin "ormai-ts-v$VERSION" || echo "Tag already pushed"
