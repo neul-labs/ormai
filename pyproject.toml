@@ -29,7 +29,6 @@ classifiers = [
     "Programming Language :: Python :: 3.13",
     "Framework :: Pydantic",
     "Topic :: Database",
-    "Topic :: Database :: Access Controls",
     "Topic :: Security",
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Typing :: Typed",
