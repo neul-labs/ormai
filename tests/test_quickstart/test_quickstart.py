@@ -3,9 +3,7 @@
 from __future__ import annotations
 
 import tempfile
-from datetime import datetime
 from pathlib import Path
-from unittest.mock import MagicMock, patch
 
 import pytest
 from peewee import (
@@ -13,11 +11,10 @@ from peewee import (
     CharField,
     DecimalField,
     ForeignKeyField,
-    IntegerField,
     Model,
     SqliteDatabase,
 )
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, create_engine
+from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from tortoise import fields
 from tortoise.models import Model as TortoiseModel
@@ -29,8 +26,7 @@ from ormai.quickstart import mount_peewee, mount_sqlalchemy, mount_tortoise
 from ormai.quickstart.peewee import PeeweeMount
 from ormai.quickstart.sqlalchemy import OrmAIMount
 from ormai.quickstart.tortoise import TortoiseMount
-from ormai.utils.defaults import DEFAULT_DEV, DEFAULT_INTERNAL, DEFAULT_PROD
-
+from ormai.utils.defaults import DEFAULT_INTERNAL
 
 # === SQLAlchemy Test Models ===
 SABase = declarative_base()

@@ -5,26 +5,25 @@ These tests verify that the DSL models and validation functions
 behave correctly across a wide range of inputs.
 """
 
-import pytest
-from hypothesis import given, settings, strategies as st
-from hypothesis.strategies import lists, dictionaries, text, integers, booleans, none, from_type
+from hypothesis import given, settings
+from hypothesis import strategies as st
+from hypothesis.strategies import booleans, dictionaries, integers, lists, none
 
 from ormai.core.dsl import (
-    QueryRequest,
-    GetRequest,
     AggregateRequest,
-    CreateRequest,
-    UpdateRequest,
-    DeleteRequest,
     BulkUpdateRequest,
+    CreateRequest,
+    DeleteRequest,
     FilterClause,
     FilterOp,
+    GetRequest,
+    IncludeClause,
     OrderClause,
     OrderDirection,
-    IncludeClause,
+    QueryRequest,
+    UpdateRequest,
 )
-from ormai.store.sanitize import sanitize_inputs, SENSITIVE_PATTERNS
-
+from ormai.store.sanitize import SENSITIVE_PATTERNS, sanitize_inputs
 
 # === Strategy Definitions ===
 
@@ -324,7 +323,7 @@ class TestSanitizeInputsProperties:
 
     @given(st.text(min_size=0, max_size=100))
     @settings(max_examples=50, deadline=5000)
-    def test_sanitize_inputs_empty_dict(self, text_data):
+    def test_sanitize_inputs_empty_dict(self, _text_data):
         """Test that sanitize_inputs handles empty dict."""
         result = sanitize_inputs({})
         assert result == {}
@@ -335,7 +334,7 @@ class TestSanitizeInputsProperties:
         max_size=20,
     ))
     @settings(max_examples=50, deadline=5000)
-    def test_sanitize_inputs_redacts_sensitive_fields(self, data):
+    def test_sanitize_inputs_redacts_sensitive_fields(self, _data):
         """Test that sensitive fields are redacted."""
         sensitive_data = {
             "password": "secret123",
@@ -353,7 +352,7 @@ class TestSensitivePatternProperties:
 
     @given(st.text(min_size=0, max_size=100))
     @settings(max_examples=50, deadline=5000)
-    def test_sensitive_pattern_matches_password_variants(self, text):
+    def test_sensitive_pattern_matches_password_variants(self, _text):
         """Test that password variants are detected."""
         password_variants = ["password", "Password", "PASSWORD", "user_password"]
         for variant in password_variants:
@@ -361,7 +360,7 @@ class TestSensitivePatternProperties:
 
     @given(st.text(min_size=0, max_size=100))
     @settings(max_examples=50, deadline=5000)
-    def test_sensitive_pattern_matches_token_variants(self, text):
+    def test_sensitive_pattern_matches_token_variants(self, _text):
         """Test that token variants are detected."""
         token_variants = ["token", "Token", "access_token", "refresh_token"]
         for variant in token_variants:
@@ -369,7 +368,7 @@ class TestSensitivePatternProperties:
 
     @given(st.text(min_size=0, max_size=100))
     @settings(max_examples=50, deadline=5000)
-    def test_sensitive_pattern_matches_api_key_variants(self, text):
+    def test_sensitive_pattern_matches_api_key_variants(self, _text):
         """Test that API key variants are detected."""
         api_key_variants = ["api_key", "apikey", "api_secret", "client_secret"]
         for variant in api_key_variants:
@@ -377,7 +376,7 @@ class TestSensitivePatternProperties:
 
     @given(st.text(min_size=0, max_size=100))
     @settings(max_examples=50, deadline=5000)
-    def test_sensitive_pattern_is_case_insensitive(self, text):
+    def test_sensitive_pattern_is_case_insensitive(self, _text):
         """Test that pattern matching is case insensitive."""
         lower = "password"
         upper = "PASSWORD"
@@ -388,7 +387,7 @@ class TestSensitivePatternProperties:
 
     @given(st.text(min_size=0, max_size=100))
     @settings(max_examples=50, deadline=5000)
-    def test_sensitive_pattern_non_sensitive_not_detected(self, text):
+    def test_sensitive_pattern_non_sensitive_not_detected(self, _text):
         """Test that non-sensitive fields are not detected."""
         non_sensitive = ["name", "email", "address", "phone", "age", "created_at"]
         for field in non_sensitive:

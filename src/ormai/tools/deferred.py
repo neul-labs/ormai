@@ -140,7 +140,7 @@ class DeferredExecutor:
         self,
         approval_request: ApprovalRequest,
         execute_fn: Any,
-        result_type: type[T],
+        result_type: type[T],  # noqa: ARG002
     ) -> DeferredResult[T]:
         """Execute an operation through the approval gate."""
         # Check approval status
@@ -214,7 +214,7 @@ class DeferredExecutor:
 
 def require_approval_or_raise(
     request: CreateRequest | UpdateRequest | DeleteRequest | BulkUpdateRequest,
-    ctx: RunContext,
+    ctx: RunContext,  # noqa: ARG001
     approval_id: str | None = None,
 ) -> None:
     """

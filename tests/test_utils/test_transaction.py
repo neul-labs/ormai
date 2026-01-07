@@ -3,12 +3,11 @@
 import pytest
 
 from ormai.utils.transaction import (
-    RETRY_FAST,
     RETRY_NONE,
     RETRY_STANDARD,
+    RetryableError,
     RetryConfig,
     RetryStrategy,
-    RetryableError,
     TransactionManager,
     retry_async,
     retry_sync,
@@ -301,7 +300,7 @@ class TestTransactionManager:
             config=RETRY_NONE,
         )
 
-        async def operation(session):
+        async def operation(_session):
             return "result"
 
         result = await manager.execute_async(operation)
@@ -333,7 +332,7 @@ class TestTransactionManager:
             config=RETRY_NONE,
         )
 
-        async def operation(session):
+        async def operation(_session):
             raise ValueError("oops")
 
         with pytest.raises(ValueError):
@@ -362,7 +361,7 @@ class TestTransactionManager:
             config=RETRY_NONE,
         )
 
-        def operation(session):
+        def operation(_session):
             return "sync result"
 
         result = manager.execute_sync(operation)

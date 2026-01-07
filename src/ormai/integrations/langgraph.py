@@ -5,7 +5,7 @@ Provides tools compatible with LangGraph and LangChain.
 """
 
 from collections.abc import Callable
-from typing import Any, Type
+from typing import Any
 
 from ormai.core.context import Principal, RunContext
 from ormai.tools.registry import ToolRegistry
@@ -100,7 +100,7 @@ def ormai_toolset_to_langchain(
     return tools
 
 
-def _schema_to_pydantic(schema: dict[str, Any]) -> Type[BaseModel]:
+def _schema_to_pydantic(schema: dict[str, Any]) -> type[BaseModel]:
     """Convert a JSON schema to a Pydantic model."""
     if not HAS_LANGCHAIN:
         raise ImportError("LangChain/Pydantic is required")
@@ -121,7 +121,7 @@ def _schema_to_pydantic(schema: dict[str, Any]) -> Type[BaseModel]:
     return create_model("ToolInput", **fields)
 
 
-def _json_type_to_python(json_type: str) -> Type:
+def _json_type_to_python(json_type: str) -> type:
     """Convert JSON schema type to Python type."""
     type_map = {
         "string": str,

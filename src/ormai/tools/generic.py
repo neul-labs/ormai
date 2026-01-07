@@ -70,7 +70,7 @@ class DescribeSchemaTool(Tool[DescribeSchemaInput, SchemaDescription]):
     async def execute(
         self,
         input: DescribeSchemaInput,
-        ctx: RunContext,
+        ctx: RunContext,  # noqa: ARG002
     ) -> SchemaDescription:
         """Execute the describe_schema operation."""
         result: dict[str, Any] = {}

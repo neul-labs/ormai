@@ -3,9 +3,8 @@ SQLAlchemy models for the example app.
 """
 
 from datetime import datetime
-from typing import Optional
 
-from sqlalchemy import ForeignKey, String, Float, DateTime, Text
+from sqlalchemy import DateTime, Float, ForeignKey, String, Text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
@@ -23,7 +22,7 @@ class Customer(Base):
     tenant_id: Mapped[str] = mapped_column(String(100), index=True)
     email: Mapped[str] = mapped_column(String(255), unique=True)
     name: Mapped[str] = mapped_column(String(255))
-    phone: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    phone: Mapped[str | None] = mapped_column(String(50), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     # Relations
@@ -43,9 +42,9 @@ class Order(Base):
     customer_id: Mapped[int] = mapped_column(ForeignKey("customers.id"))
     status: Mapped[str] = mapped_column(String(50), default="pending")
     total: Mapped[float] = mapped_column(Float, default=0.0)
-    notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    updated_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
     # Relations
     customer: Mapped["Customer"] = relationship("Customer", back_populates="orders")
@@ -78,7 +77,7 @@ class Subscription(Base):
     plan: Mapped[str] = mapped_column(String(100))
     status: Mapped[str] = mapped_column(String(50), default="active")
     started_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    cancelled_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    cancelled_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
     # Relations
     customer: Mapped["Customer"] = relationship("Customer", back_populates="subscriptions")

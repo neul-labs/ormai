@@ -2,12 +2,10 @@
 Tests for store sanitization - sensitive data detection and redaction.
 """
 
-import pytest
-import re
 
 from ormai.store.sanitize import (
-    sanitize_inputs,
     SENSITIVE_PATTERNS,
+    sanitize_inputs,
 )
 
 

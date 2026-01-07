@@ -11,14 +11,12 @@ import asyncio
 import hashlib
 import time
 from collections.abc import Awaitable, Callable
+from contextlib import suppress
 from datetime import datetime
-from typing import Any
 
 from ormai.control_plane.models import (
-    Instance,
     InstanceHealth,
     InstanceStatus,
-    PolicyVersion,
 )
 from ormai.policy.models import Policy
 from ormai.store.base import AuditStore
@@ -162,24 +160,18 @@ class ControlPlaneClient:
         # Cancel background tasks
         if self._sync_task:
             self._sync_task.cancel()
-            try:
+            with suppress(asyncio.CancelledError):
                 await self._sync_task
-            except asyncio.CancelledError:
-                pass
 
         if self._heartbeat_task:
             self._heartbeat_task.cancel()
-            try:
+            with suppress(asyncio.CancelledError):
                 await self._heartbeat_task
-            except asyncio.CancelledError:
-                pass
 
         if self._audit_task:
             self._audit_task.cancel()
-            try:
+            with suppress(asyncio.CancelledError):
                 await self._audit_task
-            except asyncio.CancelledError:
-                pass
 
     async def record_tool_call(
         self,

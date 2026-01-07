@@ -4,25 +4,25 @@ End-to-end integration tests for ORM operations.
 Tests the full request lifecycle: request -> policy validation -> compilation.
 """
 
-import pytest
 from datetime import datetime
 
-from sqlalchemy import create_engine, String, Integer, DateTime
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, Session
+import pytest
+from sqlalchemy import DateTime, Integer, String, create_engine
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from sqlalchemy.pool import StaticPool
 
 from ormai.adapters.sqlalchemy import SQLAlchemyAdapter
 from ormai.core.context import Principal, RunContext
 from ormai.core.dsl import (
-    QueryRequest,
-    GetRequest,
     AggregateRequest,
-    CreateRequest,
-    UpdateRequest,
-    DeleteRequest,
     BulkUpdateRequest,
+    CreateRequest,
+    DeleteRequest,
     FilterClause,
     FilterOp,
+    GetRequest,
+    QueryRequest,
+    UpdateRequest,
 )
 from ormai.policy.models import (
     Budget,
@@ -34,7 +34,6 @@ from ormai.policy.models import (
     RowPolicy,
     WritePolicy,
 )
-
 
 # === Test Models ===
 

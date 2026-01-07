@@ -5,7 +5,6 @@ SQL-backed audit storage using Tortoise ORM for async database access.
 """
 
 from datetime import datetime
-from typing import Any
 
 from tortoise import fields
 from tortoise.models import Model

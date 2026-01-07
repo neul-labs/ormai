@@ -2,9 +2,10 @@
 Replay engine for re-executing recorded tool calls.
 """
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Any, Callable
+from typing import Any
 
 from ormai.core.context import Principal, RunContext
 from ormai.eval.recorder import RecordedCall
@@ -90,10 +91,7 @@ class ReplayEngine:
         import time
 
         # Create context
-        if ctx_factory:
-            ctx = ctx_factory(call)
-        else:
-            ctx = self._create_context(call)
+        ctx = ctx_factory(call) if ctx_factory else self._create_context(call)
 
         result = ReplayResult(original=call)
         start = time.perf_counter()
@@ -178,9 +176,8 @@ class ReplayEngine:
             differences.append(f"Original succeeded, replay had error: {result.error}")
 
         # Compare outputs if both succeeded
-        if call.outputs is not None and result.outputs is not None:
-            if not self.comparator(call.outputs, result.outputs):
-                differences.append("Output values differ")
+        if call.outputs is not None and result.outputs is not None and not self.comparator(call.outputs, result.outputs):
+            differences.append("Output values differ")
 
         return len(differences) == 0, differences
 

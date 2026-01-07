@@ -2,8 +2,8 @@
 
 import pytest
 
-from ormai.codegen.views import ViewCodeGenerator
 from ormai.codegen.tools import DomainToolGenerator
+from ormai.codegen.views import ViewCodeGenerator
 from ormai.core.types import FieldMetadata, FieldType, ModelMetadata, SchemaMetadata
 from ormai.policy.models import FieldAction, FieldPolicy, ModelPolicy, Policy, WritePolicy
 
@@ -191,7 +191,7 @@ class TestViewCodeGenerator:
         assert "name: str" in content
         # Make sure it's not optional
         lines = content.split("\n")
-        name_lines = [l for l in lines if "name:" in l and "model" not in l.lower()]
+        name_lines = [line for line in lines if "name:" in line and "model" not in line.lower()]
         for line in name_lines:
             if "name: str" in line:
                 assert "None" not in line

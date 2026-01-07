@@ -6,10 +6,11 @@ approve write operations before execution.
 """
 
 from abc import ABC, abstractmethod
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Any, Callable
+from typing import Any
 from uuid import uuid4
 
 from ormai.core.context import RunContext
@@ -170,7 +171,7 @@ class AutoApproveGate(ApprovalGate):
     Useful for development/testing or when approval is handled externally.
     """
 
-    async def check(self, request: ApprovalRequest) -> ApprovalDecision:
+    async def check(self, request: ApprovalRequest) -> ApprovalDecision:  # noqa: ARG002
         """Auto-approve all requests."""
         return ApprovalDecision(approved=True, message="Auto-approved")
 
@@ -178,7 +179,7 @@ class AutoApproveGate(ApprovalGate):
         """Submit returns immediately with approved status."""
         return request.id
 
-    async def get_status(self, request_id: str) -> ApprovalRequest | None:
+    async def get_status(self, request_id: str) -> ApprovalRequest | None:  # noqa: ARG002
         """Always returns None as we don't track auto-approved requests."""
         return None
 
@@ -218,7 +219,7 @@ class CallbackApprovalGate(ApprovalGate):
         """Submit is same as check for callback gate."""
         return request.id
 
-    async def get_status(self, request_id: str) -> ApprovalRequest | None:
+    async def get_status(self, request_id: str) -> ApprovalRequest | None:  # noqa: ARG002
         """Callback gate doesn't track requests."""
         return None
 

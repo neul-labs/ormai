@@ -2,29 +2,16 @@
 Tests for MCP server.
 """
 
-import pytest
-from unittest.mock import MagicMock, patch
-from datetime import datetime
 from typing import Any
 
+import pytest
 from pydantic import BaseModel
 
 from ormai.core.context import Principal, RunContext
-from ormai.core.dsl import (
-    QueryRequest,
-    GetRequest,
-    AggregateRequest,
-    FilterClause,
-    FilterOp,
-)
 from ormai.core.errors import (
     AuthenticationError,
-    FieldNotAllowedError,
-    ModelNotAllowedError,
 )
 from ormai.mcp.server import McpServer, McpServerFactory
-from ormai.tools.registry import ToolRegistry
-from ormai.tools.base import Tool, ToolResult
 from ormai.policy.models import (
     Budget,
     FieldAction,
@@ -35,7 +22,8 @@ from ormai.policy.models import (
     RowPolicy,
     WritePolicy,
 )
-
+from ormai.tools.base import Tool
+from ormai.tools.registry import ToolRegistry
 
 # === Mock Tool Classes ===
 
@@ -51,7 +39,8 @@ class MockQueryTool(Tool):
     description = "Query the database"
     input_schema = MockQueryInput
 
-    async def execute(self, input: MockQueryInput, ctx: RunContext) -> dict[str, Any]:
+    async def execute(self, _input: MockQueryInput, _ctx: RunContext) -> dict[str, Any]:
+        """Execute the query tool."""
         return {"success": True, "data": []}
 
 
@@ -66,7 +55,8 @@ class MockDescribeSchemaTool(Tool):
     description = "Describe the database schema"
     input_schema = MockDescribeSchemaInput
 
-    async def execute(self, input: MockDescribeSchemaInput, ctx: RunContext) -> dict[str, Any]:
+    async def execute(self, _input: MockDescribeSchemaInput, _ctx: RunContext) -> dict[str, Any]:
+        """Execute the describe schema tool."""
         return {"success": True, "models": []}
 
 
@@ -82,7 +72,8 @@ class MockGetTool(Tool):
     description = "Get a record by ID"
     input_schema = MockGetInput
 
-    async def execute(self, input: MockGetInput, ctx: RunContext) -> dict[str, Any]:
+    async def execute(self, _input: MockGetInput, _ctx: RunContext) -> dict[str, Any]:
+        """Execute the get tool."""
         return {"success": True, "data": None}
 
 
@@ -99,7 +90,8 @@ class MockAggregateTool(Tool):
     description = "Aggregate data"
     input_schema = MockAggregateInput
 
-    async def execute(self, input: MockAggregateInput, ctx: RunContext) -> dict[str, Any]:
+    async def execute(self, _input: MockAggregateInput, _ctx: RunContext) -> dict[str, Any]:
+        """Execute the aggregate tool."""
         return {"success": True, "value": 0}
 
 
@@ -182,7 +174,7 @@ def context(sample_principal):
 
 
 @pytest.fixture
-def mcp_server(tool_registry, basic_policy):
+def mcp_server(tool_registry, _basic_policy):
     """Create an MCP server with basic configuration."""
     return McpServerFactory(
         toolset=tool_registry,
@@ -191,7 +183,7 @@ def mcp_server(tool_registry, basic_policy):
 
 
 @pytest.fixture
-def mcp_server_with_auth(tool_registry, basic_policy):
+def mcp_server_with_auth(tool_registry, _basic_policy):
     """Create an MCP server with authentication enforcement."""
     def auth_function(ctx):
         principal = ctx.get("principal")
@@ -211,7 +203,7 @@ def mcp_server_with_auth(tool_registry, basic_policy):
 class TestMcpServerFactory:
     """Tests for McpServerFactory."""
 
-    def test_factory_creates_server(self, tool_registry, basic_policy):
+    def test_factory_creates_server(self, tool_registry, _basic_policy):
         """Test that factory creates a server instance."""
         factory = McpServerFactory(toolset=tool_registry)
         server = factory.build()
@@ -221,9 +213,9 @@ class TestMcpServerFactory:
         assert server.auth is None
         assert server.enforce_auth is False
 
-    def test_factory_with_custom_context_builder(self, tool_registry, basic_policy):
+    def test_factory_with_custom_context_builder(self, tool_registry, _basic_policy):
         """Test factory with custom context builder."""
-        def custom_builder(principal, ctx):
+        def custom_builder(principal, _ctx):
             return RunContext(principal=principal, db=None)
 
         factory = McpServerFactory(
@@ -236,7 +228,8 @@ class TestMcpServerFactory:
 
     def test_factory_with_auth(self, tool_registry):
         """Test factory with auth function."""
-        auth_fn = lambda ctx: Principal(tenant_id="t", user_id="u")
+        def auth_fn(_ctx):
+            return Principal(tenant_id="t", user_id="u")
 
         factory = McpServerFactory(
             toolset=tool_registry,
@@ -292,7 +285,7 @@ class TestMcpServer:
         assert result.get("success") is True
 
     @pytest.mark.asyncio
-    async def test_call_tool_with_context(self, mcp_server, context, sample_principal):
+    async def test_call_tool_with_context(self, mcp_server, context, _sample_principal):
         """Test that context is passed to tool execution."""
         result = await mcp_server.call_tool(
             name="query",
@@ -353,7 +346,7 @@ class TestMcpServerAuthentication:
         """Test custom auth function is called."""
         auth_called = False
 
-        def custom_auth(ctx):
+        def custom_auth(_ctx):
             nonlocal auth_called
             auth_called = True
             return Principal(tenant_id="custom", user_id="u1")
@@ -371,7 +364,7 @@ class TestMcpServerAuthentication:
 class TestMcpServerToolRegistration:
     """Tests for tool registration in MCP server."""
 
-    def test_tools_registered_on_init(self, mcp_server, tool_registry):
+    def test_tools_registered_on_init(self, mcp_server, _tool_registry):
         """Test that tools are registered on server init."""
         schemas = mcp_server.get_tools()
         registered_names = {s.get("name") or s.get("function", {}).get("name") for s in schemas}
@@ -426,7 +419,7 @@ class TestMcpServerIntegration:
     @pytest.mark.asyncio
     async def test_server_with_complex_policy(self, tool_registry):
         """Test server with complex policy configuration."""
-        complex_policy = Policy(
+        _complex_policy = Policy(
             models={
                 "User": ModelPolicy(
                     allowed=True,
@@ -457,7 +450,7 @@ class TestMcpServerIntegration:
         assert len(tools) > 0
 
     @pytest.mark.asyncio
-    async def test_tool_schemas_reflect_policy(self, tool_registry, basic_policy):
+    async def test_tool_schemas_reflect_policy(self, tool_registry, _basic_policy):
         """Test that tool schemas reflect policy restrictions."""
         factory = McpServerFactory(
             toolset=tool_registry,

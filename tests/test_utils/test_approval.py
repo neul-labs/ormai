@@ -127,7 +127,7 @@ class TestCallbackApprovalGate:
     @pytest.mark.asyncio
     async def test_callback_approve(self, ctx: RunContext):
         """Test callback that approves."""
-        gate = CallbackApprovalGate(callback=lambda r: True)
+        gate = CallbackApprovalGate(callback=lambda _r: True)
         request = ApprovalRequest.from_create(
             CreateRequest(model="Order", data={"x": 1}), ctx
         )
@@ -140,7 +140,7 @@ class TestCallbackApprovalGate:
     async def test_callback_reject(self, ctx: RunContext):
         """Test callback that rejects."""
         gate = CallbackApprovalGate(
-            callback=lambda r: False,
+            callback=lambda _r: False,
             rejection_message="Not allowed",
         )
         request = ApprovalRequest.from_create(

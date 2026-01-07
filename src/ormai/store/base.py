@@ -66,7 +66,7 @@ class AuditStore(ABC):
         """
         try:
             # Try to get the running loop (for Jupyter, etc.)
-            loop = asyncio.get_running_loop()
+            asyncio.get_running_loop()
         except RuntimeError:
             # No running loop, safe to create a new one
             asyncio.run(self.store(record))

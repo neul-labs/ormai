@@ -1,16 +1,17 @@
 """Tests for Control Plane Server."""
 
-import pytest
-from datetime import datetime, timedelta
+from datetime import datetime
 from uuid import uuid4
 
-from ormai.control_plane.server import ControlPlaneServer, create_server
+import pytest
+
 from ormai.control_plane.models import (
     AuditQuery,
     InstanceHealth,
     InstanceStatus,
 )
-from ormai.policy.models import Policy, ModelPolicy, Budget
+from ormai.control_plane.server import ControlPlaneServer, create_server
+from ormai.policy.models import Budget, ModelPolicy, Policy
 from ormai.store.models import AuditRecord, ErrorInfo
 
 
@@ -248,7 +249,7 @@ class TestAuditManagement:
             endpoint="http://localhost:8000",
         )
 
-        for i in range(5):
+        for _ in range(5):
             await server.ingest_audit_record(instance.id, make_record())
 
         result = await server.query_audit_logs(AuditQuery())
@@ -283,7 +284,7 @@ class TestAuditManagement:
             endpoint="http://localhost:8000",
         )
 
-        for i in range(10):
+        for _ in range(10):
             await server.ingest_audit_record(instance.id, make_record())
 
         recent = await server.get_recent_audit_logs(limit=5)
@@ -370,7 +371,7 @@ class TestDeploymentManagement:
             published_by="admin",
         )
 
-        for i in range(3):
+        for _ in range(3):
             await server.deploy_policy(
                 policy_version=pv.version,
                 deployed_by="admin",

@@ -10,7 +10,7 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from ormai.core.dsl import FilterClause, IncludeClause, OrderClause, QueryRequest
+from ormai.core.dsl import FilterClause, QueryRequest
 
 
 class CostCategory(str, Enum):
@@ -251,9 +251,8 @@ class QueryCostEstimator:
                 return stats.unique_selectivity
             return stats.default_selectivity * 0.5
 
-        if filter_clause.field == stats.primary_key:
-            if filter_clause.op == "eq":
-                return 1.0 / max(stats.estimated_row_count, 1)
+        if filter_clause.field == stats.primary_key and filter_clause.op == "eq":
+            return 1.0 / max(stats.estimated_row_count, 1)
 
         # Selectivity by operator
         selectivity_map = {
@@ -326,7 +325,7 @@ class QueryCostEstimator:
         return self.costs["complex_filter"]
 
     def _estimate_join_cost(
-        self, request: QueryRequest, stats: TableStats, estimated_rows: int
+        self, request: QueryRequest, stats: TableStats, estimated_rows: int  # noqa: ARG002
     ) -> float:
         """Estimate cost of includes/joins."""
         if not request.include:
@@ -504,7 +503,7 @@ class CostTracker:
         # Simple ratio analysis
         ratios = [
             actual / max(est, 0.001)
-            for est, actual in zip(estimated_costs, actual_durations)
+            for est, actual in zip(estimated_costs, actual_durations, strict=True)
         ]
         avg_ratio = sum(ratios) / len(ratios)
 

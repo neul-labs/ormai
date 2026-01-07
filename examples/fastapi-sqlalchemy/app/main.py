@@ -13,7 +13,6 @@ from app.database import get_session, init_db
 from app.ormai_setup import ormai
 from ormai.core.context import RunContext
 
-
 # === Request/Response Models ===
 
 
@@ -45,7 +44,7 @@ class AggregateRequest(BaseModel):
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(app: FastAPI):  # noqa: ARG001
     """Application lifespan handler."""
     # Initialize database on startup
     await init_db()

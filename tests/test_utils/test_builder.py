@@ -2,9 +2,8 @@
 Tests for the policy builder.
 """
 
-from ormai.policy.models import FieldAction
 from ormai.utils.builder import PolicyBuilder
-from ormai.utils.defaults import DEFAULT_PROD, DEFAULT_DEV
+from ormai.utils.defaults import DEFAULT_DEV, DEFAULT_PROD
 
 
 class TestPolicyBuilder:

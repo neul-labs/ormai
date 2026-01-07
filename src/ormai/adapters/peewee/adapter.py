@@ -87,8 +87,8 @@ class PeeweeAdapter(OrmAdapter):
         self,
         request: QueryRequest,
         ctx: RunContext,
-        policy: Policy,
-        schema: SchemaMetadata,
+        policy: Policy,  # noqa: ARG002
+        schema: SchemaMetadata,  # noqa: ARG002
     ) -> CompiledQuery:
         """Compile a query request."""
         return self.compiler.compile_query(request, ctx)
@@ -97,8 +97,8 @@ class PeeweeAdapter(OrmAdapter):
         self,
         request: GetRequest,
         ctx: RunContext,
-        policy: Policy,
-        schema: SchemaMetadata,
+        policy: Policy,  # noqa: ARG002
+        schema: SchemaMetadata,  # noqa: ARG002
     ) -> CompiledQuery:
         """Compile a get request."""
         return self.compiler.compile_get(request, ctx)
@@ -107,8 +107,8 @@ class PeeweeAdapter(OrmAdapter):
         self,
         request: AggregateRequest,
         ctx: RunContext,
-        policy: Policy,
-        schema: SchemaMetadata,
+        policy: Policy,  # noqa: ARG002
+        schema: SchemaMetadata,  # noqa: ARG002
     ) -> CompiledQuery:
         """Compile an aggregate request."""
         return self.compiler.compile_aggregate(request, ctx)
@@ -116,7 +116,7 @@ class PeeweeAdapter(OrmAdapter):
     async def execute_query(
         self,
         compiled: CompiledQuery,
-        ctx: RunContext,
+        ctx: RunContext,  # noqa: ARG002
     ) -> QueryResult:
         """Execute a compiled query."""
         # Run sync operation in thread pool
@@ -128,7 +128,7 @@ class PeeweeAdapter(OrmAdapter):
     def _execute_query_sync(
         self,
         compiled: CompiledQuery,
-        ctx: RunContext,
+        ctx: RunContext,  # noqa: ARG002
     ) -> QueryResult:
         """Execute query synchronously."""
         query_info = compiled.query
@@ -167,7 +167,7 @@ class PeeweeAdapter(OrmAdapter):
     async def execute_get(
         self,
         compiled: CompiledQuery,
-        ctx: RunContext,
+        ctx: RunContext,  # noqa: ARG002
     ) -> GetResult:
         """Execute a get request."""
         loop = asyncio.get_event_loop()
@@ -178,7 +178,7 @@ class PeeweeAdapter(OrmAdapter):
     def _execute_get_sync(
         self,
         compiled: CompiledQuery,
-        ctx: RunContext,
+        ctx: RunContext,  # noqa: ARG002
     ) -> GetResult:
         """Execute get synchronously."""
         query_info = compiled.query
@@ -200,7 +200,7 @@ class PeeweeAdapter(OrmAdapter):
     async def execute_aggregate(
         self,
         compiled: CompiledQuery,
-        ctx: RunContext,
+        ctx: RunContext,  # noqa: ARG002
     ) -> AggregateResult:
         """Execute an aggregation."""
         loop = asyncio.get_event_loop()
@@ -211,7 +211,7 @@ class PeeweeAdapter(OrmAdapter):
     def _execute_aggregate_sync(
         self,
         compiled: CompiledQuery,
-        ctx: RunContext,
+        ctx: RunContext,  # noqa: ARG002
     ) -> AggregateResult:
         """Execute aggregation synchronously."""
         agg_info = compiled.query
@@ -234,7 +234,7 @@ class PeeweeAdapter(OrmAdapter):
 
     async def transaction(
         self,
-        ctx: RunContext,
+        ctx: RunContext,  # noqa: ARG002
         fn: Callable[..., T],
         *args: Any,
         **kwargs: Any,

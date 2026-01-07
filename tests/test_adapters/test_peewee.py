@@ -6,10 +6,8 @@ import pytest
 from peewee import (
     BooleanField,
     CharField,
-    DateTimeField,
     DecimalField,
     ForeignKeyField,
-    IntegerField,
     Model,
     SqliteDatabase,
 )
@@ -19,7 +17,6 @@ from ormai.core.context import Principal, RunContext
 from ormai.core.dsl import FilterClause, FilterOp, OrderClause, OrderDirection, QueryRequest
 from ormai.core.types import RelationType
 from ormai.policy.models import Budget, ModelPolicy, Policy, RowPolicy
-
 
 # Test database
 test_db = SqliteDatabase(":memory:")

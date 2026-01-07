@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import pytest
-from tortoise import Tortoise, fields
+from tortoise import fields
 from tortoise.models import Model
 
 from ormai.adapters.tortoise import TortoiseCompiler, TortoiseIntrospector

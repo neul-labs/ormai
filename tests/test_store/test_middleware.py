@@ -3,8 +3,6 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from typing import Any
-from unittest.mock import AsyncMock
 
 import pytest
 
@@ -33,13 +31,13 @@ class MockAuditStore(AuditStore):
     async def query(
         self,
         *,
-        tenant_id: str | None = None,
-        principal_id: str | None = None,
-        tool_name: str | None = None,
-        start_time: datetime | None = None,
-        end_time: datetime | None = None,
+        _tenant_id: str | None = None,
+        _principal_id: str | None = None,
+        _tool_name: str | None = None,
+        _start_time: datetime | None = None,
+        _end_time: datetime | None = None,
         limit: int = 100,
-        offset: int = 0,
+        _offset: int = 0,
     ) -> list[AuditRecord]:
         return self.records[:limit]
 
@@ -185,7 +183,7 @@ class TestAuditMiddlewareMutations:
         async def update_fn():
             return MockResult()
 
-        result = await middleware.wrap_mutation_async(
+        await middleware.wrap_mutation_async(
             tool_name="db.update",
             ctx=ctx,
             inputs={"model": "Order", "id": 1},
@@ -211,7 +209,7 @@ class TestAuditMiddlewareMutations:
         async def bulk_update_fn():
             return MockBulkResult()
 
-        result = await middleware.wrap_mutation_async(
+        await middleware.wrap_mutation_async(
             tool_name="db.bulk_update",
             ctx=ctx,
             inputs={"model": "Order", "ids": [1, 2, 3, 4, 5]},

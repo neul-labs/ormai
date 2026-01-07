@@ -4,8 +4,6 @@ import json
 import tempfile
 from pathlib import Path
 
-import pytest
-
 from ormai.mcp.config import (
     McpClientType,
     McpConfigGenerator,

@@ -11,8 +11,7 @@ from ormai.core.context import Principal, RunContext
 from ormai.tools.registry import ToolRegistry
 
 try:
-    from fastapi import APIRouter, Depends, HTTPException, Request
-    from fastapi.responses import JSONResponse
+    from fastapi import APIRouter, HTTPException, Request
     from pydantic import BaseModel
     HAS_FASTAPI = True
 except ImportError:
@@ -154,11 +153,10 @@ class OrmAIRouter:
 
         # Get database session
         db = None
-        if self.get_db:
-            if callable(self.get_db):
-                db = self.get_db(request)
-                if hasattr(db, "__await__"):
-                    db = await db
+        if self.get_db and callable(self.get_db):
+            db = self.get_db(request)
+            if hasattr(db, "__await__"):
+                db = await db
 
         return RunContext(principal=principal, db=db)
 

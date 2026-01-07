@@ -14,7 +14,6 @@ from ormai.core.dsl import (
 )
 from ormai.core.errors import (
     FieldNotAllowedError,
-    MaxAffectedRowsExceededError,
     ModelNotAllowedError,
     QueryBudgetExceededError,
     QueryTooBroadError,
@@ -151,7 +150,7 @@ class PolicyValidator:
         model: str,
         row_policy: RowPolicy,
         ctx: RunContext,
-        existing_filters: list[FilterClause] | None,
+        existing_filters: list[FilterClause] | None,  # noqa: ARG002
     ) -> list[FilterClause]:
         """Validate scoping requirements and return scope filters to inject."""
         filters: list[FilterClause] = []
@@ -198,7 +197,7 @@ class PolicyValidator:
         self,
         request: QueryRequest,
         budget: Budget,
-        model_policy: ModelPolicy,
+        model_policy: ModelPolicy,  # noqa: ARG002
     ) -> None:
         """Validate request against budget limits."""
         # Check row limit

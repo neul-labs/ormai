@@ -69,7 +69,7 @@ jobs:
         run: uv sync --dev
 
       - name: Run ruff
-        run: uv run ruff check .
+        run: uv run ruff check src examples tests
 
   type-check:
     name: Type Check
@@ -115,13 +115,10 @@ jobs:
         with:
           enable-cache: true
 
-      - name: Install build
-        run: uv pip install build
-
       - name: Validate package
         run: |
-          python -m build --check
-          twine check dist/*
+          uv run python -m build --check
+          uv run twine check dist/*
 
   version-check:
     name: Version Check

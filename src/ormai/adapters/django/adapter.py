@@ -8,7 +8,7 @@ from collections.abc import Callable
 from typing import Any, TypeVar
 
 from django.db import models, transaction
-from django.db.models import Q, F, Count, Sum, Min, Max, Avg
+from django.db.models import Avg, Count, Max, Min, Q, Sum
 
 from ormai.adapters.base import CompiledQuery, OrmAdapter
 from ormai.adapters.django.introspection import DjangoIntrospector
@@ -234,7 +234,7 @@ class DjangoAdapter(OrmAdapter):
     async def execute_query(
         self,
         compiled: CompiledQuery,
-        ctx: RunContext,
+        ctx: RunContext,  # noqa: ARG002
     ) -> QueryResult:
         """Execute a compiled query."""
         queryset = compiled.query
@@ -259,7 +259,7 @@ class DjangoAdapter(OrmAdapter):
     async def execute_get(
         self,
         compiled: CompiledQuery,
-        ctx: RunContext,
+        ctx: RunContext,  # noqa: ARG002
     ) -> GetResult:
         """Execute a compiled get request."""
         queryset = compiled.query
@@ -284,7 +284,7 @@ class DjangoAdapter(OrmAdapter):
     async def execute_aggregate(
         self,
         compiled: CompiledQuery,
-        ctx: RunContext,
+        ctx: RunContext,  # noqa: ARG002
     ) -> AggregateResult:
         """Execute a compiled aggregation."""
         queryset = compiled.query
@@ -319,7 +319,7 @@ class DjangoAdapter(OrmAdapter):
 
     async def transaction(
         self,
-        ctx: RunContext,
+        ctx: RunContext,  # noqa: ARG002
         fn: Callable[..., T],
         *args: Any,
         **kwargs: Any,
@@ -357,7 +357,7 @@ class DjangoAdapter(OrmAdapter):
     async def execute_create(
         self,
         compiled: CompiledQuery,
-        ctx: RunContext,
+        ctx: RunContext,  # noqa: ARG002
     ) -> CreateResult:
         """Execute a compiled create request."""
         model_class, data = compiled.query
@@ -403,7 +403,7 @@ class DjangoAdapter(OrmAdapter):
     async def execute_update(
         self,
         compiled: CompiledQuery,
-        ctx: RunContext,
+        ctx: RunContext,  # noqa: ARG002
     ) -> UpdateResult:
         """Execute a compiled update request."""
         queryset, data = compiled.query
@@ -456,7 +456,7 @@ class DjangoAdapter(OrmAdapter):
     async def execute_delete(
         self,
         compiled: CompiledQuery,
-        ctx: RunContext,
+        ctx: RunContext,  # noqa: ARG002
     ) -> DeleteResult:
         """Execute a compiled delete request."""
         queryset = compiled.query

@@ -6,12 +6,11 @@ Provides fixtures, assertions, and helpers for testing OrmAI integrations.
 
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Any, Callable
+from typing import Any
 from uuid import uuid4
 
 from ormai.core.context import Principal, RunContext
 from ormai.eval.harness import EvalHarness, no_cross_tenant_data, no_denied_fields
-from ormai.eval.recorder import CallRecorder
 
 
 @dataclass
@@ -267,13 +266,12 @@ class LeakDetector:
         leaks = []
         for expected_tenant, results in self._records:
             for row in results:
-                if self.tenant_field in row:
-                    if row[self.tenant_field] != expected_tenant:
-                        leaks.append({
-                            "expected_tenant": expected_tenant,
-                            "actual_tenant": row[self.tenant_field],
-                            "row": row,
-                        })
+                if self.tenant_field in row and row[self.tenant_field] != expected_tenant:
+                    leaks.append({
+                        "expected_tenant": expected_tenant,
+                        "actual_tenant": row[self.tenant_field],
+                        "row": row,
+                    })
         return leaks
 
     def assert_no_leaks(self) -> None:

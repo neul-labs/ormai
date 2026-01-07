@@ -109,10 +109,7 @@ class SQLAlchemyIntrospector:
         """Introspect a relationship."""
         # Determine relationship type
         if rel.uselist:
-            if rel.secondary is not None:
-                rel_type = "many_to_many"
-            else:
-                rel_type = "one_to_many"
+            rel_type = "many_to_many" if rel.secondary is not None else "one_to_many"
         else:
             rel_type = "many_to_one"
 

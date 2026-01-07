@@ -1,17 +1,16 @@
 """Tests for Control Plane Client."""
 
-import pytest
-import asyncio
 from datetime import datetime
 from uuid import uuid4
+
+import pytest
 
 from ormai.control_plane.client import (
     ControlPlaneClient,
     LocalControlPlaneClient,
     create_client,
 )
-from ormai.control_plane.models import InstanceStatus
-from ormai.policy.models import Policy, ModelPolicy, Budget
+from ormai.policy.models import Budget, ModelPolicy, Policy
 from ormai.store.jsonl import JsonlAuditStore
 from ormai.store.models import AuditRecord, ErrorInfo
 
@@ -139,7 +138,7 @@ class TestControlPlaneClient:
         client._audit_batch_size = 5
 
         # Add records up to batch size
-        for i in range(5):
+        for _ in range(5):
             await client.record_tool_call(make_record())
 
         # Buffer should be flushed

@@ -118,7 +118,6 @@ class ViewCodeGenerator(CodeGenerator):
         for model_name in self.policy.list_allowed_models():
             model_meta = self.schema.get_model(model_name)
             if model_meta is None:
-                result_warnings = [f"Model {model_name} not found in schema"]
                 continue
 
             model_policy = self.policy.get_model_policy(model_name)
@@ -271,7 +270,7 @@ class ViewCodeGenerator(CodeGenerator):
         self,
         field_name: str,
         field_meta: FieldMetadata,
-        for_input: bool = False,
+        for_input: bool = False,  # noqa: ARG002
         optional: bool = False,
     ) -> str:
         """Generate a field definition line."""

@@ -1,16 +1,17 @@
 """Tests for Audit Aggregator."""
 
-import pytest
 from datetime import datetime, timedelta
 from uuid import uuid4
 
+import pytest
+
 from ormai.control_plane.aggregator import (
-    InMemoryAuditAggregator,
     FederatedAuditAggregator,
+    InMemoryAuditAggregator,
 )
 from ormai.control_plane.models import AuditQuery
-from ormai.store.models import AuditRecord, ErrorInfo
 from ormai.store.jsonl import JsonlAuditStore
+from ormai.store.models import AuditRecord, ErrorInfo
 
 
 def make_record(
@@ -51,7 +52,7 @@ class TestInMemoryAuditAggregator:
         self, aggregator: InMemoryAuditAggregator
     ) -> None:
         """Ingesting and querying records works."""
-        for i in range(5):
+        for _ in range(5):
             await aggregator.ingest("instance-1", make_record())
 
         result = await aggregator.query(AuditQuery())
@@ -145,7 +146,7 @@ class TestInMemoryAuditAggregator:
         self, aggregator: InMemoryAuditAggregator
     ) -> None:
         """Query supports pagination."""
-        for i in range(20):
+        for _ in range(20):
             await aggregator.ingest("inst-1", make_record())
 
         result = await aggregator.query(AuditQuery(limit=5, offset=10))
@@ -240,7 +241,7 @@ class TestInMemoryAuditAggregator:
         """Aggregator enforces max records limit."""
         aggregator._max_records = 10
 
-        for i in range(20):
+        for _ in range(20):
             await aggregator.ingest("inst-1", make_record())
 
         result = await aggregator.query(AuditQuery())
