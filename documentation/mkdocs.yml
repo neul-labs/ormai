@@ -1,8 +1,8 @@
 site_name: OrmAI Documentation
 site_description: ORM-native capability runtime for AI agents
 site_url: https://ormai.dev
-repo_url: https://github.com/ormai/ormai
-repo_name: ormai/ormai
+repo_url: https://github.com/neul-labs/ormai
+repo_name: neul-labs/ormai
 
 theme:
   name: material
@@ -90,6 +90,6 @@ nav:
 extra:
   social:
     - icon: fontawesome/brands/github
-      link: https://github.com/ormai/ormai
+      link: https://github.com/neul-labs/ormai
   version:
     provider: mike

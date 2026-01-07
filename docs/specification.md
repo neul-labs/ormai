@@ -319,7 +319,7 @@ uv add ormai[all]
 ### Development Setup
 
 ```bash
-git clone https://github.com/anthropics/ormai.git
+git clone https://github.com/neul-labs/ormai.git
 cd ormai
 uv sync --dev
 ```
