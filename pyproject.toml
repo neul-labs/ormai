@@ -1,6 +1,6 @@
 [project]
 name = "ormai"
-version = "0.1.0"
+version = "0.2.0"
 description = "ORM-native capability runtime for safe, typed, auditable agent database access"
 readme = "README.md"
 license = { text = "MIT" }
@@ -18,7 +18,7 @@ keywords = [
     "peewee", "multi-tenant", "data-governance", "privacy",
 ]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
@@ -52,6 +52,12 @@ peewee = [
 ]
 mcp = [
     "mcp>=1.0",
+]
+benchmark = [
+    "rich>=13.0.0",
+    "openai>=1.0.0",
+    "anthropic>=0.20.0",
+    "httpx>=0.25.0",
 ]
 all = [
     "ormai[sqlalchemy,tortoise,peewee,mcp]",

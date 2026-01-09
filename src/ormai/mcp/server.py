@@ -6,18 +6,39 @@ Creates MCP servers that expose OrmAI tools.
 from __future__ import annotations
 
 import logging
+import os
+import warnings
 from collections.abc import Callable
 from typing import Any
 
 from ormai.core.context import Principal, RunContext
 from ormai.core.errors import AuthenticationError
+from ormai.middleware.rate_limit import RateLimiter
 from ormai.tools.registry import ToolRegistry
 
 logger = logging.getLogger(__name__)
 
-# Default principal constants for development use
-DEFAULT_DEV_TENANT = "default"
-DEFAULT_DEV_USER = "anonymous"
+# Environment detection
+ORMAI_ENV = os.getenv("ORMAI_ENV", "production").lower()
+IS_PRODUCTION = ORMAI_ENV == "production"
+IS_DEVELOPMENT = ORMAI_ENV == "development"
+
+# Default principal constants for development use only
+# WARNING: These should NEVER be used in production
+_DEV_TENANT = "dev-default"
+_DEV_USER = "dev-anonymous"
+
+
+def _is_production_environment() -> bool:
+    """
+    Detect if running in a production environment.
+
+    Checks ORMAI_ENV environment variable:
+    - "production" (default): Returns True
+    - "development": Returns False
+    - Any other value: Returns True (fail-safe)
+    """
+    return not IS_DEVELOPMENT
 
 
 class McpServerFactory:
@@ -28,17 +49,23 @@ class McpServerFactory:
     handles authentication, and routes tool calls to implementations.
 
     Security Note:
-        If no auth function is provided and enforce_auth is True, an
-        AuthenticationError will be raised. Set enforce_auth=False for
-        development only. Always provide an auth function in production.
+        By default, enforce_auth is automatically determined based on ORMAI_ENV:
+        - production (default): enforce_auth=True (requires auth function)
+        - development: enforce_auth=False (allows anonymous access with warnings)
+
+        Always provide an auth function in production. Set ORMAI_ENV=development
+        only for local development and testing.
 
     Example:
+        # Production (requires auth)
         server = McpServerFactory(
             toolset=toolset,
             auth=jwt_auth,
             context_builder=default_context_builder,
-            enforce_auth=True,
         ).build()
+
+        # Development (set ORMAI_ENV=development)
+        server = McpServerFactory(toolset=toolset).build()
     """
 
     def __init__(
@@ -46,7 +73,8 @@ class McpServerFactory:
         toolset: ToolRegistry,
         auth: Callable[[dict[str, Any]], Principal] | None = None,
         context_builder: Callable[[Principal, Any], RunContext] | None = None,
-        enforce_auth: bool = False,
+        enforce_auth: bool | None = None,
+        rate_limiter: RateLimiter | None = None,
     ) -> None:
         """
         Initialize the factory.
@@ -55,12 +83,34 @@ class McpServerFactory:
             toolset: The tool registry to expose
             auth: Optional auth function that extracts Principal from request
             context_builder: Optional function to build RunContext from Principal
-            enforce_auth: If True, require auth function or raise AuthenticationError
+            enforce_auth: If True, require auth function. If None (default),
+                         auto-detect based on ORMAI_ENV environment variable.
+            rate_limiter: Optional rate limiter for request throttling
         """
         self.toolset = toolset
         self.auth = auth
         self.context_builder = context_builder
-        self.enforce_auth = enforce_auth
+        self.rate_limiter = rate_limiter
+
+        # Auto-detect enforce_auth based on environment if not explicitly set
+        if enforce_auth is None:
+            self.enforce_auth = _is_production_environment()
+            if self.enforce_auth and not auth:
+                logger.warning(
+                    "Running in production mode (ORMAI_ENV=%s) without auth function. "
+                    "Set ORMAI_ENV=development for local development, or provide an "
+                    "auth function for production use.",
+                    ORMAI_ENV,
+                )
+        else:
+            self.enforce_auth = enforce_auth
+            if not enforce_auth and _is_production_environment():
+                warnings.warn(
+                    "enforce_auth=False in production environment. This is insecure. "
+                    "Consider setting ORMAI_ENV=development for local development.",
+                    UserWarning,
+                    stacklevel=2,
+                )
 
     def build(self) -> McpServer:
         """
@@ -73,6 +123,7 @@ class McpServerFactory:
             auth=self.auth,
             context_builder=self.context_builder,
             enforce_auth=self.enforce_auth,
+            rate_limiter=self.rate_limiter,
         )
 
 
@@ -88,12 +139,15 @@ class McpServer:
         toolset: ToolRegistry,
         auth: Callable[[dict[str, Any]], Principal] | None = None,
         context_builder: Callable[[Principal, Any], RunContext] | None = None,
-        enforce_auth: bool = False,
+        enforce_auth: bool | None = None,
+        rate_limiter: RateLimiter | None = None,
     ) -> None:
         self.toolset = toolset
         self.auth = auth
         self.context_builder = context_builder
-        self.enforce_auth = enforce_auth
+        self.rate_limiter = rate_limiter
+        # Use provided value or auto-detect from environment
+        self.enforce_auth = enforce_auth if enforce_auth is not None else _is_production_environment()
 
     def get_tools(self) -> list[dict[str, Any]]:
         """
@@ -126,20 +180,30 @@ class McpServer:
             if self.enforce_auth:
                 raise AuthenticationError(
                     "Authentication required but no auth function provided. "
-                    "Provide an auth function or set enforce_auth=False for development."
+                    "Set ORMAI_ENV=development for local development, or provide "
+                    "an auth function for production use."
                 )
-            # Default principal for development - warn about security implications
-            logger.warning(
-                "No auth function provided. Using default development principal "
-                "(tenant_id=%r, user_id=%r). This is insecure for production use. "
-                "Provide an auth function or set enforce_auth=True to enforce authentication.",
-                DEFAULT_DEV_TENANT,
-                DEFAULT_DEV_USER,
-            )
+            # Default principal for development only
+            if _is_production_environment():
+                logger.error(
+                    "SECURITY WARNING: Using development principal in production! "
+                    "Set ORMAI_ENV=development or provide an auth function."
+                )
+            else:
+                logger.info(
+                    "Using development principal (tenant_id=%r, user_id=%r). "
+                    "This is expected in development mode (ORMAI_ENV=development).",
+                    _DEV_TENANT,
+                    _DEV_USER,
+                )
             principal = Principal(
-                tenant_id=DEFAULT_DEV_TENANT,
-                user_id=DEFAULT_DEV_USER,
+                tenant_id=_DEV_TENANT,
+                user_id=_DEV_USER,
             )
+
+        # Check rate limits if enabled
+        if self.rate_limiter:
+            await self.rate_limiter.check_and_raise(principal, tool_name=name)
 
         # Build run context
         if self.context_builder and context:

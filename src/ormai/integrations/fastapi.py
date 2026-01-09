@@ -8,6 +8,8 @@ from collections.abc import Callable
 from typing import Any
 
 from ormai.core.context import Principal, RunContext
+from ormai.health.checks import HealthChecker, create_health_router
+from ormai.middleware.rate_limit import RateLimiter, RateLimitError
 from ormai.tools.registry import ToolRegistry
 
 try:
@@ -60,6 +62,8 @@ class OrmAIRouter:
         get_principal: Callable[..., Principal] | None = None,
         get_db: Callable[..., Any] | None = None,
         prefix: str = "",
+        rate_limiter: RateLimiter | None = None,
+        health_checker: HealthChecker | None = None,
     ) -> None:
         """
         Initialize the router.
@@ -69,6 +73,8 @@ class OrmAIRouter:
             get_principal: Dependency to get the current principal
             get_db: Dependency to get the database session
             prefix: Optional path prefix for routes
+            rate_limiter: Optional rate limiter for request throttling
+            health_checker: Optional health checker for health endpoints
         """
         if not HAS_FASTAPI:
             raise ImportError(
@@ -78,9 +84,16 @@ class OrmAIRouter:
         self.toolset = toolset
         self.get_principal = get_principal
         self.get_db = get_db
+        self.rate_limiter = rate_limiter
+        self.health_checker = health_checker
         self.router = APIRouter(prefix=prefix)
 
         self._setup_routes()
+
+        # Include health routes if checker is provided
+        if health_checker:
+            health_router = create_health_router(health_checker)
+            self.router.include_router(health_router)
 
     def _setup_routes(self) -> None:
         """Set up the API routes."""
@@ -107,6 +120,23 @@ class OrmAIRouter:
                 # Build context
                 ctx = await self._build_context(http_request)
 
+                # Check rate limits if enabled
+                if self.rate_limiter:
+                    try:
+                        await self.rate_limiter.check_and_raise(
+                            ctx.principal, tool_name=request.name
+                        )
+                    except RateLimitError as e:
+                        raise HTTPException(
+                            status_code=429,
+                            detail={
+                                "error": "rate_limit_exceeded",
+                                "message": str(e),
+                                "retry_after": e.retry_after,
+                            },
+                            headers={"Retry-After": str(int(e.retry_after))},
+                        ) from e
+
                 # Execute tool
                 result = await self.toolset.execute(
                     request.name,
@@ -119,6 +149,8 @@ class OrmAIRouter:
                     result=result.model_dump(),
                 )
 
+            except HTTPException:
+                raise
             except Exception as e:
                 return ToolCallResponse(
                     success=False,
@@ -166,6 +198,8 @@ def create_ormai_router(
     get_principal: Callable[..., Principal] | None = None,
     get_db: Callable[..., Any] | None = None,
     prefix: str = "/ormai",
+    rate_limiter: RateLimiter | None = None,
+    health_checker: HealthChecker | None = None,
 ) -> Any:
     """
     Create a FastAPI router for OrmAI tools.
@@ -183,6 +217,8 @@ def create_ormai_router(
         get_principal=get_principal,
         get_db=get_db,
         prefix=prefix,
+        rate_limiter=rate_limiter,
+        health_checker=health_checker,
     )
     return ormai.router
 

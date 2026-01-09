@@ -41,6 +41,17 @@ class MockAuditStore(AuditStore):
     ) -> list[AuditRecord]:
         return self.records[:limit]
 
+    async def count(
+        self,
+        *,
+        _tenant_id: str | None = None,
+        _principal_id: str | None = None,
+        _tool_name: str | None = None,
+        _start_time: datetime | None = None,
+        _end_time: datetime | None = None,
+    ) -> int:
+        return len(self.records)
+
 
 @pytest.fixture
 def mock_store() -> MockAuditStore:

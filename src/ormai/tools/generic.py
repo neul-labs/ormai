@@ -30,6 +30,7 @@ from ormai.core.dsl import (
     UpdateResult,
 )
 from ormai.core.types import ModelMetadata, SchemaMetadata
+from ormai.policy.budgets import BudgetEnforcer
 from ormai.policy.models import ModelPolicy, Policy
 from ormai.tools.base import Tool
 
@@ -183,6 +184,11 @@ class QueryTool(Tool[QueryInput, QueryResult]):
             include=[IncludeClause.model_validate(i) for i in input.include] if input.include else None,
         )
 
+        # Enforce budget limits before compilation
+        budget = self.policy.get_budget(input.model)
+        enforcer = BudgetEnforcer(budget)
+        enforcer.enforce(request)
+
         # Compile and execute
         compiled = self.adapter.compile_query(request, ctx, self.policy, self.schema)
         return await self.adapter.execute_query(compiled, ctx)
@@ -230,6 +236,17 @@ class GetTool(Tool[GetInput, GetResult]):
             select=input.select,
             include=[IncludeClause.model_validate(i) for i in input.include] if input.include else None,
         )
+
+        # Check include depth limit
+        if request.include:
+            budget = self.policy.get_budget(input.model)
+            if len(request.include) > budget.max_includes_depth:
+                from ormai.core.errors import QueryBudgetExceededError
+                raise QueryBudgetExceededError(
+                    budget_type="max_includes_depth",
+                    limit=budget.max_includes_depth,
+                    requested=len(request.include),
+                )
 
         compiled = self.adapter.compile_get(request, ctx, self.policy, self.schema)
         return await self.adapter.execute_get(compiled, ctx)

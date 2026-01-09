@@ -16,6 +16,8 @@ from ormai.core.context import RunContext
 from ormai.core.dsl import (
     AggregateRequest,
     AggregateResult,
+    BulkUpdateRequest,
+    BulkUpdateResult,
     CreateRequest,
     CreateResult,
     DeleteRequest,
@@ -470,6 +472,54 @@ class DjangoAdapter(OrmAdapter):
         return DeleteResult(
             deleted_count=deleted,
             success=True,
+        )
+
+    def compile_bulk_update(
+        self,
+        request: BulkUpdateRequest,
+        ctx: RunContext,
+        policy: Policy,
+        schema: SchemaMetadata,
+    ) -> CompiledQuery:
+        """Compile a bulk update request."""
+        engine = PolicyEngine(policy, schema)
+        engine.validate_model_access(request.model)
+        engine.validate_write_access(request.model, "update")
+
+        model_class = self._get_model(request.model)
+        queryset = model_class.objects.all()
+
+        # Apply scope filters
+        injector = ScopeInjector(policy)
+        scope_filters = injector.get_scope_filters(request.model, ctx)
+        for f in scope_filters:
+            queryset = queryset.filter(self._filter_to_q(f))
+
+        # Filter by IDs
+        pk_field = self._get_pk_field(model_class)
+        queryset = queryset.filter(**{f"{pk_field}__in": request.ids})
+
+        return CompiledQuery(
+            query=(queryset, request.data, request.ids),
+            request=request,
+            injected_filters=scope_filters,
+            policy_decisions=["bulk_update_allowed"],
+        )
+
+    async def execute_bulk_update(
+        self,
+        compiled: CompiledQuery,
+        ctx: RunContext,  # noqa: ARG002
+    ) -> BulkUpdateResult:
+        """Execute a compiled bulk update request."""
+        queryset, data, ids = compiled.query
+
+        updated_count = queryset.update(**data)
+
+        return BulkUpdateResult(
+            updated_count=updated_count,
+            success=True,
+            failed_ids=[],
         )
 
     def _filter_to_q(self, f: FilterClause) -> Q:

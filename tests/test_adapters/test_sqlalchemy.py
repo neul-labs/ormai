@@ -199,7 +199,7 @@ def principal():
 class TestSQLAlchemyAdapterInitialization:
     """Tests for adapter initialization."""
 
-    def test_init_with_sync_engine(self, sync_engine, basic_policy, _session_manager):
+    def test_init_withsync_engine(self, sync_engine, basic_policy, session_manager):
         """Test initialization with sync engine."""
         adapter = SQLAlchemyAdapter(
             engine=sync_engine,
@@ -500,7 +500,7 @@ class TestSQLAlchemyAsyncSupport:
 
         assert isinstance(async_engine, AsyncEngine)
 
-    def test_adapter_is_async_flag(self, _sync_engine, basic_policy):
+    def test_adapter_is_async_flag(self, sync_engine, basic_policy):
         """Test that adapter correctly identifies async engine."""
         async_adapter = SQLAlchemyAdapter(
             engine=create_async_engine("sqlite+aiosqlite:///:memory:"),
@@ -513,11 +513,11 @@ class TestSQLAlchemyAsyncSupport:
 class TestSQLAlchemySessionManagement:
     """Tests for session management."""
 
-    def test_session_manager_created(self, session_manager, sync_engine):
+    def testsession_manager_created(self, session_manager, sync_engine):
         """Test that session manager is created correctly."""
         assert session_manager.engine == sync_engine
 
-    def test_adapter_uses_provided_session_manager(self, adapter, session_manager):
+    def test_adapter_uses_providedsession_manager(self, adapter, session_manager):
         """Test that adapter uses provided session manager."""
         assert adapter.session_manager is session_manager
 

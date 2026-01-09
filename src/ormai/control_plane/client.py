@@ -9,10 +9,13 @@ Allows OrmAI instances to connect to a control plane for:
 
 import asyncio
 import hashlib
+import logging
 import time
 from collections.abc import Awaitable, Callable
 from contextlib import suppress
 from datetime import datetime
+
+logger = logging.getLogger(__name__)
 
 from ormai.control_plane.models import (
     InstanceHealth,
@@ -251,9 +254,8 @@ class ControlPlaneClient:
                 await self._sync_policy()
             except asyncio.CancelledError:
                 break
-            except Exception:
-                # Log error but continue
-                pass
+            except Exception as e:
+                logger.error(f"Policy sync failed: {e}", exc_info=True)
 
     async def _heartbeat_loop(self) -> None:
         """Background task for periodic health heartbeats."""
@@ -263,9 +265,8 @@ class ControlPlaneClient:
                 await self._send_heartbeat()
             except asyncio.CancelledError:
                 break
-            except Exception:
-                # Log error but continue
-                pass
+            except Exception as e:
+                logger.error(f"Heartbeat failed: {e}", exc_info=True)
 
     async def _audit_loop(self) -> None:
         """Background task for periodic audit log flushing."""
@@ -276,9 +277,8 @@ class ControlPlaneClient:
                     await self._flush_audit_buffer()
             except asyncio.CancelledError:
                 break
-            except Exception:
-                # Log error but continue
-                pass
+            except Exception as e:
+                logger.error(f"Audit flush failed: {e}", exc_info=True)
 
     async def _sync_policy(self) -> bool:
         """
