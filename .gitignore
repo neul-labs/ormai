@@ -3,6 +3,8 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+.spider2_data 
+
 # C extensions
 *.so
 

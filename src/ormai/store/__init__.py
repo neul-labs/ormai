@@ -38,3 +38,12 @@ __all__ = [
     # Middleware
     "AuditMiddleware",
 ]
+
+# Optional Django audit store (requires Django to be installed)
+try:
+    from ormai.store.django import AuditRecordModel as DjangoAuditModel  # noqa: F401
+    from ormai.store.django import DjangoAuditStore  # noqa: F401
+
+    __all__.extend(["DjangoAuditStore", "DjangoAuditModel"])
+except ImportError:
+    pass
