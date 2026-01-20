@@ -82,7 +82,7 @@
     "directory": "ormai-ts"
   },
   "dependencies": {
-    "zod": "^3.23.8",
+    "zod": "^4.3.5",
     "zod-to-json-schema": "^3.23.5"
   },
   "devDependencies": {
