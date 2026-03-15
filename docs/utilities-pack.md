@@ -111,7 +111,7 @@ Produces:
 - `db.get`
 - `db.query`
 - `db.aggregate`
-- `db.create` / `db.update` / `db.delete` (enabled only if profile/policy allow writes)
+- `db.create` / `db.update` / `db.delete` / `db.bulk_update_by_ids` (enabled only if profile/policy allow writes)
 
 Each rejection carries structured “retry hints” (e.g., “must filter `created_at` within 30 days”) so LLM clients can self-correct.
 
@@ -131,7 +131,7 @@ Mount examples rely solely on these helpers—no bespoke session boilerplate req
 
 ### `AuditStore` interface & implementations
 
-- `SqlAuditStore` (SQLAlchemy), `TortoiseAuditStore`, `JsonlAuditStore` (dev default).
+- `SqlAuditStore` (SQLAlchemy), `TortoiseAuditStore`, `PeeweeAuditStore`, `JsonlAuditStore` (dev default).
 - Records: tool name, principal, request ID, timestamp, sanitized inputs, policy decisions, row counts, duration, error info, trace IDs.
 
 ### `AuditMiddleware`

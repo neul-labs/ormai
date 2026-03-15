@@ -74,6 +74,8 @@ Adapters target SQLAlchemy (sync/async), Tortoise ORM (async), and Peewee (sync)
    - MCP server exposing OrmAI tools with auth/context injection.
 6. **`ormai.generators`**
    - Optional utilities to derive domain tools or view models from ORM metadata and policy definitions.
+7. **`ormai.utils`**
+   - Defaults, policy builders, view/tool factories, session/audit helpers, schema cache, testing utilities, and MCP mounting helpers for fast integration.
 
 ---
 
@@ -227,6 +229,7 @@ Backend considerations:
 - SQLAlchemy: `OrmAI.from_sqlalchemy(engine, model_registry, policies)`
 - Tortoise: `OrmAI.from_tortoise(models, policies)`
 - Peewee: `OrmAI.from_peewee(db, models, policies)`
+- Utilities pack quickstart: `ormai.quickstart.mount_sqlalchemy` (and peers) returning toolset + MCP server + generated views/policy defaults in under 30 lines.
 
 ### Policy configuration
 
@@ -235,6 +238,7 @@ Backend considerations:
 ### Generators
 
 - Optionally generate view models and canonical domain tools (e.g., CRUD operations) from ORM metadata and policies.
+- Utilities pack augments this with `DefaultsProfile`, `PolicyBuilder`, `ViewFactory`, `ToolsetFactory`, `SessionManager`, `AuditStore`, `SchemaCache`, MCP helpers, testing/eval utilities, and one-file quickstarts to minimize integration friction.
 
 ---
 
@@ -264,17 +268,19 @@ Threats mitigated include prompt injection, malicious MCP clients, accidental `S
 
 ## 14. Delivery Plan
 
-- **Phase 1 (MVP)**
+- **Phase 1 (Read-Only MVP)**
   - SQLAlchemy/Tortoise/Peewee adapters.
   - Read-only generic tools (`describe_schema`, `get`, `query`, `aggregate`).
   - Policies for allowlists, scoping, redaction, budgets.
   - Base MCP server and audit store.
-- **Phase 2 (Writes)**
+- **Phase 2 (Controlled Writes)**
   - Mutation tools with approval gates and before/after audit support.
-- **Phase 3 (DX + Reliability)**
+- **Phase 3 (DX & Reliability)**
   - Generators for views/tools, advanced pagination, replay/eval harnesses, improved cost models.
+- **Phase 4 (TypeScript Edition)**
+  - `ormai-ts` for Node.js with Prisma/Drizzle/TypeORM adapters, Zod validation, and identical MCP tool schemas.
 
-See `docs/roadmap.md` for milestone details and acceptance criteria.
+See `docs/roadmap.md` for milestone details and `docs/ormai-ts-specification.md` for TypeScript edition design.
 
 ---
 
@@ -282,3 +288,65 @@ See `docs/roadmap.md` for milestone details and acceptance criteria.
 
 - Core runtime, DSL, and policy engine remain ORM-agnostic.
 - Adding support for additional ORMs only requires implementing the adapter interface.
+
+---
+
+## 16. Project Tooling
+
+### Package Management
+
+OrmAI uses [uv](https://docs.astral.sh/uv/) as its package manager for fast, reliable dependency management.
+
+```bash
+# Install uv
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Install OrmAI with extras
+uv add ormai[sqlalchemy]
+uv add ormai[tortoise]
+uv add ormai[peewee]
+uv add ormai[all]
+```
+
+### Development Setup
+
+```bash
+git clone https://github.com/anthropics/ormai.git
+cd ormai
+uv sync --dev
+```
+
+### Project Structure
+
+```
+ormai/
+├── pyproject.toml      # Project metadata and dependencies (uv/PEP 621)
+├── uv.lock             # Locked dependencies
+├── src/ormai/
+│   ├── core/
+│   ├── adapters/
+│   ├── policy/
+│   ├── store/
+│   ├── mcp/
+│   ├── generators/
+│   └── utils/
+├── tests/
+├── docs/
+└── examples/
+```
+
+### Development Commands
+
+```bash
+uv run pytest                    # Run tests
+uv run pytest --cov=ormai        # Run tests with coverage
+uv run ruff check .              # Lint
+uv run ruff format .             # Format
+uv run mypy src/ormai            # Type check
+uv run python -m ormai.cli       # Run CLI (if applicable)
+```
+
+### CI/CD
+
+- GitHub Actions workflows use `uv` for reproducible builds.
+- Lock file (`uv.lock`) ensures deterministic installs across environments.
