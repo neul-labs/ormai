@@ -5,6 +5,14 @@ Contains policy models, evaluation engine, scoping, redaction, and budget enforc
 """
 
 from ormai.policy.budgets import BudgetEnforcer, ComplexityScorer
+from ormai.policy.costs import (
+    CostBreakdown,
+    CostBudget,
+    CostCategory,
+    CostTracker,
+    QueryCostEstimator,
+    TableStats,
+)
 from ormai.policy.engine import PolicyEngine
 from ormai.policy.models import (
     Budget,
@@ -39,4 +47,11 @@ __all__ = [
     # Budgets
     "BudgetEnforcer",
     "ComplexityScorer",
+    # Cost Model
+    "QueryCostEstimator",
+    "CostBreakdown",
+    "CostBudget",
+    "CostCategory",
+    "CostTracker",
+    "TableStats",
 ]

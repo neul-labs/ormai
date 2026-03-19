@@ -5,6 +5,13 @@ Contains the runtime context, DSL schemas, error taxonomy, and shared types.
 """
 
 from ormai.core.context import Principal, RunContext
+from ormai.core.cursor import (
+    CursorData,
+    CursorEncoder,
+    CursorType,
+    build_keyset_condition,
+    default_encoder,
+)
 from ormai.core.dsl import (
     AggregateRequest,
     FilterClause,
@@ -42,6 +49,12 @@ __all__ = [
     # Context
     "Principal",
     "RunContext",
+    # Cursor
+    "CursorEncoder",
+    "CursorData",
+    "CursorType",
+    "build_keyset_condition",
+    "default_encoder",
     # DSL
     "QueryRequest",
     "GetRequest",

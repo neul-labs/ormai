@@ -65,7 +65,7 @@ Adapters target SQLAlchemy (sync/async), Tortoise ORM (async), and Peewee (sync)
 1. **`ormai.core`**
    - Tool runtime, execution context, error taxonomy, DSL schemas.
 2. **`ormai.adapters`**
-   - `SQLAlchemyAdapter`, `TortoiseAdapter`, `PeeweeAdapter` implementing introspection, compile, execute, and session lifecycle.
+   - `SQLAlchemyAdapter`, `TortoiseAdapter`, `PeeweeAdapter`, `DjangoAdapter`, `SQLModelAdapter` implementing introspection, compile, execute, and session lifecycle.
 3. **`ormai.policy`**
    - Allowlist configuration, scoping hooks, budget enforcement, write controls, redaction logic.
 4. **`ormai.store`**
@@ -76,6 +76,14 @@ Adapters target SQLAlchemy (sync/async), Tortoise ORM (async), and Peewee (sync)
    - Optional utilities to derive domain tools or view models from ORM metadata and policy definitions.
 7. **`ormai.utils`**
    - Defaults, policy builders, view/tool factories, session/audit helpers, schema cache, testing utilities, and MCP mounting helpers for fast integration.
+8. **`ormai.integrations`**
+   - FastAPI integration (`OrmAIRouter`, `mount_ormai`)
+   - LangGraph/LangChain integration (`OrmAIToolkit`, `ormai_toolset_to_langchain`)
+9. **`ormai.control_plane`**
+   - Policy Registry for versioned policy management
+   - Audit Aggregator for cross-instance log querying
+   - Client SDK for connecting instances to control plane
+   - Server for centralized management
 
 ---
 

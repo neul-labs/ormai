@@ -13,6 +13,12 @@ from ormai.core.context import RunContext
 from ormai.core.dsl import (
     AggregateRequest,
     AggregateResult,
+    BulkUpdateRequest,
+    BulkUpdateResult,
+    CreateRequest,
+    CreateResult,
+    DeleteRequest,
+    DeleteResult,
     FilterClause,
     GetRequest,
     GetResult,
@@ -20,6 +26,8 @@ from ormai.core.dsl import (
     OrderClause,
     QueryRequest,
     QueryResult,
+    UpdateRequest,
+    UpdateResult,
 )
 from ormai.core.types import SchemaMetadata
 from ormai.policy.models import Policy
@@ -270,3 +278,208 @@ class AggregateTool(Tool[AggregateInput, AggregateResult]):
 
         compiled = self.adapter.compile_aggregate(request, ctx, self.policy, self.schema)
         return await self.adapter.execute_aggregate(compiled, ctx)
+
+
+# =============================================================================
+# MUTATION TOOLS (Phase 2)
+# =============================================================================
+
+
+class CreateInput(BaseModel):
+    """Input for create tool."""
+
+    model: str = Field(..., description="The model to create a record in")
+    data: dict[str, Any] = Field(..., description="Field values for the new record")
+    reason: str | None = Field(
+        default=None,
+        description="Reason for the mutation (may be required by policy)",
+    )
+    return_fields: list[str] | None = Field(
+        default=None,
+        description="Fields to return after creation",
+    )
+
+
+class CreateTool(Tool[CreateInput, CreateResult]):
+    """
+    Tool to create a new database record.
+
+    Requires write permissions and validates against write policies.
+    """
+
+    name = "db.create"
+    description = "Create a new database record."
+    input_schema = CreateInput
+
+    def __init__(self, adapter: OrmAdapter, policy: Policy, schema: SchemaMetadata) -> None:
+        self.adapter = adapter
+        self.policy = policy
+        self.schema = schema
+
+    async def execute(
+        self,
+        input: CreateInput,
+        ctx: RunContext,
+    ) -> CreateResult:
+        """Execute the create operation."""
+        # Build the request
+        request = CreateRequest(
+            model=input.model,
+            data=input.data,
+            reason=input.reason,
+            return_fields=input.return_fields,
+        )
+
+        # Compile and execute
+        compiled = self.adapter.compile_create(request, ctx, self.policy, self.schema)
+        return await self.adapter.execute_create(compiled, ctx)
+
+
+class UpdateInput(BaseModel):
+    """Input for update tool."""
+
+    model: str = Field(..., description="The model to update")
+    id: Any = Field(..., description="The primary key of the record to update")
+    data: dict[str, Any] = Field(..., description="Fields to update")
+    reason: str | None = Field(
+        default=None,
+        description="Reason for the mutation",
+    )
+    return_fields: list[str] | None = Field(
+        default=None,
+        description="Fields to return after update",
+    )
+
+
+class UpdateTool(Tool[UpdateInput, UpdateResult]):
+    """
+    Tool to update a database record by primary key.
+
+    Requires write permissions and validates against write policies.
+    """
+
+    name = "db.update"
+    description = "Update a database record by its primary key."
+    input_schema = UpdateInput
+
+    def __init__(self, adapter: OrmAdapter, policy: Policy, schema: SchemaMetadata) -> None:
+        self.adapter = adapter
+        self.policy = policy
+        self.schema = schema
+
+    async def execute(
+        self,
+        input: UpdateInput,
+        ctx: RunContext,
+    ) -> UpdateResult:
+        """Execute the update operation."""
+        request = UpdateRequest(
+            model=input.model,
+            id=input.id,
+            data=input.data,
+            reason=input.reason,
+            return_fields=input.return_fields,
+        )
+
+        compiled = self.adapter.compile_update(request, ctx, self.policy, self.schema)
+        return await self.adapter.execute_update(compiled, ctx)
+
+
+class DeleteInput(BaseModel):
+    """Input for delete tool."""
+
+    model: str = Field(..., description="The model to delete from")
+    id: Any = Field(..., description="The primary key of the record to delete")
+    reason: str | None = Field(
+        default=None,
+        description="Reason for the deletion",
+    )
+    hard: bool = Field(
+        default=False,
+        description="If True, perform hard delete instead of soft delete",
+    )
+
+
+class DeleteTool(Tool[DeleteInput, DeleteResult]):
+    """
+    Tool to delete a database record by primary key.
+
+    By default, performs a soft delete if the model supports it.
+    Requires write/delete permissions.
+    """
+
+    name = "db.delete"
+    description = "Delete a database record by its primary key."
+    input_schema = DeleteInput
+
+    def __init__(self, adapter: OrmAdapter, policy: Policy, schema: SchemaMetadata) -> None:
+        self.adapter = adapter
+        self.policy = policy
+        self.schema = schema
+
+    async def execute(
+        self,
+        input: DeleteInput,
+        ctx: RunContext,
+    ) -> DeleteResult:
+        """Execute the delete operation."""
+        request = DeleteRequest(
+            model=input.model,
+            id=input.id,
+            reason=input.reason,
+            hard=input.hard,
+        )
+
+        compiled = self.adapter.compile_delete(request, ctx, self.policy, self.schema)
+        return await self.adapter.execute_delete(compiled, ctx)
+
+
+class BulkUpdateInput(BaseModel):
+    """Input for bulk update tool."""
+
+    model: str = Field(..., description="The model to update")
+    ids: list[Any] = Field(
+        ...,
+        min_length=1,
+        max_length=100,
+        description="Primary keys of records to update",
+    )
+    data: dict[str, Any] = Field(..., description="Fields to update on all records")
+    reason: str | None = Field(
+        default=None,
+        description="Reason for the mutation",
+    )
+
+
+class BulkUpdateTool(Tool[BulkUpdateInput, BulkUpdateResult]):
+    """
+    Tool to update multiple database records by their primary keys.
+
+    Safer than filter-based bulk updates because it requires explicit IDs.
+    Requires write permissions and bulk operation permissions.
+    """
+
+    name = "db.bulk_update"
+    description = "Update multiple database records by their primary keys."
+    input_schema = BulkUpdateInput
+
+    def __init__(self, adapter: OrmAdapter, policy: Policy, schema: SchemaMetadata) -> None:
+        self.adapter = adapter
+        self.policy = policy
+        self.schema = schema
+
+    async def execute(
+        self,
+        input: BulkUpdateInput,
+        ctx: RunContext,
+    ) -> BulkUpdateResult:
+        """Execute the bulk update operation."""
+        request = BulkUpdateRequest(
+            model=input.model,
+            ids=input.ids,
+            data=input.data,
+            reason=input.reason,
+        )
+
+        compiled = self.adapter.compile_bulk_update(request, ctx, self.policy, self.schema)
+        return await self.adapter.execute_bulk_update(compiled, ctx)

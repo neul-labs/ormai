@@ -34,11 +34,20 @@ class AggregateOp(str, Enum):
     MAX = "max"
 
 
+class RelationType(str, Enum):
+    """Supported relation types."""
+
+    ONE_TO_ONE = "one_to_one"
+    ONE_TO_MANY = "one_to_many"
+    MANY_TO_ONE = "many_to_one"
+    MANY_TO_MANY = "many_to_many"
+
+
 class FieldMetadata(BaseModel):
     """Metadata for a model field."""
 
     name: str
-    field_type: FieldType
+    field_type: str  # String to allow both enum values and raw strings
     nullable: bool = False
     primary_key: bool = False
     default: Any = None
@@ -52,7 +61,7 @@ class RelationMetadata(BaseModel):
 
     name: str
     target_model: str
-    relation_type: str  # "one_to_one", "one_to_many", "many_to_one", "many_to_many"
+    relation_type: RelationType | str  # RelationType enum or string
     foreign_key: str | None = None
     back_populates: str | None = None
 
@@ -66,7 +75,8 @@ class ModelMetadata(BaseModel):
     table_name: str
     fields: dict[str, FieldMetadata] = Field(default_factory=dict)
     relations: dict[str, RelationMetadata] = Field(default_factory=dict)
-    primary_keys: list[str] = Field(default_factory=list)
+    primary_key: str = "id"  # Primary key field name
+    primary_keys: list[str] = Field(default_factory=list)  # For composite keys
     description: str | None = None
 
     model_config = {"frozen": True}

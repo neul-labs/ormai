@@ -27,6 +27,7 @@ class AuditMiddleware:
         self,
         store: AuditStore,
         sanitize_inputs: bool = True,
+        capture_snapshots: bool = False,
     ) -> None:
         """
         Initialize the middleware.
@@ -34,9 +35,11 @@ class AuditMiddleware:
         Args:
             store: The audit store to write records to
             sanitize_inputs: Whether to sanitize sensitive data from inputs
+            capture_snapshots: Whether to capture before/after snapshots for mutations
         """
         self.store = store
         self.sanitize_inputs = sanitize_inputs
+        self.capture_snapshots = capture_snapshots
 
     async def wrap_async(
         self,
@@ -69,16 +72,18 @@ class AuditMiddleware:
 
         except OrmAIError as e:
             error_info = ErrorInfo(
-                code=e.code,
+                type=type(e).__name__,
                 message=e.message,
+                code=e.code,
                 details=e.details,
             )
             raise
 
         except Exception as e:
             error_info = ErrorInfo(
-                code="INTERNAL_ERROR",
+                type=type(e).__name__,
                 message=str(e),
+                code="INTERNAL_ERROR",
             )
             raise
 
@@ -132,16 +137,18 @@ class AuditMiddleware:
 
         except OrmAIError as e:
             error_info = ErrorInfo(
-                code=e.code,
+                type=type(e).__name__,
                 message=e.message,
+                code=e.code,
                 details=e.details,
             )
             raise
 
         except Exception as e:
             error_info = ErrorInfo(
-                code="INTERNAL_ERROR",
+                type=type(e).__name__,
                 message=str(e),
+                code="INTERNAL_ERROR",
             )
             raise
 
@@ -172,6 +179,177 @@ class AuditMiddleware:
                     loop.run_until_complete(self.store.store(record))
             except RuntimeError:
                 # No event loop, create a new one
+                asyncio.run(self.store.store(record))
+
+    async def wrap_mutation_async(
+        self,
+        tool_name: str,
+        ctx: RunContext,
+        inputs: dict[str, Any],
+        fn: Callable[..., Any],
+        before_snapshot: dict[str, Any] | None = None,
+        *args: Any,
+        **kwargs: Any,
+    ) -> Any:
+        """
+        Wrap an async mutation with audit logging including before/after snapshots.
+
+        Args:
+            tool_name: Name of the tool being executed
+            ctx: Run context
+            inputs: Tool inputs
+            fn: The mutation function to execute
+            before_snapshot: Optional snapshot of data before mutation
+            *args, **kwargs: Arguments to pass to fn
+
+        Returns the result of the mutation.
+        """
+        start_time = time.perf_counter()
+        error_info: ErrorInfo | None = None
+        affected_rows: int | None = None
+        after_snapshot: dict[str, Any] | None = None
+        result: Any = None
+
+        try:
+            result = await fn(*args, **kwargs)
+
+            # Extract affected rows and after snapshot from result
+            if hasattr(result, "data") and result.data is not None:
+                if self.capture_snapshots:
+                    after_snapshot = result.data if isinstance(result.data, dict) else None
+            if hasattr(result, "updated_count"):
+                affected_rows = result.updated_count
+            elif hasattr(result, "success") and result.success:
+                affected_rows = 1
+
+            return result
+
+        except OrmAIError as e:
+            error_info = ErrorInfo(
+                type=type(e).__name__,
+                message=e.message,
+                code=e.code,
+                details=e.details,
+            )
+            raise
+
+        except Exception as e:
+            error_info = ErrorInfo(
+                type=type(e).__name__,
+                message=str(e),
+                code="INTERNAL_ERROR",
+            )
+            raise
+
+        finally:
+            duration_ms = (time.perf_counter() - start_time) * 1000
+
+            record = AuditRecord(
+                id=str(uuid4()),
+                tool_name=tool_name,
+                principal_id=ctx.principal.user_id,
+                tenant_id=ctx.principal.tenant_id,
+                request_id=ctx.request_id,
+                trace_id=ctx.trace_id,
+                timestamp=datetime.now(timezone.utc),
+                duration_ms=duration_ms,
+                inputs=self._sanitize(inputs) if self.sanitize_inputs else inputs,
+                affected_rows=affected_rows,
+                error=error_info,
+                before_snapshot=before_snapshot if self.capture_snapshots else None,
+                after_snapshot=after_snapshot if self.capture_snapshots else None,
+            )
+
+            await self.store.store(record)
+
+    def wrap_mutation_sync(
+        self,
+        tool_name: str,
+        ctx: RunContext,
+        inputs: dict[str, Any],
+        fn: Callable[..., T],
+        before_snapshot: dict[str, Any] | None = None,
+        *args: Any,
+        **kwargs: Any,
+    ) -> T:
+        """
+        Wrap a sync mutation with audit logging including before/after snapshots.
+
+        Args:
+            tool_name: Name of the tool being executed
+            ctx: Run context
+            inputs: Tool inputs
+            fn: The mutation function to execute
+            before_snapshot: Optional snapshot of data before mutation
+            *args, **kwargs: Arguments to pass to fn
+
+        Returns the result of the mutation.
+        """
+        start_time = time.perf_counter()
+        error_info: ErrorInfo | None = None
+        affected_rows: int | None = None
+        after_snapshot: dict[str, Any] | None = None
+        result: Any = None
+
+        try:
+            result = fn(*args, **kwargs)
+
+            # Extract affected rows and after snapshot from result
+            if hasattr(result, "data") and result.data is not None:
+                if self.capture_snapshots:
+                    after_snapshot = result.data if isinstance(result.data, dict) else None
+            if hasattr(result, "updated_count"):
+                affected_rows = result.updated_count
+            elif hasattr(result, "success") and result.success:
+                affected_rows = 1
+
+            return result
+
+        except OrmAIError as e:
+            error_info = ErrorInfo(
+                type=type(e).__name__,
+                message=e.message,
+                code=e.code,
+                details=e.details,
+            )
+            raise
+
+        except Exception as e:
+            error_info = ErrorInfo(
+                type=type(e).__name__,
+                message=str(e),
+                code="INTERNAL_ERROR",
+            )
+            raise
+
+        finally:
+            duration_ms = (time.perf_counter() - start_time) * 1000
+
+            record = AuditRecord(
+                id=str(uuid4()),
+                tool_name=tool_name,
+                principal_id=ctx.principal.user_id,
+                tenant_id=ctx.principal.tenant_id,
+                request_id=ctx.request_id,
+                trace_id=ctx.trace_id,
+                timestamp=datetime.now(timezone.utc),
+                duration_ms=duration_ms,
+                inputs=self._sanitize(inputs) if self.sanitize_inputs else inputs,
+                affected_rows=affected_rows,
+                error=error_info,
+                before_snapshot=before_snapshot if self.capture_snapshots else None,
+                after_snapshot=after_snapshot if self.capture_snapshots else None,
+            )
+
+            # Store synchronously
+            import asyncio
+            try:
+                loop = asyncio.get_event_loop()
+                if loop.is_running():
+                    asyncio.create_task(self.store.store(record))
+                else:
+                    loop.run_until_complete(self.store.store(record))
+            except RuntimeError:
                 asyncio.run(self.store.store(record))
 
     def _sanitize(self, inputs: dict[str, Any]) -> dict[str, Any]:

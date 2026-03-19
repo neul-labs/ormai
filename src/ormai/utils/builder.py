@@ -180,6 +180,208 @@ class PolicyBuilder:
         self._ownership_field = field
         return self
 
+    def enable_writes(
+        self,
+        models: list[str] | None = None,
+        *,
+        allow_create: bool = True,
+        allow_update: bool = True,
+        allow_delete: bool = True,
+        allow_bulk: bool = False,
+        soft_delete: bool = True,
+        max_affected_rows: int = 1,
+        require_reason: bool | None = None,
+        require_approval: bool = False,
+    ) -> "PolicyBuilder":
+        """
+        Enable write operations for specified models.
+
+        Args:
+            models: List of model names (or None for all registered models)
+            allow_create: Whether create operations are allowed
+            allow_update: Whether update operations are allowed
+            allow_delete: Whether delete operations are allowed
+            allow_bulk: Whether bulk operations are allowed
+            soft_delete: Whether to use soft delete by default
+            max_affected_rows: Maximum rows affected per operation
+            require_reason: Whether a reason is required (defaults to profile setting)
+            require_approval: Whether human approval is required
+        """
+        if require_reason is None:
+            require_reason = self.profile.require_reason_for_writes
+
+        target_models = models if models else list(self._models.keys())
+
+        for model_name in target_models:
+            if model_name not in self._models:
+                continue
+
+            model = self._models[model_name]
+            write_policy = WritePolicy(
+                enabled=True,
+                allow_create=allow_create,
+                allow_update=allow_update,
+                allow_delete=allow_delete,
+                allow_bulk=allow_bulk,
+                require_primary_key=True,
+                soft_delete=soft_delete,
+                max_affected_rows=max_affected_rows,
+                require_reason=require_reason,
+                require_approval=require_approval,
+                readonly_fields=model.write_policy.readonly_fields if model.write_policy else [],
+            )
+
+            self._models[model_name] = ModelPolicy(
+                allowed=model.allowed,
+                readable=model.readable,
+                writable=True,
+                fields=model.fields,
+                relations=model.relations,
+                row_policy=model.row_policy,
+                write_policy=write_policy,
+                budget=model.budget,
+            )
+
+        return self
+
+    def readonly_fields(
+        self,
+        model: str,
+        fields: list[str],
+    ) -> "PolicyBuilder":
+        """
+        Mark fields as readonly (cannot be updated).
+
+        Args:
+            model: Model name
+            fields: List of field names that cannot be written
+        """
+        if model not in self._models:
+            return self
+
+        model_policy = self._models[model]
+        current_write_policy = model_policy.write_policy or WritePolicy()
+
+        new_readonly = list(set(current_write_policy.readonly_fields) | set(fields))
+
+        new_write_policy = WritePolicy(
+            enabled=current_write_policy.enabled,
+            allow_create=current_write_policy.allow_create,
+            allow_update=current_write_policy.allow_update,
+            allow_delete=current_write_policy.allow_delete,
+            allow_bulk=current_write_policy.allow_bulk,
+            require_primary_key=current_write_policy.require_primary_key,
+            soft_delete=current_write_policy.soft_delete,
+            max_affected_rows=current_write_policy.max_affected_rows,
+            require_reason=current_write_policy.require_reason,
+            require_approval=current_write_policy.require_approval,
+            readonly_fields=new_readonly,
+        )
+
+        self._models[model] = ModelPolicy(
+            allowed=model_policy.allowed,
+            readable=model_policy.readable,
+            writable=model_policy.writable,
+            fields=model_policy.fields,
+            relations=model_policy.relations,
+            row_policy=model_policy.row_policy,
+            write_policy=new_write_policy,
+            budget=model_policy.budget,
+        )
+
+        return self
+
+    def require_approval(self, models: list[str] | None = None) -> "PolicyBuilder":
+        """
+        Require human approval for write operations.
+
+        Args:
+            models: List of model names (or None for all registered models)
+        """
+        target_models = models if models else list(self._models.keys())
+
+        for model_name in target_models:
+            if model_name not in self._models:
+                continue
+
+            model = self._models[model_name]
+            current_write_policy = model.write_policy or WritePolicy()
+
+            new_write_policy = WritePolicy(
+                enabled=current_write_policy.enabled,
+                allow_create=current_write_policy.allow_create,
+                allow_update=current_write_policy.allow_update,
+                allow_delete=current_write_policy.allow_delete,
+                allow_bulk=current_write_policy.allow_bulk,
+                require_primary_key=current_write_policy.require_primary_key,
+                soft_delete=current_write_policy.soft_delete,
+                max_affected_rows=current_write_policy.max_affected_rows,
+                require_reason=current_write_policy.require_reason,
+                require_approval=True,
+                readonly_fields=current_write_policy.readonly_fields,
+            )
+
+            self._models[model_name] = ModelPolicy(
+                allowed=model.allowed,
+                readable=model.readable,
+                writable=model.writable,
+                fields=model.fields,
+                relations=model.relations,
+                row_policy=model.row_policy,
+                write_policy=new_write_policy,
+                budget=model.budget,
+            )
+
+        return self
+
+    def allow_bulk_updates(
+        self,
+        models: list[str] | None = None,
+        max_affected_rows: int = 100,
+    ) -> "PolicyBuilder":
+        """
+        Enable bulk update operations.
+
+        Args:
+            models: List of model names (or None for all registered models)
+            max_affected_rows: Maximum rows affected per bulk operation
+        """
+        target_models = models if models else list(self._models.keys())
+
+        for model_name in target_models:
+            if model_name not in self._models:
+                continue
+
+            model = self._models[model_name]
+            current_write_policy = model.write_policy or WritePolicy()
+
+            new_write_policy = WritePolicy(
+                enabled=current_write_policy.enabled,
+                allow_create=current_write_policy.allow_create,
+                allow_update=current_write_policy.allow_update,
+                allow_delete=current_write_policy.allow_delete,
+                allow_bulk=True,
+                require_primary_key=current_write_policy.require_primary_key,
+                soft_delete=current_write_policy.soft_delete,
+                max_affected_rows=max_affected_rows,
+                require_reason=current_write_policy.require_reason,
+                require_approval=current_write_policy.require_approval,
+                readonly_fields=current_write_policy.readonly_fields,
+            )
+
+            self._models[model_name] = ModelPolicy(
+                allowed=model.allowed,
+                readable=model.readable,
+                writable=model.writable,
+                fields=model.fields,
+                relations=model.relations,
+                row_policy=model.row_policy,
+                write_policy=new_write_policy,
+                budget=model.budget,
+            )
+
+        return self
+
     def for_role(self, role: str) -> "RoleOverlayBuilder":
         """
         Start building role-specific overrides.

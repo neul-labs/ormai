@@ -245,3 +245,179 @@ class AggregateResult(BaseModel):
     row_count: int = Field(default=0)
 
     model_config = {"frozen": True}
+
+
+# =============================================================================
+# MUTATION DSL (Phase 2)
+# =============================================================================
+
+
+class CreateRequest(BaseModel):
+    """
+    A request to create a new record.
+
+    Example:
+        {
+            "model": "Order",
+            "data": {
+                "customer_id": 123,
+                "total": 99.99,
+                "status": "pending"
+            },
+            "reason": "Customer placed order via checkout flow"
+        }
+    """
+
+    model: str = Field(..., description="The model/table name")
+    data: dict[str, Any] = Field(..., description="Field values for the new record")
+    reason: str | None = Field(
+        default=None,
+        description="Reason for the mutation (required by some policies)",
+    )
+    return_fields: list[str] | None = Field(
+        default=None,
+        description="Fields to return after creation (None means all allowed)",
+    )
+
+    model_config = {"frozen": True}
+
+
+class UpdateRequest(BaseModel):
+    """
+    A request to update a record by primary key.
+
+    Example:
+        {
+            "model": "Order",
+            "id": 123,
+            "data": {"status": "shipped"},
+            "reason": "Order shipped by warehouse"
+        }
+    """
+
+    model: str = Field(..., description="The model/table name")
+    id: Any = Field(..., description="The primary key of the record to update")
+    data: dict[str, Any] = Field(..., description="Fields to update")
+    reason: str | None = Field(
+        default=None,
+        description="Reason for the mutation",
+    )
+    return_fields: list[str] | None = Field(
+        default=None,
+        description="Fields to return after update",
+    )
+
+    model_config = {"frozen": True}
+
+
+class DeleteRequest(BaseModel):
+    """
+    A request to delete a record by primary key.
+
+    By default, this performs a soft delete if the model has a soft delete field.
+    Hard deletes require explicit policy permission.
+
+    Example:
+        {
+            "model": "Order",
+            "id": 123,
+            "reason": "Customer requested cancellation",
+            "hard": false
+        }
+    """
+
+    model: str = Field(..., description="The model/table name")
+    id: Any = Field(..., description="The primary key of the record to delete")
+    reason: str | None = Field(
+        default=None,
+        description="Reason for the deletion",
+    )
+    hard: bool = Field(
+        default=False,
+        description="If True, perform hard delete instead of soft delete",
+    )
+
+    model_config = {"frozen": True}
+
+
+class BulkUpdateRequest(BaseModel):
+    """
+    A request to update multiple records by their primary keys.
+
+    This is safer than a filter-based bulk update because it requires
+    explicit identification of each record to update.
+
+    Example:
+        {
+            "model": "Order",
+            "ids": [123, 124, 125],
+            "data": {"status": "cancelled"},
+            "reason": "Batch cancellation due to supplier issue"
+        }
+    """
+
+    model: str = Field(..., description="The model/table name")
+    ids: list[Any] = Field(
+        ...,
+        min_length=1,
+        max_length=100,
+        description="Primary keys of records to update",
+    )
+    data: dict[str, Any] = Field(..., description="Fields to update on all records")
+    reason: str | None = Field(
+        default=None,
+        description="Reason for the mutation",
+    )
+
+    model_config = {"frozen": True}
+
+
+class CreateResult(BaseModel):
+    """
+    Result of a create operation.
+    """
+
+    data: dict[str, Any] = Field(default_factory=dict)
+    id: Any = Field(default=None, description="Primary key of created record")
+    success: bool = Field(default=True)
+
+    model_config = {"frozen": True}
+
+
+class UpdateResult(BaseModel):
+    """
+    Result of an update operation.
+    """
+
+    data: dict[str, Any] | None = Field(default=None)
+    success: bool = Field(default=True)
+    found: bool = Field(default=True)
+
+    model_config = {"frozen": True}
+
+
+class DeleteResult(BaseModel):
+    """
+    Result of a delete operation.
+    """
+
+    success: bool = Field(default=True)
+    found: bool = Field(default=True)
+    soft_deleted: bool = Field(default=True, description="True if soft delete was used")
+
+    model_config = {"frozen": True}
+
+
+class BulkUpdateResult(BaseModel):
+    """
+    Result of a bulk update operation.
+    """
+
+    updated_count: int = Field(default=0)
+    success: bool = Field(default=True)
+    failed_ids: list[Any] = Field(
+        default_factory=list,
+        description="IDs that failed to update (if any)",
+    )
+
+    model_config = {"frozen": True}
