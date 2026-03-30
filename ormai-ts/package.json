@@ -83,7 +83,7 @@
   },
   "dependencies": {
     "zod": "^4.3.5",
-    "zod-to-json-schema": "^3.23.5"
+    "zod-to-json-schema": "^3.25.2"
   },
   "devDependencies": {
     "@types/node": "^25.0.9",
