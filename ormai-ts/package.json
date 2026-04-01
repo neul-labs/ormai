@@ -67,25 +67,19 @@
     "clean": "rm -rf dist"
   },
   "keywords": [
-    "orm",
-    "ai",
-    "agent",
-    "prisma",
-    "drizzle",
-    "typeorm",
-    "mcp",
-    "langchain",
-    "vercel-ai",
-    "database",
-    "policy",
-    "audit"
+    "orm", "ai", "agents", "agent-tools", "capability-runtime",
+    "prisma", "drizzle", "typeorm", "mcp", "langchain", "vercel-ai",
+    "llamaindex", "mastra", "openai", "anthropic",
+    "database", "policy", "audit", "security", "tenant-isolation",
+    "multi-tenant", "data-governance", "privacy", "access-control",
+    "zod", "llm-tools"
   ],
-  "author": "Anthropic",
+  "author": "Dipankar Sarkar <me@dipankar.name>",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/anthropics/ormai.git",
-    "directory": "packages/ormai-ts"
+    "url": "https://github.com/neul-labs/ormai",
+    "directory": "ormai-ts"
   },
   "dependencies": {
     "zod": "^3.23.8",
