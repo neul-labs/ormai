@@ -206,9 +206,8 @@ class AuditMiddleware:
             result = await fn(*args, **kwargs)
 
             # Extract affected rows and after snapshot from result
-            if hasattr(result, "data") and result.data is not None:
-                if self.capture_snapshots:
-                    after_snapshot = result.data if isinstance(result.data, dict) else None
+            if hasattr(result, "data") and result.data is not None and self.capture_snapshots:
+                after_snapshot = result.data if isinstance(result.data, dict) else None
             if hasattr(result, "updated_count"):
                 affected_rows = result.updated_count
             elif hasattr(result, "success") and result.success:
@@ -287,9 +286,8 @@ class AuditMiddleware:
             result = fn(*args, **kwargs)
 
             # Extract affected rows and after snapshot from result
-            if hasattr(result, "data") and result.data is not None:
-                if self.capture_snapshots:
-                    after_snapshot = result.data if isinstance(result.data, dict) else None
+            if hasattr(result, "data") and result.data is not None and self.capture_snapshots:
+                after_snapshot = result.data if isinstance(result.data, dict) else None
             if hasattr(result, "updated_count"):
                 affected_rows = result.updated_count
             elif hasattr(result, "success") and result.success:

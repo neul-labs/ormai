@@ -9,7 +9,6 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import Any, TypeVar
 
-from tortoise import Tortoise
 from tortoise.functions import Avg, Count, Max, Min, Sum
 from tortoise.transactions import in_transaction
 
@@ -87,8 +86,8 @@ class TortoiseAdapter(OrmAdapter):
         self,
         request: QueryRequest,
         ctx: RunContext,
-        policy: Policy,
-        schema: SchemaMetadata,
+        policy: Policy,  # noqa: ARG002
+        schema: SchemaMetadata,  # noqa: ARG002
     ) -> CompiledQuery:
         """Compile a query request."""
         return self.compiler.compile_query(request, ctx)
@@ -97,8 +96,8 @@ class TortoiseAdapter(OrmAdapter):
         self,
         request: GetRequest,
         ctx: RunContext,
-        policy: Policy,
-        schema: SchemaMetadata,
+        policy: Policy,  # noqa: ARG002
+        schema: SchemaMetadata,  # noqa: ARG002
     ) -> CompiledQuery:
         """Compile a get request."""
         return self.compiler.compile_get(request, ctx)
@@ -107,8 +106,8 @@ class TortoiseAdapter(OrmAdapter):
         self,
         request: AggregateRequest,
         ctx: RunContext,
-        policy: Policy,
-        schema: SchemaMetadata,
+        policy: Policy,  # noqa: ARG002
+        schema: SchemaMetadata,  # noqa: ARG002
     ) -> CompiledQuery:
         """Compile an aggregate request."""
         return self.compiler.compile_aggregate(request, ctx)
@@ -116,7 +115,7 @@ class TortoiseAdapter(OrmAdapter):
     async def execute_query(
         self,
         compiled: CompiledQuery,
-        ctx: RunContext,
+        ctx: RunContext,  # noqa: ARG002
     ) -> QueryResult:
         """Execute a compiled query."""
         queryset = compiled.query
@@ -145,7 +144,7 @@ class TortoiseAdapter(OrmAdapter):
     async def execute_get(
         self,
         compiled: CompiledQuery,
-        ctx: RunContext,
+        ctx: RunContext,  # noqa: ARG002
     ) -> GetResult:
         """Execute a get request."""
         queryset = compiled.query
@@ -164,7 +163,7 @@ class TortoiseAdapter(OrmAdapter):
     async def execute_aggregate(
         self,
         compiled: CompiledQuery,
-        ctx: RunContext,
+        ctx: RunContext,  # noqa: ARG002
     ) -> AggregateResult:
         """Execute an aggregation."""
         agg_info = compiled.query
@@ -215,7 +214,7 @@ class TortoiseAdapter(OrmAdapter):
 
     async def transaction(
         self,
-        ctx: RunContext,
+        ctx: RunContext,  # noqa: ARG002
         fn: Callable[..., T],
         *args: Any,
         **kwargs: Any,

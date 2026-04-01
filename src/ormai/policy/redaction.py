@@ -78,7 +78,7 @@ class Redactor:
 
     def _redact_value(
         self,
-        field: str,
+        field: str,  # noqa: ARG002
         value: Any,
         policy: FieldPolicy,
     ) -> Any:

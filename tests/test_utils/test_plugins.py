@@ -439,10 +439,10 @@ class TestPluginChain:
         class BrokenPlugin(ErrorPlugin):
             name = "broken"
 
-            def transform(self, error, context):
+            def transform(self, _error, _context):
                 raise RuntimeError("Plugin error!")
 
-            def on_error(self, error, context):
+            def on_error(self, _error, _context):
                 raise RuntimeError("Plugin error!")
 
         metrics = MetricsPlugin()

@@ -18,8 +18,20 @@ from ormai.core.dsl import (
     QueryRequest,
     UpdateRequest,
 )
-from ormai.core.types import FieldMetadata, ModelMetadata, SchemaMetadata, RelationMetadata, RelationType
-from ormai.policy.engine import PolicyEngine, PolicyDecision
+from ormai.core.errors import (
+    FieldNotAllowedError,
+    ModelNotAllowedError,
+    QueryBudgetExceededError,
+    TenantScopeRequiredError,
+)
+from ormai.core.types import (
+    FieldMetadata,
+    ModelMetadata,
+    RelationMetadata,
+    RelationType,
+    SchemaMetadata,
+)
+from ormai.policy.engine import PolicyDecision, PolicyEngine
 from ormai.policy.models import (
     Budget,
     FieldAction,
@@ -30,15 +42,6 @@ from ormai.policy.models import (
     RowPolicy,
     WritePolicy,
 )
-from ormai.core.errors import (
-    FieldNotAllowedError,
-    MaxAffectedRowsExceededError,
-    ModelNotAllowedError,
-    QueryBudgetExceededError,
-    TenantScopeRequiredError,
-    WriteDisabledError,
-)
-
 
 # === Test Fixtures ===
 
@@ -432,7 +435,7 @@ class TestFieldAccessControl:
         assert "email" in decision.redaction_rules
         assert decision.redaction_rules["email"] == "mask"
 
-    def test_denied_fields_marked_for_redaction(self, sample_schema):
+    def test_denied_fields_marked_for_redaction(self, _sample_schema):
         """Test that denied fields are marked for removal."""
         policy = Policy(
             models={

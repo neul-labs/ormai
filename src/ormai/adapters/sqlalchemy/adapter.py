@@ -10,13 +10,12 @@ from typing import Any, TypeVar
 
 from sqlalchemy import Engine
 from sqlalchemy.ext.asyncio import AsyncEngine
-from sqlalchemy.orm import Session
 
 from ormai.adapters.base import CompiledQuery, OrmAdapter
 from ormai.adapters.sqlalchemy.compiler import SQLAlchemyCompiler
 from ormai.adapters.sqlalchemy.introspection import SQLAlchemyIntrospector
-from ormai.adapters.sqlalchemy.queries import QueryExecutor
 from ormai.adapters.sqlalchemy.mutations import MutationExecutor
+from ormai.adapters.sqlalchemy.queries import QueryExecutor
 from ormai.adapters.sqlalchemy.session import SessionManager
 from ormai.core.context import RunContext
 from ormai.core.dsl import (
@@ -117,8 +116,8 @@ class SQLAlchemyAdapter(OrmAdapter):
         self,
         request: QueryRequest,
         ctx: RunContext,
-        policy: Policy,
-        schema: SchemaMetadata,
+        policy: Policy,  # noqa: ARG002
+        schema: SchemaMetadata,  # noqa: ARG002
     ) -> CompiledQuery:
         """Compile a query request."""
         return self.compiler.compile_query(request, ctx)
@@ -127,8 +126,8 @@ class SQLAlchemyAdapter(OrmAdapter):
         self,
         request: GetRequest,
         ctx: RunContext,
-        policy: Policy,
-        schema: SchemaMetadata,
+        policy: Policy,  # noqa: ARG002
+        schema: SchemaMetadata,  # noqa: ARG002
     ) -> CompiledQuery:
         """Compile a get request."""
         return self.compiler.compile_get(request, ctx)
@@ -137,8 +136,8 @@ class SQLAlchemyAdapter(OrmAdapter):
         self,
         request: AggregateRequest,
         ctx: RunContext,
-        policy: Policy,
-        schema: SchemaMetadata,
+        policy: Policy,  # noqa: ARG002
+        schema: SchemaMetadata,  # noqa: ARG002
     ) -> CompiledQuery:
         """Compile an aggregate request."""
         return self.compiler.compile_aggregate(request, ctx)

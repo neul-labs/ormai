@@ -9,13 +9,11 @@ import asyncio
 import statistics
 from abc import ABC, abstractmethod
 from datetime import datetime, timedelta
-from typing import Any
 
 from ormai.control_plane.models import (
     AuditQuery,
     AuditQueryResult,
     AuditStats,
-    Instance,
 )
 from ormai.store.base import AuditStore
 from ormai.store.models import AuditRecord
@@ -194,7 +192,7 @@ class InMemoryAuditAggregator(AuditAggregator):
             records=[r for _, r in paginated],
             total_count=total_count,
             query=query,
-            instances_queried=list(set(iid for iid, _ in self._records)),
+            instances_queried=list({iid for iid, _ in self._records}),
         )
 
     async def get_stats(
@@ -392,9 +390,8 @@ class FederatedAuditAggregator(AuditAggregator):
                 for record in records:
                     if query.errors_only and record.error is None:
                         continue
-                    if query.model:
-                        if record.inputs.get("model") != query.model:
-                            continue
+                    if query.model and record.inputs.get("model") != query.model:
+                        continue
                     all_records.append(record)
 
         # Sort merged results

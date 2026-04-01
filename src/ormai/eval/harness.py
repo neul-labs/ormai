@@ -2,8 +2,9 @@
 Evaluation harness for testing OrmAI tool behavior.
 """
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any, Callable
+from typing import Any
 
 from ormai.core.context import RunContext
 from ormai.eval.recorder import CallRecorder, RecordedCall
@@ -210,9 +211,8 @@ def no_cross_tenant_data(call: RecordedCall, result: ReplayResult) -> bool:
     data = result.outputs.get("data", [])
     if isinstance(data, list):
         for row in data:
-            if isinstance(row, dict) and "tenant_id" in row:
-                if row["tenant_id"] != call.tenant_id:
-                    return False
+            if isinstance(row, dict) and "tenant_id" in row and row["tenant_id"] != call.tenant_id:
+                return False
 
     return True
 
@@ -228,7 +228,7 @@ def no_denied_fields(denied_fields: list[str]) -> Callable[[RecordedCall, Replay
         Invariant check function
     """
 
-    def check(call: RecordedCall, result: ReplayResult) -> bool:
+    def check(call: RecordedCall, result: ReplayResult) -> bool:  # noqa: ARG001
         if result.outputs is None:
             return True
 
@@ -241,9 +241,8 @@ def no_denied_fields(denied_fields: list[str]) -> Callable[[RecordedCall, Replay
                         return False
                 elif isinstance(d[key], list):
                     for item in d[key]:
-                        if isinstance(item, dict):
-                            if not check_dict(item):
-                                return False
+                        if isinstance(item, dict) and not check_dict(item):
+                            return False
             return True
 
         return check_dict(result.outputs)
@@ -262,7 +261,7 @@ def response_within_budget(max_rows: int) -> Callable[[RecordedCall, ReplayResul
         Invariant check function
     """
 
-    def check(call: RecordedCall, result: ReplayResult) -> bool:
+    def check(call: RecordedCall, result: ReplayResult) -> bool:  # noqa: ARG001
         if result.outputs is None:
             return True
 

@@ -21,7 +21,6 @@ from peewee import (
 from ormai.store.base import AuditStore
 from ormai.store.models import AuditRecord, ErrorInfo
 
-
 # Note: This is a base model. Users should create their own model
 # that inherits from this and sets the database.
 

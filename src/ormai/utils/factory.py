@@ -98,7 +98,7 @@ class ToolsetFactory:
         has_delete = False
         has_bulk = False
 
-        for model_name, model_policy in self.policy.models.items():
+        for _model_name, model_policy in self.policy.models.items():
             if not model_policy.writable:
                 continue
             wp = model_policy.write_policy

@@ -9,9 +9,6 @@ from uuid import uuid4
 
 if TYPE_CHECKING:
     from sqlalchemy.orm import Session as SqlAlchemySession
-    from tortoise import Tortoise  # type: ignore
-    from peewee import Model as PeeweeModel  # type: ignore
-    from django.db import models  # type: ignore
 
 
 @dataclass(frozen=True)

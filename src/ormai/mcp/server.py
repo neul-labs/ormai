@@ -62,7 +62,7 @@ class McpServerFactory:
         self.context_builder = context_builder
         self.enforce_auth = enforce_auth
 
-    def build(self) -> "McpServer":
+    def build(self) -> McpServer:
         """
         Build the MCP server.
 
@@ -164,10 +164,10 @@ class McpServer:
         try:
             from mcp.server import Server
             from mcp.types import Tool as McpTool
-        except ImportError:
+        except ImportError as err:
             raise ImportError(
                 "MCP SDK not installed. Install with: uv add ormai[mcp]"
-            )
+            ) from err
 
         server = Server("ormai")
 

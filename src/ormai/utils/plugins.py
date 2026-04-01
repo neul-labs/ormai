@@ -6,6 +6,7 @@ Provides hooks for error handling, message transformation, and extensibility.
 
 from abc import ABC, abstractmethod
 from collections.abc import Callable
+from contextlib import suppress
 from typing import Any
 
 from pydantic import BaseModel
@@ -50,8 +51,8 @@ class ErrorPlugin(ABC):
 
     def transform(
         self,
-        error: OrmAIError,
-        context: ErrorContext,
+        error: OrmAIError,  # noqa: ARG002
+        context: ErrorContext,  # noqa: ARG002
     ) -> TransformedError | None:
         """
         Transform an error.
@@ -61,7 +62,9 @@ class ErrorPlugin(ABC):
         """
         return None
 
-    def on_error(self, error: OrmAIError, context: ErrorContext) -> None:
+    def on_error(  # noqa: B027
+        self, error: OrmAIError, context: ErrorContext  # noqa: ARG002
+    ) -> None:
         """
         Hook called when an error occurs.
 
@@ -112,8 +115,8 @@ class LocalizedErrorPlugin(ErrorPlugin):
 
     def transform(
         self,
-        error: OrmAIError,
-        context: ErrorContext,
+        error: OrmAIError,  # noqa: ARG002
+        context: ErrorContext,  # noqa: ARG002
     ) -> TransformedError | None:
         """Transform error to user-friendly message."""
         template = self.messages.get(error.code)
@@ -217,8 +220,8 @@ class TerseErrorPlugin(ErrorPlugin):
 
     def transform(
         self,
-        error: OrmAIError,
-        context: ErrorContext,
+        error: OrmAIError,  # noqa: ARG002
+        context: ErrorContext,  # noqa: ARG002
     ) -> TransformedError:
         """Return minimal error without sensitive details."""
         message = self.TERSE_MESSAGES.get(error.code, "An error occurred")
@@ -395,10 +398,8 @@ class PluginChain:
         """
         # Call on_error for all plugins (side effects)
         for plugin in self.plugins:
-            try:
+            with suppress(Exception):
                 plugin.on_error(error, context)
-            except Exception:
-                pass  # Don't let plugin errors break the chain
 
         # Find first transformer that returns a result
         for plugin in self.plugins:

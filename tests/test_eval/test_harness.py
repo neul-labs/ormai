@@ -63,9 +63,10 @@ class TestCallRecorder:
         """Test recording a call that raises an error."""
         recorder = CallRecorder()
 
-        with pytest.raises(ValueError):
-            with recorder.record_call("db.query", sample_context, {"model": "Customer"}):
-                raise ValueError("Test error")
+        with pytest.raises(ValueError), recorder.record_call(
+            "db.query", sample_context, {"model": "Customer"}
+        ):
+            raise ValueError("Test error")
 
         assert len(recorder.calls) == 1
         assert recorder.calls[0].error is not None
@@ -112,9 +113,8 @@ class TestCallRecorder:
         with recorder.record_call("db.query", sample_context, {}) as call:
             call.outputs = {}
 
-        with pytest.raises(ValueError):
-            with recorder.record_call("db.error", sample_context, {}):
-                raise ValueError("oops")
+        with pytest.raises(ValueError), recorder.record_call("db.error", sample_context, {}):
+            raise ValueError("oops")
 
         errors = recorder.filter_errors()
         success = recorder.filter_success()
@@ -131,7 +131,7 @@ class TestReplayEngine:
         """Test replaying a successful call."""
         engine = ReplayEngine()
 
-        async def executor(tool_name, ctx, inputs):
+        async def executor(_tool_name, _ctx, _inputs):
             return {"data": [{"id": 1, "name": "Alice", "tenant_id": "tenant-1"}]}
 
         result = await engine.replay_call(sample_call, executor)
@@ -145,7 +145,7 @@ class TestReplayEngine:
         """Test detecting output mismatch."""
         engine = ReplayEngine()
 
-        async def executor(tool_name, ctx, inputs):
+        async def executor(_tool_name, _ctx, _inputs):
             return {"data": [{"id": 2, "name": "Bob"}]}  # Different output
 
         result = await engine.replay_call(sample_call, executor)
@@ -158,7 +158,7 @@ class TestReplayEngine:
         """Test replaying a call that errors."""
         engine = ReplayEngine()
 
-        async def executor(tool_name, ctx, inputs):
+        async def executor(_tool_name, _ctx, _inputs):
             raise ValueError("Replay error")
 
         result = await engine.replay_call(sample_call, executor)
@@ -172,7 +172,7 @@ class TestReplayEngine:
         engine = ReplayEngine()
         calls = [sample_call, sample_call]
 
-        async def executor(tool_name, ctx, inputs):
+        async def executor(_tool_name, _ctx, _inputs):
             return sample_call.outputs
 
         results = await engine.replay_all(calls, executor)
@@ -189,7 +189,7 @@ class TestEvalHarness:
         """Test evaluation with all passing calls."""
         harness = EvalHarness()
 
-        async def executor(tool_name, ctx, inputs):
+        async def executor(_tool_name, _ctx, _inputs):
             return sample_call.outputs
 
         result = await harness.evaluate([sample_call], executor)
@@ -203,9 +203,9 @@ class TestEvalHarness:
     async def test_evaluate_with_invariant(self, sample_call: RecordedCall):
         """Test evaluation with invariant checking."""
         harness = EvalHarness()
-        harness.add_invariant("always_true", lambda call, result: True)
+        harness.add_invariant("always_true", lambda _call, _result: True)
 
-        async def executor(tool_name, ctx, inputs):
+        async def executor(_tool_name, _ctx, _inputs):
             return sample_call.outputs
 
         result = await harness.evaluate([sample_call], executor)
@@ -217,9 +217,9 @@ class TestEvalHarness:
     async def test_evaluate_invariant_violation(self, sample_call: RecordedCall):
         """Test evaluation with invariant violation."""
         harness = EvalHarness()
-        harness.add_invariant("always_fail", lambda call, result: False)
+        harness.add_invariant("always_fail", lambda _call, _result: False)
 
-        async def executor(tool_name, ctx, inputs):
+        async def executor(_tool_name, _ctx, _inputs):
             return sample_call.outputs
 
         result = await harness.evaluate([sample_call], executor)

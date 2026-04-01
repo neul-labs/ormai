@@ -75,6 +75,7 @@ dev = [
     "pytest>=8.0",
     "pytest-asyncio>=0.23",
     "pytest-cov>=4.0",
+    "hypothesis>=6.0",  # For property-based testing
     "ruff>=0.8",
     "mypy>=1.13",
     "sqlalchemy>=2.0",  # For testing

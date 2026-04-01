@@ -49,7 +49,7 @@ class MutationExecutor:
         request: CreateRequest,
         ctx: Any,
         policy: Policy,
-        schema: SchemaMetadata,
+        schema: SchemaMetadata,  # noqa: ARG002
     ) -> CompiledQuery:
         """Compile a create request."""
         decision = self._adapter.compiler.policy_engine.validate_create(
@@ -78,8 +78,8 @@ class MutationExecutor:
         self,
         request: UpdateRequest,
         ctx: Any,
-        policy: Policy,
-        schema: SchemaMetadata,
+        policy: Policy,  # noqa: ARG002
+        schema: SchemaMetadata,  # noqa: ARG002
     ) -> CompiledQuery:
         """Compile an update request."""
         decision = self._adapter.compiler.policy_engine.validate_update(
@@ -109,8 +109,8 @@ class MutationExecutor:
         self,
         request: DeleteRequest,
         ctx: Any,
-        policy: Policy,
-        schema: SchemaMetadata,
+        policy: Policy,  # noqa: ARG002
+        schema: SchemaMetadata,  # noqa: ARG002
     ) -> CompiledQuery:
         """Compile a delete request."""
         decision = self._adapter.compiler.policy_engine.validate_delete(
@@ -123,10 +123,8 @@ class MutationExecutor:
 
         model_meta = schema.get_model(request.model)
         soft_delete_field = None
-        if model_meta:
-            # Check if the model has a deleted_at field for soft deletes
-            if "deleted_at" in model_meta.fields:
-                soft_delete_field = "deleted_at"
+        if model_meta and "deleted_at" in model_meta.fields:
+            soft_delete_field = "deleted_at"
 
         pk_column = self._adapter.compiler._get_primary_key_column(model_class)
 
@@ -147,8 +145,8 @@ class MutationExecutor:
         self,
         request: BulkUpdateRequest,
         ctx: Any,
-        policy: Policy,
-        schema: SchemaMetadata,
+        policy: Policy,  # noqa: ARG002
+        schema: SchemaMetadata,  # noqa: ARG002
     ) -> CompiledQuery:
         """Compile a bulk update request."""
         decision = self._adapter.compiler.policy_engine.validate_bulk_update(

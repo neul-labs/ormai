@@ -184,7 +184,7 @@ class SQLAlchemyCompiler:
     def _build_select(
         self,
         model_class: type,
-        fields: list[str],
+        fields: list[str],  # noqa: ARG002
     ) -> Select:
         """Build a SELECT statement for the given model and fields."""
         # For now, select the whole model - field filtering happens in result processing
@@ -353,10 +353,10 @@ class SQLAlchemyCompiler:
         # Simple implementation: cursor is just the offset encoded as string
         try:
             return int(cursor)
-        except ValueError:
+        except ValueError as err:
             raise ValidationError(
                 f"Invalid cursor format: '{cursor}'. Expected a numeric offset string.",
-            )
+            ) from err
 
     @staticmethod
     def encode_cursor(offset: int) -> str:

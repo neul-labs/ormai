@@ -5,31 +5,28 @@ These tests focus on adapter initialization, schema introspection,
 compilation, and other unit-testable aspects.
 """
 
-import pytest
 from datetime import datetime
-from unittest.mock import MagicMock, patch
-import asyncio
 
-from sqlalchemy import create_engine, String, Float, DateTime, ForeignKey, Integer
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship, Session
+import pytest
+from sqlalchemy import DateTime, Float, ForeignKey, Integer, String, create_engine
 from sqlalchemy.ext.asyncio import create_async_engine
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 from ormai.adapters.sqlalchemy import SQLAlchemyAdapter
 from ormai.adapters.sqlalchemy.session import SessionManager
-from ormai.adapters.base import CompiledQuery
 from ormai.core.context import Principal, RunContext
 from ormai.core.dsl import (
-    QueryRequest,
-    GetRequest,
     AggregateRequest,
-    CreateRequest,
-    UpdateRequest,
-    DeleteRequest,
     BulkUpdateRequest,
+    CreateRequest,
+    DeleteRequest,
     FilterClause,
     FilterOp,
+    GetRequest,
     OrderClause,
     OrderDirection,
+    QueryRequest,
+    UpdateRequest,
 )
 from ormai.policy.models import (
     Budget,
@@ -41,7 +38,6 @@ from ormai.policy.models import (
     RowPolicy,
     WritePolicy,
 )
-
 
 # === Test Models ===
 
@@ -203,7 +199,7 @@ def principal():
 class TestSQLAlchemyAdapterInitialization:
     """Tests for adapter initialization."""
 
-    def test_init_with_sync_engine(self, sync_engine, basic_policy, session_manager):
+    def test_init_with_sync_engine(self, sync_engine, basic_policy, _session_manager):
         """Test initialization with sync engine."""
         adapter = SQLAlchemyAdapter(
             engine=sync_engine,
@@ -504,7 +500,7 @@ class TestSQLAlchemyAsyncSupport:
 
         assert isinstance(async_engine, AsyncEngine)
 
-    def test_adapter_is_async_flag(self, sync_engine, basic_policy):
+    def test_adapter_is_async_flag(self, _sync_engine, basic_policy):
         """Test that adapter correctly identifies async engine."""
         async_adapter = SQLAlchemyAdapter(
             engine=create_async_engine("sqlite+aiosqlite:///:memory:"),

@@ -17,7 +17,6 @@ from ormai.core.dsl import (
     FilterClause,
     FilterOp,
     GetRequest,
-    IncludeClause,
     OrderDirection,
     QueryRequest,
 )

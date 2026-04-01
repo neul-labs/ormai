@@ -1,8 +1,6 @@
 """Tests for SQL-based audit stores."""
 
-import tempfile
 from datetime import datetime, timedelta, timezone
-from pathlib import Path
 
 import pytest
 from peewee import SqliteDatabase

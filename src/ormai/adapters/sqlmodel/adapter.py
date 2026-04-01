@@ -5,10 +5,9 @@ SQLModel is built on SQLAlchemy, so this adapter wraps the SQLAlchemy adapter
 with SQLModel-specific conveniences.
 """
 
-from typing import Any, Type
+from typing import Any
 
 from sqlalchemy.engine import Engine
-from sqlalchemy.orm import Session
 
 from ormai.adapters.sqlalchemy import SQLAlchemyAdapter
 from ormai.core.types import SchemaMetadata
@@ -50,7 +49,7 @@ class SQLModelAdapter(SQLAlchemyAdapter):
         self,
         engine: Engine,
         session_factory: Any = None,
-        models: list[Type] | None = None,
+        models: list[type] | None = None,
     ) -> None:
         """
         Initialize the SQLModel adapter.
@@ -88,7 +87,7 @@ class SQLModelAdapter(SQLAlchemyAdapter):
     def from_models(
         cls,
         engine: Engine,
-        *model_classes: Type,
+        *model_classes: type,
     ) -> "SQLModelAdapter":
         """
         Create an adapter from SQLModel classes.

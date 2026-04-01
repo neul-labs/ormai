@@ -145,7 +145,7 @@ class TortoiseIntrospector:
         )
 
     def _introspect_relation(
-        self, name: str, field: Any, model: type
+        self, name: str, field: Any, model: type  # noqa: ARG002
     ) -> RelationMetadata | None:
         """Introspect a relation field."""
         from tortoise.fields.relational import (

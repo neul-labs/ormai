@@ -2,11 +2,10 @@
 OrmAI configuration for the example app.
 """
 
-from ormai.quickstart import mount_sqlalchemy
-from ormai.utils.defaults import DEFAULT_PROD
-
 from app.database import engine
 from app.models import ALL_MODELS
+from ormai.quickstart import mount_sqlalchemy
+from ormai.utils.defaults import DEFAULT_PROD
 
 
 def setup_ormai():
