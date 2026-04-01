@@ -1,6 +1,6 @@
-# Contributing to FastAgentic
+# Contributing to Ormai
 
-Thank you for your interest in contributing to FastAgentic! This document provides guidelines and information for contributors.
+Thank you for your interest in contributing to Ormai! This document provides guidelines and information for contributors.
 
 ## Development Setup
 
@@ -13,11 +13,11 @@ Thank you for your interest in contributing to FastAgentic! This document provid
 
 ```bash
 # Clone the repository
-git clone https://github.com/fastagentic/fastagentic.git
-cd fastagentic
+git clone https://github.com/neul-labs/ormai.git
+cd ormai
 
 # Install dependencies
-uv sync --extra dev
+uv sync --dev
 
 # Run tests to verify setup
 uv run pytest tests/ -v
@@ -35,22 +35,22 @@ We use the following tools for code quality:
 
 ```bash
 # Run linting
-uv run ruff check src/
+uv run ruff check src/ tests/
 
 # Auto-fix lint issues
-uv run ruff check src/ --fix
+uv run ruff check src/ tests/ --fix
 
 # Format code
-uv run ruff format src/
+uv run ruff format src/ tests/
 
 # Type checking
-uv run mypy src/fastagentic --ignore-missing-imports
+uv run mypy src/ormai --ignore-missing-imports
 
 # Run tests
 uv run pytest tests/ -v
 
 # Run tests with coverage
-uv run pytest tests/ --cov=src/fastagentic --cov-report=html
+uv run pytest tests/ --cov=src/ormai --cov-report=html
 ```
 
 ### Pre-commit Hooks
@@ -88,7 +88,7 @@ uv run pytest tests/ -v
 uv run pytest tests/test_your_module.py -v
 
 # Run with coverage
-uv run pytest tests/ --cov=src/fastagentic
+uv run pytest tests/ --cov=src/ormai
 ```
 
 ### 4. Submit a Pull Request
@@ -101,41 +101,44 @@ uv run pytest tests/ --cov=src/fastagentic
 ## Project Structure
 
 ```
-fastagentic/
-├── src/fastagentic/       # Main source code
-│   ├── adapters/          # Framework adapters
+ormai/
+├── src/ormai/             # Main source code
+│   ├── adapters/          # ORM adapters (sqlalchemy, tortoise, peewee)
+│   ├── capability/        # Capability-based access control
 │   ├── cli/               # CLI commands
 │   ├── protocols/         # MCP, A2A protocols
-│   ├── integrations/      # Third-party integrations
 │   └── ...                # Core modules
 ├── tests/                 # Test suite
-├── docs/                  # Documentation
+│   ├── unit/              # Unit tests
+│   ├── integration/       # Integration tests
+│   └── fuzzing/           # Fuzzing/property-based tests
 ├── examples/              # Example applications
-└── templates/             # Project templates
+├── docs/                  # Documentation
+└── ormai-ts/              # TypeScript package
 ```
 
 ## Adding New Features
 
-### Adding a New Adapter
+### Adding a New ORM Adapter
 
-1. Create `src/fastagentic/adapters/your_adapter.py`
+1. Create `src/ormai/adapters/your_adapter.py`
 2. Implement the `BaseAdapter` interface
-3. Add to `src/fastagentic/adapters/__init__.py`
-4. Add tests in `tests/test_adapters_your_adapter.py`
-5. Add documentation in `docs/adapters/your_adapter.md`
+3. Add to `src/ormai/adapters/__init__.py`
+4. Add tests in `tests/unit/test_adapters_your_adapter.py`
+5. Add optional dependency in `pyproject.toml`
 
 ### Adding a New Integration
 
-1. Create `src/fastagentic/integrations/your_integration.py`
+1. Create `src/ormai/integrations/your_integration.py`
 2. Implement the hook or provider interface
-3. Add to `src/fastagentic/integrations/__init__.py`
+3. Add to `src/ormai/integrations/__init__.py`
 4. Add tests and documentation
 
 ### Adding CLI Commands
 
-1. Edit `src/fastagentic/cli/main.py`
+1. Edit `src/ormai/cli/main.py`
 2. Add command with `@app.command()` decorator
-3. Update `docs/cli-reference.md`
+3. Update documentation
 
 ## Testing Guidelines
 
@@ -150,26 +153,27 @@ fastagentic/
 - **Unit tests** - Test individual functions/classes
 - **Integration tests** - Test component interactions
 - **Fuzzing tests** - Property-based testing (in `tests/fuzzing/`)
-- **Mutation tests** - Mutation testing (in `tests/mutation/`)
 
-### Running Advanced Tests
+### Running Tests
 
 ```bash
-# Install testing dependencies
-uv sync --extra testing
+# Run all tests
+uv run pytest tests/ -v
 
-# Run fuzzing tests
-uv run pytest tests/fuzzing/ -v
+# Run unit tests only
+uv run pytest tests/unit/ -v
 
-# Run mutation tests
-uv run mutmut run --paths-to-mutate=src/fastagentic/policy/
+# Run with coverage
+uv run pytest tests/ --cov=src/ormai
+
+# Run type checking
+uv run mypy src/ormai
 ```
 
 ## Documentation
 
 - Use Markdown for documentation
 - Place docs in the `docs/` directory
-- Update `docs/index.md` for new pages
 - Include code examples where appropriate
 
 ## Code Review Process
@@ -184,7 +188,7 @@ uv run mutmut run --paths-to-mutate=src/fastagentic/policy/
 When reporting issues, please include:
 
 - Python version
-- FastAgentic version
+- Ormai version
 - Minimal reproduction steps
 - Error messages/stack traces
 - Expected vs actual behavior
@@ -205,4 +209,4 @@ By contributing, you agree that your contributions will be licensed under the MI
 - Check existing documentation in `docs/`
 - Review existing examples in `examples/`
 
-Thank you for contributing to FastAgentic!
+Thank you for contributing to Ormai!
