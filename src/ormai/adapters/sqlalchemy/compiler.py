@@ -20,7 +20,8 @@ from ormai.core.dsl import (
     OrderDirection,
     QueryRequest,
 )
-from ormai.core.types import SchemaMetadata
+from ormai.core.errors import ValidationError
+from ormai.core.types import DEFAULT_PRIMARY_KEY, SchemaMetadata
 from ormai.policy.engine import PolicyEngine
 from ormai.policy.models import Policy
 
@@ -214,7 +215,10 @@ class SQLAlchemyCompiler:
         for f in filters:
             column = getattr(model_class, f.field, None)
             if column is None:
-                continue  # Skip unknown fields (validated earlier)
+                raise ValidationError(
+                    f"Filter field '{f.field}' does not exist on model '{model_class.__name__}'",
+                    field=f.field,
+                )
 
             condition = self._build_single_condition(column, f.op, f.value)
             if condition is not None:
@@ -259,8 +263,14 @@ class SQLAlchemyCompiler:
             case "between":
                 if isinstance(value, (list, tuple)) and len(value) == 2:
                     return column.between(value[0], value[1])
+                raise ValidationError(
+                    f"Invalid 'between' operator: expected a list/tuple of 2 values, got {value!r}",
+                    field=str(column),
+                )
             case _:
-                return None
+                raise ValidationError(
+                    f"Unsupported filter operator: {op_str}",
+                )
 
         return None
 
@@ -336,7 +346,7 @@ class SQLAlchemyCompiler:
         pk_cols = [c.key for c in mapper.primary_key]
         if pk_cols:
             return pk_cols[0]
-        return "id"  # Fallback
+        return DEFAULT_PRIMARY_KEY
 
     def _decode_cursor(self, cursor: str) -> int:
         """Decode a pagination cursor to an offset."""
@@ -344,7 +354,9 @@ class SQLAlchemyCompiler:
         try:
             return int(cursor)
         except ValueError:
-            return 0
+            raise ValidationError(
+                f"Invalid cursor format: '{cursor}'. Expected a numeric offset string.",
+            )
 
     @staticmethod
     def encode_cursor(offset: int) -> str:

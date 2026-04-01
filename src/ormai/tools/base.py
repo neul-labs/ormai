@@ -2,6 +2,7 @@
 Base tool class and result types.
 """
 
+import traceback
 from abc import ABC, abstractmethod
 from typing import Any, Generic, TypeVar
 
@@ -101,6 +102,10 @@ class Tool(ABC, Generic[InputT, OutputT]):
                 return ToolResult.fail({
                     "code": "INTERNAL_ERROR",
                     "message": str(e),
+                    "details": {
+                        "exception_type": type(e).__name__,
+                        "traceback": traceback.format_exc(),
+                    },
                 })
 
     def get_json_schema(self) -> dict[str, Any]:

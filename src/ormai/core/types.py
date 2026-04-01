@@ -7,6 +7,9 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+# Default primary key field name used across all adapters
+DEFAULT_PRIMARY_KEY = "id"
+
 
 class FieldType(str, Enum):
     """Supported field types."""
@@ -75,7 +78,7 @@ class ModelMetadata(BaseModel):
     table_name: str
     fields: dict[str, FieldMetadata] = Field(default_factory=dict)
     relations: dict[str, RelationMetadata] = Field(default_factory=dict)
-    primary_key: str = "id"  # Primary key field name
+    primary_key: str = DEFAULT_PRIMARY_KEY
     primary_keys: list[str] = Field(default_factory=list)  # For composite keys
     description: str | None = None
 

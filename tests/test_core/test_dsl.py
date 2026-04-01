@@ -69,12 +69,12 @@ class TestQueryRequest:
         # Valid range
         QueryRequest(model="Order", take=1)
         QueryRequest(model="Order", take=100)
+        # take limit is now enforced at runtime via budget policy, not schema validation
+        QueryRequest(model="Order", take=101)  # This is allowed at schema level
 
         # Invalid
         with pytest.raises(ValidationError):
             QueryRequest(model="Order", take=0)
-        with pytest.raises(ValidationError):
-            QueryRequest(model="Order", take=101)
 
 
 class TestGetRequest:

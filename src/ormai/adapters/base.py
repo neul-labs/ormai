@@ -287,4 +287,4 @@ class OrmAdapter(ABC):
         Adapters may override for better sync support.
         """
         import asyncio
-        return asyncio.get_event_loop().run_until_complete(self.introspect())
+        return asyncio.run(self.introspect())

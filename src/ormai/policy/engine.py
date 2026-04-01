@@ -5,6 +5,8 @@ The PolicyEngine is the central point for policy evaluation. It validates
 requests against policies and provides decisions for query compilation.
 """
 
+from typing import TYPE_CHECKING
+
 from ormai.core.context import RunContext
 from ormai.core.dsl import (
     AggregateRequest,
@@ -30,6 +32,10 @@ from ormai.core.errors import (
 )
 from ormai.core.types import SchemaMetadata
 from ormai.policy.models import Budget, ModelPolicy, Policy, RowPolicy
+from ormai.policy.validation import PolicyValidator
+
+if TYPE_CHECKING:
+    from ormai.policy.engine import PolicyEngine
 
 
 class PolicyDecision:
@@ -68,6 +74,7 @@ class PolicyEngine:
     def __init__(self, policy: Policy, schema: SchemaMetadata) -> None:
         self.policy = policy
         self.schema = schema
+        self._validator = PolicyValidator(policy, schema, self)
 
     def validate_query(
         self,
@@ -83,13 +90,15 @@ class PolicyEngine:
         decision = PolicyDecision()
 
         # 1. Validate model access
-        model_policy = self._validate_model_access(request.model, readable=True)
+        model_policy = self._validator.validate_model_access(
+            request.model, readable=True
+        )
         decision.add_decision(f"Model '{request.model}' access validated")
 
         # 2. Get and validate budget
         budget = self.policy.get_budget(request.model)
         decision.budget = budget
-        self._validate_budget(request, budget, model_policy)
+        self._validator.validate_budget(request, budget, model_policy)
         decision.add_decision(f"Budget validated: max_rows={budget.max_rows}")
 
         # 3. Validate and filter fields
@@ -97,7 +106,7 @@ class PolicyEngine:
         all_fields = list(schema_model.fields.keys()) if schema_model else []
 
         if request.select:
-            decision.allowed_fields = self._validate_fields(
+            decision.allowed_fields = self._validator.validate_fields(
                 request.select, request.model, model_policy, all_fields
             )
         else:
@@ -106,12 +115,14 @@ class PolicyEngine:
 
         # 4. Validate relations/includes
         if request.include:
-            self._validate_includes(request.include, request.model, model_policy, budget)
+            self._validator.validate_includes(
+                request.include, request.model, model_policy, budget
+            )
             decision.add_decision(f"Validated {len(request.include)} includes")
 
         # 5. Validate and inject scoping
         row_policy = self.policy.get_row_policy(request.model)
-        scope_filters = self._validate_and_get_scope_filters(
+        scope_filters = self._validator.validate_and_get_scope_filters(
             request.model, row_policy, ctx, request.where
         )
         decision.injected_filters.extend(scope_filters)
@@ -120,7 +131,7 @@ class PolicyEngine:
 
         # 6. Check broad query guard
         if budget.broad_query_guard:
-            self._validate_query_breadth(request, budget, scope_filters)
+            self._validator.validate_query_breadth(request, budget, scope_filters)
             decision.add_decision("Broad query guard passed")
 
         # 7. Collect redaction rules
@@ -140,7 +151,9 @@ class PolicyEngine:
         decision = PolicyDecision()
 
         # Validate model access
-        model_policy = self._validate_model_access(request.model, readable=True)
+        model_policy = self._validator.validate_model_access(
+            request.model, readable=True
+        )
         decision.add_decision(f"Model '{request.model}' access validated")
 
         # Get budget
@@ -152,21 +165,23 @@ class PolicyEngine:
         all_fields = list(schema_model.fields.keys()) if schema_model else []
 
         if request.select:
-            decision.allowed_fields = self._validate_fields(
+            decision.allowed_fields = self._validator.validate_fields(
                 request.select, request.model, model_policy, all_fields
             )
         else:
             decision.allowed_fields = model_policy.get_allowed_fields(all_fields)
 
-        # Validate includes
-        if request.include:
-            self._validate_includes(request.include, request.model, model_policy, budget)
-
         # Inject scope filters
         row_policy = self.policy.get_row_policy(request.model)
-        decision.injected_filters = self._validate_and_get_scope_filters(
+        decision.injected_filters = self._validator.validate_and_get_scope_filters(
             request.model, row_policy, ctx, None
         )
+
+        # Collect redaction rules
+        for field in decision.allowed_fields:
+            field_policy = model_policy.get_field_policy(field)
+            if field_policy.action.value != "allow":
+                decision.redaction_rules[field] = field_policy.action.value
 
         return decision
 
@@ -175,30 +190,33 @@ class PolicyEngine:
         request: AggregateRequest,
         ctx: RunContext,
     ) -> PolicyDecision:
-        """Validate an aggregation request."""
+        """Validate an aggregate request."""
         decision = PolicyDecision()
 
         # Validate model access
-        model_policy = self._validate_model_access(request.model, readable=True)
+        model_policy = self._validator.validate_model_access(
+            request.model, readable=True
+        )
         decision.add_decision(f"Model '{request.model}' access validated")
 
-        # Validate operation is allowed
-        if request.operation not in model_policy.allowed_aggregations:
-            raise FieldNotAllowedError(
-                field=f"aggregation:{request.operation}",
-                model=request.model,
-                allowed_fields=model_policy.allowed_aggregations,
-            )
-
-        # Validate field is aggregatable (for non-count operations)
-        if request.field and request.operation != "count":
-            if model_policy.aggregatable_fields is not None:
-                if request.field not in model_policy.aggregatable_fields:
-                    raise FieldNotAllowedError(
-                        field=request.field,
-                        model=request.model,
-                        allowed_fields=model_policy.aggregatable_fields,
-                    )
+        # Validate field is aggregatable
+        if request.field:
+            schema_model = self.schema.get_model(request.model)
+            all_fields = list(schema_model.fields.keys()) if schema_model else []
+            if request.field not in all_fields:
+                raise FieldNotAllowedError(
+                    field=request.field,
+                    model=request.model,
+                    allowed_fields=all_fields,
+                )
+            # Check if field is aggregatable (None means all allowed fields are aggregatable)
+            aggregatable = model_policy.aggregatable_fields
+            if aggregatable is not None and request.field not in aggregatable:
+                raise FieldNotAllowedError(
+                    field=request.field,
+                    model=request.model,
+                    allowed_fields=list(aggregatable),
+                )
             # Also check regular field policy
             if not model_policy.is_field_allowed(request.field):
                 raise FieldNotAllowedError(
@@ -211,214 +229,11 @@ class PolicyEngine:
 
         # Inject scope filters
         row_policy = self.policy.get_row_policy(request.model)
-        decision.injected_filters = self._validate_and_get_scope_filters(
-            request.model, row_policy, ctx, request.where
+        decision.injected_filters = self._validator.validate_and_get_scope_filters(
+            request.model, row_policy, ctx, None
         )
 
         return decision
-
-    def _validate_model_access(
-        self,
-        model: str,
-        readable: bool = False,
-        writable: bool = False,
-    ) -> ModelPolicy:
-        """Validate that a model is accessible."""
-        model_policy = self.policy.get_model_policy(model)
-
-        if model_policy is None:
-            raise ModelNotAllowedError(
-                model=model,
-                allowed_models=self.policy.list_allowed_models(),
-            )
-
-        if not model_policy.allowed:
-            raise ModelNotAllowedError(
-                model=model,
-                allowed_models=self.policy.list_allowed_models(),
-            )
-
-        if readable and not model_policy.readable:
-            raise ModelNotAllowedError(
-                model=model,
-                allowed_models=[
-                    m for m, p in self.policy.models.items() if p.allowed and p.readable
-                ],
-            )
-
-        if writable and not model_policy.writable:
-            raise ModelNotAllowedError(
-                model=model,
-                allowed_models=[
-                    m for m, p in self.policy.models.items() if p.allowed and p.writable
-                ],
-            )
-
-        return model_policy
-
-    def _validate_fields(
-        self,
-        fields: list[str],
-        model: str,
-        model_policy: ModelPolicy,
-        all_fields: list[str],
-    ) -> list[str]:
-        """Validate field access and return allowed fields."""
-        allowed = []
-        for field in fields:
-            if field not in all_fields:
-                raise FieldNotAllowedError(
-                    field=field,
-                    model=model,
-                    allowed_fields=all_fields,
-                )
-            if not model_policy.is_field_allowed(field):
-                raise FieldNotAllowedError(
-                    field=field,
-                    model=model,
-                    allowed_fields=model_policy.get_allowed_fields(all_fields),
-                )
-            allowed.append(field)
-        return allowed
-
-    def _validate_includes(
-        self,
-        includes: list[IncludeClause],
-        model: str,
-        model_policy: ModelPolicy,
-        budget: Budget,
-    ) -> None:
-        """Validate relation includes."""
-        if len(includes) > budget.max_includes_depth:
-            raise QueryBudgetExceededError(
-                budget_type="includes_count",
-                limit=budget.max_includes_depth,
-                requested=len(includes),
-            )
-
-        schema_model = self.schema.get_model(model)
-        available_relations = list(schema_model.relations.keys()) if schema_model else []
-
-        for include in includes:
-            # Check relation exists
-            if schema_model and include.relation not in schema_model.relations:
-                raise RelationNotAllowedError(
-                    relation=include.relation,
-                    model=model,
-                    allowed_relations=available_relations,
-                )
-
-            # Check relation policy
-            relation_policy = model_policy.relations.get(include.relation)
-            if relation_policy is None or not relation_policy.allowed:
-                allowed_relations = [
-                    r for r, p in model_policy.relations.items() if p.allowed
-                ]
-                raise RelationNotAllowedError(
-                    relation=include.relation,
-                    model=model,
-                    allowed_relations=allowed_relations or available_relations,
-                )
-
-    def _validate_and_get_scope_filters(
-        self,
-        model: str,
-        row_policy: RowPolicy,
-        ctx: RunContext,
-        existing_filters: list[FilterClause] | None,
-    ) -> list[FilterClause]:
-        """Validate scoping requirements and return scope filters to inject."""
-        filters: list[FilterClause] = []
-
-        # Tenant scoping
-        if row_policy.tenant_scope_field:
-            if self.policy.require_tenant_scope and not ctx.principal.tenant_id:
-                raise TenantScopeRequiredError(
-                    model=model,
-                    scope_field=row_policy.tenant_scope_field,
-                )
-            if ctx.principal.tenant_id:
-                filters.append(
-                    FilterClause(
-                        field=row_policy.tenant_scope_field,
-                        op="eq",
-                        value=ctx.principal.tenant_id,
-                    )
-                )
-
-        # Ownership scoping (if configured)
-        if row_policy.ownership_scope_field and ctx.principal.user_id:
-            filters.append(
-                FilterClause(
-                    field=row_policy.ownership_scope_field,
-                    op="eq",
-                    value=ctx.principal.user_id,
-                )
-            )
-
-        # Soft delete filter
-        if row_policy.soft_delete_field and not row_policy.include_soft_deleted:
-            filters.append(
-                FilterClause(
-                    field=row_policy.soft_delete_field,
-                    op="is_null",
-                    value=True,
-                )
-            )
-
-        return filters
-
-    def _validate_budget(
-        self,
-        request: QueryRequest,
-        budget: Budget,
-        model_policy: ModelPolicy,
-    ) -> None:
-        """Validate request against budget limits."""
-        # Check row limit
-        if request.take > budget.max_rows:
-            raise QueryBudgetExceededError(
-                budget_type="max_rows",
-                limit=budget.max_rows,
-                requested=request.take,
-            )
-
-        # Check field count
-        if request.select and len(request.select) > budget.max_select_fields:
-            raise QueryBudgetExceededError(
-                budget_type="select_fields",
-                limit=budget.max_select_fields,
-                requested=len(request.select),
-            )
-
-        # Check include depth
-        if request.include and len(request.include) > budget.max_includes_depth:
-            raise QueryBudgetExceededError(
-                budget_type="includes_depth",
-                limit=budget.max_includes_depth,
-                requested=len(request.include),
-            )
-
-    def _validate_query_breadth(
-        self,
-        request: QueryRequest,
-        budget: Budget,
-        scope_filters: list[FilterClause],
-    ) -> None:
-        """Validate that the query isn't too broad (broad query guard)."""
-        total_filters = len(scope_filters)
-        if request.where:
-            total_filters += len(request.where)
-
-        if total_filters < budget.min_filters_for_broad_query:
-            raise QueryTooBroadError(
-                model=request.model,
-                suggestion=f"Add at least {budget.min_filters_for_broad_query} filter(s) to narrow the query",
-            )
-
-    # =========================================================================
-    # WRITE VALIDATION METHODS (Phase 2)
-    # =========================================================================
 
     def validate_create(
         self,
@@ -437,54 +252,42 @@ class PolicyEngine:
         """
         decision = PolicyDecision()
 
-        # 1. Validate model access (writable)
-        model_policy = self._validate_model_access(request.model, writable=True)
+        # Validate model access
+        model_policy = self._validator.validate_model_access(
+            request.model, writable=True
+        )
         decision.add_decision(f"Model '{request.model}' write access validated")
 
-        # 2. Check write policy
-        write_policy = model_policy.write_policy
-        if not write_policy.enabled:
+        # Check if create is allowed
+        if not model_policy.write_policy.allow_create:
             raise WriteDisabledError(operation="create", model=request.model)
-        if not write_policy.allow_create:
-            raise WriteDisabledError(operation="create", model=request.model)
-        decision.add_decision("Create operation allowed by policy")
 
-        # 3. Check reason requirement
-        if write_policy.require_reason and not request.reason:
-            raise ValidationError(
-                message="A reason is required for this write operation",
-                field="reason",
-            )
-
-        # 4. Validate fields being written
+        # Validate fields
         schema_model = self.schema.get_model(request.model)
         all_fields = list(schema_model.fields.keys()) if schema_model else []
-        writable_fields = self._get_writable_fields(all_fields, model_policy)
 
-        for field in request.data.keys():
-            if field in write_policy.readonly_fields:
-                raise FieldNotAllowedError(
-                    field=field,
-                    model=request.model,
-                    allowed_fields=writable_fields,
-                )
-        decision.add_decision(f"Validated {len(request.data)} fields for write")
+        allowed_fields = self._validator.validate_fields(
+            list(request.data.keys()), request.model, model_policy, all_fields
+        )
+        decision.allowed_fields = allowed_fields
+        decision.add_decision(f"Validated {len(allowed_fields)} fields for create")
 
-        # 5. Get return fields
-        if request.return_fields:
-            decision.allowed_fields = self._validate_fields(
-                request.return_fields, request.model, model_policy, all_fields
-            )
-        else:
-            decision.allowed_fields = model_policy.get_allowed_fields(all_fields)
-
-        # 6. Inject scope data (tenant_id to be set on created record)
+        # Inject scope filters
         row_policy = self.policy.get_row_policy(request.model)
-        decision.injected_filters = self._validate_and_get_scope_filters(
+        decision.injected_filters = self._validator.validate_and_get_scope_filters(
             request.model, row_policy, ctx, None
         )
+        if decision.injected_filters:
+            decision.add_decision(
+                f"Injected {len(decision.injected_filters)} scope filters"
+            )
 
-        decision.budget = self.policy.get_budget(request.model)
+        # Collect redaction rules for audit logging
+        for field in decision.allowed_fields:
+            field_policy = model_policy.get_field_policy(field)
+            if field_policy.action.value != "allow":
+                decision.redaction_rules[field] = field_policy.action.value
+
         return decision
 
     def validate_update(
@@ -492,59 +295,41 @@ class PolicyEngine:
         request: UpdateRequest,
         ctx: RunContext,
     ) -> PolicyDecision:
-        """
-        Validate an update request against policies.
-        """
+        """Validate an update request."""
         decision = PolicyDecision()
 
-        # 1. Validate model access (writable)
-        model_policy = self._validate_model_access(request.model, writable=True)
+        # Validate model access
+        model_policy = self._validator.validate_model_access(
+            request.model, writable=True
+        )
         decision.add_decision(f"Model '{request.model}' write access validated")
 
-        # 2. Check write policy
-        write_policy = model_policy.write_policy
-        if not write_policy.enabled:
+        # Check if update is allowed
+        if not model_policy.write_policy.allow_update:
             raise WriteDisabledError(operation="update", model=request.model)
-        if not write_policy.allow_update:
-            raise WriteDisabledError(operation="update", model=request.model)
-        decision.add_decision("Update operation allowed by policy")
 
-        # 3. Check reason requirement
-        if write_policy.require_reason and not request.reason:
-            raise ValidationError(
-                message="A reason is required for this write operation",
-                field="reason",
-            )
-
-        # 4. Validate fields being updated
+        # Validate fields
         schema_model = self.schema.get_model(request.model)
         all_fields = list(schema_model.fields.keys()) if schema_model else []
-        writable_fields = self._get_writable_fields(all_fields, model_policy)
 
-        for field in request.data.keys():
-            if field in write_policy.readonly_fields:
-                raise FieldNotAllowedError(
-                    field=field,
-                    model=request.model,
-                    allowed_fields=writable_fields,
-                )
-        decision.add_decision(f"Validated {len(request.data)} fields for update")
+        allowed_fields = self._validator.validate_fields(
+            list(request.data.keys()), request.model, model_policy, all_fields
+        )
+        decision.allowed_fields = allowed_fields
+        decision.add_decision(f"Validated {len(allowed_fields)} fields for update")
 
-        # 5. Get return fields
-        if request.return_fields:
-            decision.allowed_fields = self._validate_fields(
-                request.return_fields, request.model, model_policy, all_fields
-            )
-        else:
-            decision.allowed_fields = model_policy.get_allowed_fields(all_fields)
-
-        # 6. Inject scope filters (to ensure update is scoped)
+        # Inject scope filters
         row_policy = self.policy.get_row_policy(request.model)
-        decision.injected_filters = self._validate_and_get_scope_filters(
+        decision.injected_filters = self._validator.validate_and_get_scope_filters(
             request.model, row_policy, ctx, None
         )
 
-        decision.budget = self.policy.get_budget(request.model)
+        # Collect redaction rules
+        for field in decision.allowed_fields:
+            field_policy = model_policy.get_field_policy(field)
+            if field_policy.action.value != "allow":
+                decision.redaction_rules[field] = field_policy.action.value
+
         return decision
 
     def validate_delete(
@@ -552,43 +337,25 @@ class PolicyEngine:
         request: DeleteRequest,
         ctx: RunContext,
     ) -> PolicyDecision:
-        """
-        Validate a delete request against policies.
-        """
+        """Validate a delete request."""
         decision = PolicyDecision()
 
-        # 1. Validate model access (writable)
-        model_policy = self._validate_model_access(request.model, writable=True)
+        # Validate model access
+        model_policy = self._validator.validate_model_access(
+            request.model, writable=True
+        )
         decision.add_decision(f"Model '{request.model}' write access validated")
 
-        # 2. Check write policy
-        write_policy = model_policy.write_policy
-        if not write_policy.enabled:
+        # Check if delete is allowed
+        if not model_policy.write_policy.allow_delete:
             raise WriteDisabledError(operation="delete", model=request.model)
-        if not write_policy.allow_delete:
-            raise WriteDisabledError(operation="delete", model=request.model)
-        decision.add_decision("Delete operation allowed by policy")
 
-        # 3. Check reason requirement
-        if write_policy.require_reason and not request.reason:
-            raise ValidationError(
-                message="A reason is required for this delete operation",
-                field="reason",
-            )
-
-        # 4. If hard delete requested, check if allowed
-        if request.hard and write_policy.soft_delete:
-            raise ValidationError(
-                message="Hard delete is not allowed; use soft delete instead",
-            )
-
-        # 5. Inject scope filters
+        # Inject scope filters
         row_policy = self.policy.get_row_policy(request.model)
-        decision.injected_filters = self._validate_and_get_scope_filters(
+        decision.injected_filters = self._validator.validate_and_get_scope_filters(
             request.model, row_policy, ctx, None
         )
 
-        decision.budget = self.policy.get_budget(request.model)
         return decision
 
     def validate_bulk_update(
@@ -596,69 +363,49 @@ class PolicyEngine:
         request: BulkUpdateRequest,
         ctx: RunContext,
     ) -> PolicyDecision:
-        """
-        Validate a bulk update request against policies.
-        """
+        """Validate a bulk update request."""
         decision = PolicyDecision()
 
-        # 1. Validate model access (writable)
-        model_policy = self._validate_model_access(request.model, writable=True)
+        # Validate model access
+        model_policy = self._validator.validate_model_access(
+            request.model, writable=True
+        )
         decision.add_decision(f"Model '{request.model}' write access validated")
 
-        # 2. Check write policy
-        write_policy = model_policy.write_policy
-        if not write_policy.enabled:
+        # Check if bulk update is allowed
+        if not model_policy.write_policy.allow_bulk:
             raise WriteDisabledError(operation="bulk_update", model=request.model)
-        if not write_policy.allow_update:
-            raise WriteDisabledError(operation="bulk_update", model=request.model)
-        if not write_policy.allow_bulk:
-            raise WriteDisabledError(operation="bulk_update", model=request.model)
-        decision.add_decision("Bulk update operation allowed by policy")
 
-        # 3. Check max affected rows
+        # Check max affected rows
+        budget = self.policy.get_budget(request.model)
+        decision.budget = budget
+        write_policy = model_policy.write_policy
+
         if len(request.ids) > write_policy.max_affected_rows:
             raise MaxAffectedRowsExceededError(
-                operation="bulk_update",
-                max_rows=write_policy.max_affected_rows,
-                affected_rows=len(request.ids),
-            )
-        decision.add_decision(f"Bulk update size validated: {len(request.ids)} rows")
-
-        # 4. Check reason requirement
-        if write_policy.require_reason and not request.reason:
-            raise ValidationError(
-                message="A reason is required for this bulk operation",
-                field="reason",
+                limit=write_policy.max_affected_rows,
+                requested=len(request.ids),
             )
 
-        # 5. Validate fields being updated
+        # Validate fields
         schema_model = self.schema.get_model(request.model)
         all_fields = list(schema_model.fields.keys()) if schema_model else []
-        writable_fields = self._get_writable_fields(all_fields, model_policy)
 
-        for field in request.data.keys():
-            if field in write_policy.readonly_fields:
-                raise FieldNotAllowedError(
-                    field=field,
-                    model=request.model,
-                    allowed_fields=writable_fields,
-                )
+        allowed_fields = self._validator.validate_fields(
+            list(request.data.keys()), request.model, model_policy, all_fields
+        )
+        decision.allowed_fields = allowed_fields
 
-        # 6. Inject scope filters
+        # Inject scope filters
         row_policy = self.policy.get_row_policy(request.model)
-        decision.injected_filters = self._validate_and_get_scope_filters(
+        decision.injected_filters = self._validator.validate_and_get_scope_filters(
             request.model, row_policy, ctx, None
         )
 
-        decision.budget = self.policy.get_budget(request.model)
-        return decision
+        # Collect redaction rules
+        for field in decision.allowed_fields:
+            field_policy = model_policy.get_field_policy(field)
+            if field_policy.action.value != "allow":
+                decision.redaction_rules[field] = field_policy.action.value
 
-    def _get_writable_fields(
-        self,
-        all_fields: list[str],
-        model_policy: ModelPolicy,
-    ) -> list[str]:
-        """Get list of fields that can be written to."""
-        write_policy = model_policy.write_policy
-        readonly = set(write_policy.readonly_fields)
-        return [f for f in all_fields if f not in readonly]
+        return decision

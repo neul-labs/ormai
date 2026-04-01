@@ -29,8 +29,8 @@ from ormai.core.dsl import (
     UpdateRequest,
     UpdateResult,
 )
-from ormai.core.types import SchemaMetadata
-from ormai.policy.models import Policy
+from ormai.core.types import ModelMetadata, SchemaMetadata
+from ormai.policy.models import ModelPolicy, Policy
 from ormai.tools.base import Tool
 
 # === Describe Schema Tool ===
@@ -93,7 +93,9 @@ class DescribeSchemaTool(Tool[DescribeSchemaInput, SchemaDescription]):
 
         return SchemaDescription(models=result)
 
-    def _describe_model(self, model_meta: Any, model_policy: Any) -> dict[str, Any]:
+    def _describe_model(
+        self, model_meta: ModelMetadata, model_policy: ModelPolicy
+    ) -> dict[str, Any]:
         """Build description for a single model."""
         # Get allowed fields
         fields = {}
