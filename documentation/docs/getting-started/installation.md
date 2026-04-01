@@ -61,7 +61,7 @@ uv add ormai --extra sqlalchemy
 For development or contributing:
 
 ```bash
-git clone https://github.com/ormai/ormai.git
+git clone https://github.com/neul-labs/ormai.git
 cd ormai
 uv sync --all-extras
 ```

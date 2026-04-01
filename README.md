@@ -2,8 +2,8 @@
 
 [![PyPI Version](https://img.shields.io/pypi/v/ormai)](https://pypi.org/project/ormai/)
 [![Python Versions](https://img.shields.io/pypi/pyversions/ormai)](https://pypi.org/project/ormai/)
-[![MIT License](https://img.shields.io/pypi/l/ormai)](https://github.com/anthropics/ormai/blob/main/LICENSE)
-[![Tests](https://img.shields.io/github/actions/workflow/status/anthropics/ormai/test.yml?label=tests)](https://github.com/anthropics/ormai/actions)
+[![MIT License](https://img.shields.io/pypi/l/ormai)](https://github.com/neul-labs/ormai/blob/main/LICENSE)
+[![Tests](https://img.shields.io/github/actions/workflow/status/neul-labs/ormai/test.yml?label=tests)](https://github.com/neul-labs/ormai/actions)
 
 OrmAI is an ORM-native capability runtime that turns existing SQLAlchemy, Tortoise, and Peewee models into a safe, typed, auditable tool surface for agents. It layers policy-compiled data access, tenant isolation, and audit logging on top of your current application without exposing direct ORM handles to the LLM.
 
@@ -81,7 +81,7 @@ uv add ormai[all]           # All adapters
 For development:
 
 ```bash
-git clone https://github.com/anthropics/ormai.git
+git clone https://github.com/neul-labs/ormai.git
 cd ormai
 uv sync --dev
 ```
@@ -248,7 +248,7 @@ See [docs/quickstart.md](./docs/quickstart.md) for detailed guides on:
 
 ```bash
 # Set up development environment
-git clone https://github.com/anthropics/ormai.git
+git clone https://github.com/neul-labs/ormai.git
 cd ormai
 uv sync --dev
 

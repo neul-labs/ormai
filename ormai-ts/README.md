@@ -276,5 +276,5 @@ MIT
 
 ## Related
 
-- [OrmAI Python](https://github.com/anthropics/ormai) - Python edition
+- [OrmAI Python](https://github.com/neul-labs/ormai) - Python edition
 - [Model Context Protocol](https://modelcontextprotocol.io/) - MCP specification
