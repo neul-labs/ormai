@@ -88,3 +88,11 @@ Thumbs.db
 *.sqlite3
 *.log
 .claude/
+
+# Node.js / TypeScript
+node_modules/
+dist/
+build/
+*.tsbuildinfo
+.next/
+out/
