@@ -109,6 +109,46 @@ class JsonlAuditStore(AuditStore):
 
         return results
 
+    async def count(
+        self,
+        *,
+        tenant_id: str | None = None,
+        principal_id: str | None = None,
+        tool_name: str | None = None,
+        start_time: datetime | None = None,
+        end_time: datetime | None = None,
+    ) -> int:
+        """Count records matching filters."""
+        if not self.path.exists():
+            return 0
+
+        count = 0
+
+        with open(self.path) as f:
+            for line in f:
+                if not line.strip():
+                    continue
+
+                data = json.loads(line)
+
+                # Apply filters
+                if tenant_id and data.get("tenant_id") != tenant_id:
+                    continue
+                if principal_id and data.get("principal_id") != principal_id:
+                    continue
+                if tool_name and data.get("tool_name") != tool_name:
+                    continue
+
+                record_time = datetime.fromisoformat(data["timestamp"])
+                if start_time and record_time < start_time:
+                    continue
+                if end_time and record_time > end_time:
+                    continue
+
+                count += 1
+
+        return count
+
     def _serialize_record(self, record: AuditRecord) -> dict[str, Any]:
         """Serialize a record for JSON storage."""
         data = record.model_dump()
@@ -120,6 +160,45 @@ class JsonlAuditStore(AuditStore):
         if isinstance(data.get("timestamp"), str):
             data["timestamp"] = datetime.fromisoformat(data["timestamp"])
         return AuditRecord.model_validate(data)
+
+    async def delete_before(self, before: datetime) -> int:
+        """
+        Delete records older than the specified timestamp.
+
+        This rewrites the entire file, keeping only records newer than the cutoff.
+
+        Args:
+            before: Delete records with timestamp before this datetime
+
+        Returns:
+            Number of records deleted
+        """
+        if not self.path.exists():
+            return 0
+
+        # Read all records and filter
+        records_to_keep: list[str] = []
+        deleted_count = 0
+
+        with open(self.path) as f:
+            for line in f:
+                if not line.strip():
+                    continue
+
+                data = json.loads(line)
+                record_time = datetime.fromisoformat(data["timestamp"])
+
+                if record_time < before:
+                    deleted_count += 1
+                else:
+                    records_to_keep.append(line)
+
+        # Rewrite file with remaining records
+        if deleted_count > 0:
+            with open(self.path, "w") as f:
+                f.writelines(records_to_keep)
+
+        return deleted_count
 
     def clear(self) -> None:
         """Clear all records (for testing)."""

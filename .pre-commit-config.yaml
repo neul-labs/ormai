@@ -3,7 +3,7 @@ repos:
     hooks:
       - id: ruff-check
         name: Run ruff linter
-        entry: uv run ruff check src/fastagentic/ tests/
+        entry: uv run ruff check src/ormai/ tests/
         language: system
         pass_filenames: false
         types: [python]
@@ -11,7 +11,7 @@ repos:
 
       - id: ruff-format
         name: Check ruff formatting
-        entry: uv run ruff format --check src/fastagentic/ tests/
+        entry: uv run ruff format --check src/ormai/ tests/
         language: system
         pass_filenames: false
         types: [python]

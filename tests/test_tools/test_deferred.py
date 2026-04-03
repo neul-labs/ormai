@@ -138,7 +138,7 @@ class TestDeferredExecutor:
         assert pending[0].operation == "update"
 
     @pytest.mark.asyncio
-    async def test_check_nonexistent_approval(self, _ctx: RunContext):
+    async def test_check_nonexistent_approval(self, ctx: RunContext):
         """Test checking a non-existent approval ID."""
         queue = InMemoryApprovalQueue()
         executor = DeferredExecutor(queue)

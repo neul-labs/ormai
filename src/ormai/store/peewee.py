@@ -255,7 +255,7 @@ class PeeweeAuditStore(AuditStore):
 
         return [self._to_record(m) for m in query]
 
-    def count_sync(
+    async def count(
         self,
         *,
         tenant_id: str | None = None,
@@ -264,7 +264,27 @@ class PeeweeAuditStore(AuditStore):
         start_time: datetime | None = None,
         end_time: datetime | None = None,
     ) -> int:
-        """Count audit records matching filters (synchronous)."""
+        """Count audit records matching filters."""
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(
+            None,
+            self._count_sync,
+            tenant_id,
+            principal_id,
+            tool_name,
+            start_time,
+            end_time,
+        )
+
+    def _count_sync(
+        self,
+        tenant_id: str | None,
+        principal_id: str | None,
+        tool_name: str | None,
+        start_time: datetime | None,
+        end_time: datetime | None,
+    ) -> int:
+        """Synchronous count implementation."""
         query = self.model.select()
 
         if tenant_id:
@@ -280,6 +300,28 @@ class PeeweeAuditStore(AuditStore):
 
         return query.count()
 
+    def count_sync(
+        self,
+        *,
+        tenant_id: str | None = None,
+        principal_id: str | None = None,
+        tool_name: str | None = None,
+        start_time: datetime | None = None,
+        end_time: datetime | None = None,
+    ) -> int:
+        """Count audit records matching filters (synchronous)."""
+        return self._count_sync(tenant_id, principal_id, tool_name, start_time, end_time)
+
+    async def delete_before(self, before: datetime) -> int:
+        """Delete audit records older than the given timestamp."""
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(None, self._delete_before_sync, before)
+
+    def _delete_before_sync(self, before: datetime) -> int:
+        """Synchronous delete implementation."""
+        query = self.model.delete().where(self.model.timestamp < before)
+        return query.execute()
+
     def delete_before_sync(self, before: datetime) -> int:
         """
         Delete audit records older than the given timestamp (synchronous).
@@ -289,8 +331,7 @@ class PeeweeAuditStore(AuditStore):
         Returns:
             Number of records deleted
         """
-        query = self.model.delete().where(self.model.timestamp < before)
-        return query.execute()
+        return self._delete_before_sync(before)
 
     def _to_record(self, model: Model) -> AuditRecord:
         """Convert a Peewee model to an AuditRecord."""

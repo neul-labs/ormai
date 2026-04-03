@@ -435,7 +435,7 @@ class TestFieldAccessControl:
         assert "email" in decision.redaction_rules
         assert decision.redaction_rules["email"] == "mask"
 
-    def test_denied_fields_marked_for_redaction(self, _sample_schema):
+    def test_denied_fields_marked_for_redaction(self, sample_schema):
         """Test that denied fields are marked for removal."""
         policy = Policy(
             models={

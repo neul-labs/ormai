@@ -56,6 +56,58 @@ class AuditStore(ABC):
         """
         ...
 
+    @abstractmethod
+    async def count(
+        self,
+        *,
+        tenant_id: str | None = None,
+        principal_id: str | None = None,
+        tool_name: str | None = None,
+        start_time: datetime | None = None,
+        end_time: datetime | None = None,
+    ) -> int:
+        """
+        Count audit records matching filters.
+
+        Returns the total count without retrieving records.
+        """
+        ...
+
+    async def bulk_store(self, records: list[AuditRecord]) -> int:
+        """
+        Store multiple audit records in a single operation.
+
+        Default implementation calls store() in a loop.
+        Override in implementations for optimized batch inserts.
+
+        Args:
+            records: List of audit records to store
+
+        Returns:
+            Number of records stored
+        """
+        for record in records:
+            await self.store(record)
+        return len(records)
+
+    async def delete_before(self, before: datetime) -> int:
+        """
+        Delete audit records older than the specified timestamp.
+
+        Used for retention policy cleanup.
+        Override in implementations that support deletion.
+
+        Args:
+            before: Delete records with timestamp before this datetime
+
+        Returns:
+            Number of records deleted
+
+        Raises:
+            NotImplementedError: If the store doesn't support deletion
+        """
+        raise NotImplementedError("Retention cleanup not supported by this store")
+
     def store_sync(self, record: AuditRecord) -> None:
         """
         Synchronous wrapper for store.

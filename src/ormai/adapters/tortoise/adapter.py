@@ -15,14 +15,23 @@ from tortoise.transactions import in_transaction
 from ormai.adapters.base import CompiledQuery, OrmAdapter
 from ormai.adapters.tortoise.compiler import TortoiseCompiler
 from ormai.adapters.tortoise.introspection import TortoiseIntrospector
+from ormai.adapters.tortoise.mutations import MutationExecutor
 from ormai.core.context import RunContext
 from ormai.core.dsl import (
     AggregateRequest,
     AggregateResult,
+    BulkUpdateRequest,
+    BulkUpdateResult,
+    CreateRequest,
+    CreateResult,
+    DeleteRequest,
+    DeleteResult,
     GetRequest,
     GetResult,
     QueryRequest,
     QueryResult,
+    UpdateRequest,
+    UpdateResult,
 )
 from ormai.core.types import SchemaMetadata
 from ormai.policy.models import Policy
@@ -62,6 +71,7 @@ class TortoiseAdapter(OrmAdapter):
         # Cache schema on init
         self._schema: SchemaMetadata | None = None
         self._compiler: TortoiseCompiler | None = None
+        self._mutation_executor: MutationExecutor | None = None
 
     @property
     def schema(self) -> SchemaMetadata:
@@ -77,6 +87,13 @@ class TortoiseAdapter(OrmAdapter):
             model_map = {m.__name__: m for m in self.models}
             self._compiler = TortoiseCompiler(model_map, self.policy, self.schema)
         return self._compiler
+
+    @property
+    def mutation_executor(self) -> MutationExecutor:
+        """Get the mutation executor."""
+        if self._mutation_executor is None:
+            self._mutation_executor = MutationExecutor(self)
+        return self._mutation_executor
 
     async def introspect(self) -> SchemaMetadata:
         """Introspect the database schema."""
@@ -275,3 +292,79 @@ class TortoiseAdapter(OrmAdapter):
             return int(cursor)
         except ValueError:
             return 0
+
+    # =========================================================================
+    # MUTATION METHODS
+    # =========================================================================
+
+    def compile_create(
+        self,
+        request: CreateRequest,
+        ctx: RunContext,
+        policy: Policy,
+        schema: SchemaMetadata,
+    ) -> CompiledQuery:
+        """Compile a create request."""
+        return self.mutation_executor.compile_create(request, ctx, policy, schema)
+
+    def compile_update(
+        self,
+        request: UpdateRequest,
+        ctx: RunContext,
+        policy: Policy,
+        schema: SchemaMetadata,
+    ) -> CompiledQuery:
+        """Compile an update request."""
+        return self.mutation_executor.compile_update(request, ctx, policy, schema)
+
+    def compile_delete(
+        self,
+        request: DeleteRequest,
+        ctx: RunContext,
+        policy: Policy,
+        schema: SchemaMetadata,
+    ) -> CompiledQuery:
+        """Compile a delete request."""
+        return self.mutation_executor.compile_delete(request, ctx, policy, schema)
+
+    def compile_bulk_update(
+        self,
+        request: BulkUpdateRequest,
+        ctx: RunContext,
+        policy: Policy,
+        schema: SchemaMetadata,
+    ) -> CompiledQuery:
+        """Compile a bulk update request."""
+        return self.mutation_executor.compile_bulk_update(request, ctx, policy, schema)
+
+    async def execute_create(
+        self,
+        compiled: CompiledQuery,
+        ctx: RunContext,
+    ) -> CreateResult:
+        """Execute a create request."""
+        return await self.mutation_executor.execute_create(compiled, ctx)
+
+    async def execute_update(
+        self,
+        compiled: CompiledQuery,
+        ctx: RunContext,
+    ) -> UpdateResult:
+        """Execute an update request."""
+        return await self.mutation_executor.execute_update(compiled, ctx)
+
+    async def execute_delete(
+        self,
+        compiled: CompiledQuery,
+        ctx: RunContext,
+    ) -> DeleteResult:
+        """Execute a delete request."""
+        return await self.mutation_executor.execute_delete(compiled, ctx)
+
+    async def execute_bulk_update(
+        self,
+        compiled: CompiledQuery,
+        ctx: RunContext,
+    ) -> BulkUpdateResult:
+        """Execute a bulk update request."""
+        return await self.mutation_executor.execute_bulk_update(compiled, ctx)

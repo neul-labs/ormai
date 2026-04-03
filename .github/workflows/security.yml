@@ -1,0 +1,120 @@
+name: Security
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Run daily at midnight UTC
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+
+env:
+  PYTHON_VERSION: "3.12"
+
+jobs:
+  dependency-audit:
+    name: Dependency Audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+
+      - name: Install dependencies
+        run: |
+          uv sync --dev
+          uv pip install pip-audit
+
+      - name: Run pip-audit
+        run: |
+          uv run pip-audit --strict --progress-spinner off
+        continue-on-error: true
+
+      - name: Run pip-audit (output for PR)
+        if: github.event_name == 'pull_request'
+        run: |
+          uv run pip-audit --format markdown > audit-results.md || true
+          echo "## Dependency Audit Results" >> $GITHUB_STEP_SUMMARY
+          cat audit-results.md >> $GITHUB_STEP_SUMMARY || echo "No vulnerabilities found" >> $GITHUB_STEP_SUMMARY
+
+  codeql-analysis:
+    name: CodeQL Analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      security-events: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: python
+          queries: security-and-quality
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:python"
+
+  secrets-scan:
+    name: Secrets Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  security-report:
+    name: Security Report
+    runs-on: ubuntu-latest
+    needs: [dependency-audit, codeql-analysis, secrets-scan]
+    if: always()
+    steps:
+      - name: Check security scan results
+        run: |
+          echo "## Security Scan Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ "${{ needs.dependency-audit.result }}" == "success" ]; then
+            echo "- Dependency Audit: Passed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- Dependency Audit: Failed/Skipped" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [ "${{ needs.codeql-analysis.result }}" == "success" ]; then
+            echo "- CodeQL Analysis: Passed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- CodeQL Analysis: Failed/Skipped" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [ "${{ needs.secrets-scan.result }}" == "success" ]; then
+            echo "- Secrets Scan: Passed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- Secrets Scan: Failed/Skipped" >> $GITHUB_STEP_SUMMARY
+          fi

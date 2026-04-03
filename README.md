@@ -11,10 +11,12 @@ OrmAI is an ORM-native capability runtime that turns existing SQLAlchemy, Tortoi
 
 - [Quick Start](#quick-start)
 - [Installation](#installation)
+- [Production Configuration](#production-configuration)
 - [Core API Reference](#core-api-reference)
 - [Policy Configuration](#policy-configuration)
 - [Tool Reference](#tool-reference)
 - [Architecture](#architecture)
+- [Benchmark Demo](#benchmark-demo)
 - [Examples](#examples)
 - [Contributing](#contributing)
 - [Resources](#resources)
@@ -84,6 +86,88 @@ For development:
 git clone https://github.com/neul-labs/ormai.git
 cd ormai
 uv sync --dev
+```
+
+## Production Configuration
+
+OrmAI includes production-ready features for secure deployment. Key configuration areas:
+
+### Environment Detection
+
+OrmAI uses the `ORMAI_ENV` environment variable to determine runtime behavior:
+
+```bash
+# Production (default) - requires authentication
+export ORMAI_ENV=production
+
+# Development - allows anonymous access with warnings
+export ORMAI_ENV=development
+```
+
+### Security Checklist
+
+Before deploying to production:
+
+- [ ] Set `ORMAI_ENV=production` (enforces authentication)
+- [ ] Configure authentication function for MCP server
+- [ ] Use `DEFAULT_PROD` or stricter policy profile
+- [ ] Enable HTTPS/TLS for all endpoints
+- [ ] Configure audit log retention policy
+- [ ] Set up structured logging for observability
+- [ ] Enable rate limiting to prevent abuse
+
+### Rate Limiting
+
+```python
+from ormai.middleware import RateLimiter, RateLimitConfig
+
+limiter = RateLimiter(
+    config=RateLimitConfig(
+        requests_per_minute=60,
+        requests_per_hour=1000,
+        burst_limit=10,
+    )
+)
+```
+
+### Health Checks
+
+```python
+from ormai.health import HealthChecker, check_database, check_audit_store
+
+checker = HealthChecker(version="0.2.0")
+checker.add_check("database", lambda: check_database(adapter))
+checker.add_check("audit", lambda: check_audit_store(store))
+
+# Get health status
+health = await checker.check_all()
+```
+
+### Structured Logging
+
+```python
+from ormai.logging import configure_logging, LogFormat, LogLevel
+
+# Production: JSON logs for log aggregation
+configure_logging(level=LogLevel.INFO, format=LogFormat.JSON)
+
+# Development: Colorized text logs
+configure_logging(level=LogLevel.DEBUG, format=LogFormat.TEXT)
+```
+
+### Audit Log Retention
+
+```python
+from ormai.store import RetentionPolicy, RetentionManager
+
+policy = RetentionPolicy.days(90)  # Keep logs for 90 days
+manager = RetentionManager(store=audit_store, policy=policy)
+
+# Run cleanup once
+await manager.run_cleanup()
+
+# Or schedule periodic cleanup
+await manager.start_scheduler()
 ```
 
 ## Core API Reference
@@ -231,10 +315,64 @@ from ormai import (
 | `ormai.mcp` | MCP server glue, auth/context translation |
 | `ormai.utils` | Builders, factories, plugins, testing utilities |
 
+## Benchmark Demo
+
+OrmAI includes a benchmark demo comparing OrmAI's tool-based approach against raw text-to-SQL using the [Spider dataset](https://yale-lily.github.io/spider). The demo showcases OrmAI's safety advantages with a rich split-screen CLI.
+
+### Why OrmAI vs Text-to-SQL?
+
+| Aspect | OrmAI | Text-to-SQL |
+|--------|-------|-------------|
+| **SQL Injection** | Impossible (parameterized) | Possible |
+| **Policy Enforcement** | Built-in | None |
+| **Audit Trail** | Complete | None |
+| **Unsafe Operations** | Blocked by policy | Executed |
+
+### Running the Demo
+
+```bash
+# Install benchmark dependencies
+uv add ormai[benchmark]
+
+# Download Spider dataset (first-time setup)
+uv run python examples/spider_demo.py download
+
+# Run quick demo (20 questions) - great for presentations
+uv run python examples/spider_demo.py run --limit 20
+
+# Run full benchmark with both GPT-4 and Claude
+uv run python examples/spider_demo.py run
+
+# Run with single LLM
+uv run python examples/spider_demo.py run --llm gpt-4
+uv run python examples/spider_demo.py run --llm claude
+```
+
+### Demo Output
+
+The demo displays a live split-screen comparison:
+
+```
++--------------------------- Spider Benchmark ---------------------------+
+|  Dataset: Spider (dev)  |  Questions: 1034  |  LLMs: GPT-4 + Claude    |
++------------------------------------------------------------------------+
+|  +---------- OrmAI ----------+  +---------- Text-to-SQL ----------+    |
+|  |  GPT-4      ======== 67%  |  |  GPT-4      ======== 67%       |    |
+|  |  Correct: 523  Blocked: 8 |  |  Correct: 498  Unsafe: 23      |    |
+|  |                           |  |                                 |    |
+|  |  Claude     ======== 67%  |  |  Claude     ======== 67%       |    |
+|  |  Correct: 531  Blocked: 6 |  |  Correct: 512  Unsafe: 19      |    |
+|  +---------------------------+  +---------------------------------+    |
++------------------------------------------------------------------------+
+```
+
+**Requirements**: Set `OPENAI_API_KEY` and/or `ANTHROPIC_API_KEY` environment variables.
+
 ## Examples
 
 Full working examples are available in the `examples/` directory:
 
+- `examples/spider_demo.py` - Spider benchmark comparing OrmAI vs text-to-SQL
 - `examples/fastapi-sqlalchemy/` - FastAPI with SQLAlchemy and agent integration
 
 See [docs/quickstart.md](./docs/quickstart.md) for detailed guides on:

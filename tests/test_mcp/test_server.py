@@ -174,7 +174,7 @@ def context(sample_principal):
 
 
 @pytest.fixture
-def mcp_server(tool_registry, _basic_policy):
+def mcp_server(tool_registry, basic_policy):
     """Create an MCP server with basic configuration."""
     return McpServerFactory(
         toolset=tool_registry,
@@ -183,7 +183,7 @@ def mcp_server(tool_registry, _basic_policy):
 
 
 @pytest.fixture
-def mcp_server_with_auth(tool_registry, _basic_policy):
+def mcp_server_with_auth(tool_registry, basic_policy):
     """Create an MCP server with authentication enforcement."""
     def auth_function(ctx):
         principal = ctx.get("principal")
@@ -203,9 +203,10 @@ def mcp_server_with_auth(tool_registry, _basic_policy):
 class TestMcpServerFactory:
     """Tests for McpServerFactory."""
 
-    def test_factory_creates_server(self, tool_registry, _basic_policy):
+    def test_factory_creates_server(self, tool_registry, basic_policy):
         """Test that factory creates a server instance."""
-        factory = McpServerFactory(toolset=tool_registry)
+        # Explicitly set enforce_auth=False to test without auth
+        factory = McpServerFactory(toolset=tool_registry, enforce_auth=False)
         server = factory.build()
 
         assert isinstance(server, McpServer)
@@ -213,7 +214,7 @@ class TestMcpServerFactory:
         assert server.auth is None
         assert server.enforce_auth is False
 
-    def test_factory_with_custom_context_builder(self, tool_registry, _basic_policy):
+    def test_factory_with_custom_context_builder(self, tool_registry, basic_policy):
         """Test factory with custom context builder."""
         def custom_builder(principal, _ctx):
             return RunContext(principal=principal, db=None)
@@ -285,7 +286,7 @@ class TestMcpServer:
         assert result.get("success") is True
 
     @pytest.mark.asyncio
-    async def test_call_tool_with_context(self, mcp_server, context, _sample_principal):
+    async def test_call_tool_with_context(self, mcp_server, context, sample_principal):
         """Test that context is passed to tool execution."""
         result = await mcp_server.call_tool(
             name="query",
@@ -364,7 +365,7 @@ class TestMcpServerAuthentication:
 class TestMcpServerToolRegistration:
     """Tests for tool registration in MCP server."""
 
-    def test_tools_registered_on_init(self, mcp_server, _tool_registry):
+    def test_tools_registered_on_init(self, mcp_server, tool_registry):
         """Test that tools are registered on server init."""
         schemas = mcp_server.get_tools()
         registered_names = {s.get("name") or s.get("function", {}).get("name") for s in schemas}
@@ -450,7 +451,7 @@ class TestMcpServerIntegration:
         assert len(tools) > 0
 
     @pytest.mark.asyncio
-    async def test_tool_schemas_reflect_policy(self, tool_registry, _basic_policy):
+    async def test_tool_schemas_reflect_policy(self, tool_registry, basic_policy):
         """Test that tool schemas reflect policy restrictions."""
         factory = McpServerFactory(
             toolset=tool_registry,
@@ -501,9 +502,18 @@ class TestMcpServerAsyncSupport:
 class TestMcpServerDefaults:
     """Tests for default values and configuration."""
 
-    def test_server_default_enforce_auth_is_false(self, tool_registry):
-        """Test that default enforce_auth is False."""
+    def test_server_default_enforce_auth_is_true_in_production(self, tool_registry):
+        """Test that default enforce_auth is True in production mode (ORMAI_ENV=production or unset)."""
+        # Production mode is the default (ORMAI_ENV=production or not set)
         factory = McpServerFactory(toolset=tool_registry)
+        server = factory.build()
+
+        # In production mode, enforce_auth defaults to True for security
+        assert server.enforce_auth is True
+
+    def test_server_enforce_auth_explicit_false(self, tool_registry):
+        """Test that enforce_auth can be explicitly set to False."""
+        factory = McpServerFactory(toolset=tool_registry, enforce_auth=False)
         server = factory.build()
 
         assert server.enforce_auth is False

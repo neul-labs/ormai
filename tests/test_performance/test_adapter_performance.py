@@ -186,7 +186,7 @@ def populated_perf_db(perf_engine, perf_principal):
 class TestQueryPerformance:
     """Performance tests for query operations."""
 
-    def test_simple_query_performance(self, perf_adapter, _populated_perf_db, perf_principal):
+    def test_simple_query_performance(self, perf_adapter, populated_perf_db, perf_principal):
         """Test performance of simple queries."""
         ctx = RunContext(principal=perf_principal, db=None)
         request = QueryRequest(
@@ -213,7 +213,7 @@ class TestQueryPerformance:
         assert avg_time < 0.01, f"Average query time too high: {avg_time:.4f}s"
         assert p95_time < 0.02, f"P95 query time too high: {p95_time:.4f}s"
 
-    def test_filtered_query_performance(self, perf_adapter, _populated_perf_db, perf_principal):
+    def test_filtered_query_performance(self, perf_adapter, populated_perf_db, perf_principal):
         """Test performance of filtered queries."""
         ctx = RunContext(principal=perf_principal, db=None)
         request = QueryRequest(
@@ -240,7 +240,7 @@ class TestQueryPerformance:
         assert avg_time < 0.01, f"Average filtered query time too high: {avg_time:.4f}s"
         assert p95_time < 0.02, f"P95 filtered query time too high: {p95_time:.4f}s"
 
-    def test_aggregate_query_performance(self, perf_adapter, _populated_perf_db, perf_principal):
+    def test_aggregate_query_performance(self, perf_adapter, populated_perf_db, perf_principal):
         """Test performance of aggregate queries."""
         ctx = RunContext(principal=perf_principal, db=None)
         request = AggregateRequest(
@@ -336,7 +336,7 @@ class TestMutationPerformance:
 class TestSchemaIntrospectionPerformance:
     """Performance tests for schema introspection."""
 
-    def test_schema_caching_performance(self, perf_adapter, _perf_principal):
+    def test_schema_caching_performance(self, perf_adapter, perf_principal):
         """Test that schema is cached and retrieved quickly."""
 
         # First access (introspection)
@@ -431,7 +431,7 @@ class TestAdapterCreationPerformance:
 class TestThroughputTests:
     """Throughput tests for common operations."""
 
-    def test_query_throughput(self, perf_adapter, _populated_perf_db, perf_principal):
+    def test_query_throughput(self, perf_adapter, populated_perf_db, perf_principal):
         """Measure query throughput (queries per second)."""
         ctx = RunContext(principal=perf_principal, db=None)
         request = QueryRequest(
@@ -454,7 +454,7 @@ class TestThroughputTests:
         # Should handle at least 500 queries per second
         assert count >= 500, f"Query throughput too low: {count} qps"
 
-    def test_compilation_throughput(self, perf_adapter, _populated_perf_db, perf_principal):
+    def test_compilation_throughput(self, perf_adapter, populated_perf_db, perf_principal):
         """Measure compilation throughput (compilations per second)."""
         ctx = RunContext(principal=perf_principal, db=None)
         requests = [
