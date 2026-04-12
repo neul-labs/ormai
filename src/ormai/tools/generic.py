@@ -102,8 +102,12 @@ class DescribeSchemaTool(Tool[DescribeSchemaInput, SchemaDescription]):
         fields = {}
         for field_name, field_meta in model_meta.fields.items():
             if model_policy.is_field_allowed(field_name):
+                # Handle both enum values and raw strings for field_type
+                field_type = field_meta.field_type
+                if hasattr(field_type, "value"):
+                    field_type = field_type.value
                 fields[field_name] = {
-                    "type": field_meta.field_type.value,
+                    "type": field_type,
                     "nullable": field_meta.nullable,
                     "primary_key": field_meta.primary_key,
                 }
