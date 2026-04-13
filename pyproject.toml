@@ -44,7 +44,7 @@ dependencies = [
 [project.optional-dependencies]
 sqlalchemy = [
     "sqlalchemy>=2.0,<3.0",
-    "greenlet>=3.0",  # For SQLAlchemy async
+    "greenlet>=3.4.0",  # For SQLAlchemy async
 ]
 tortoise = [
     "tortoise-orm>=0.20",
@@ -87,7 +87,7 @@ dev = [
     "ruff>=0.8",
     "mypy>=1.13",
     "sqlalchemy>=2.0",  # For testing
-    "greenlet>=3.0",  # For SQLAlchemy async
+    "greenlet>=3.4.0",  # For SQLAlchemy async
     "aiosqlite>=0.20",  # For async SQLite testing
     "tortoise-orm>=0.20",  # For Tortoise adapter testing
     "peewee>=3.17",  # For Peewee adapter testing
