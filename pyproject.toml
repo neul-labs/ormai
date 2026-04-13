@@ -80,12 +80,12 @@ packages = ["src/ormai"]
 
 [dependency-groups]
 dev = [
-    "pytest>=8.0",
-    "pytest-asyncio>=0.23",
-    "pytest-cov>=4.0",
-    "hypothesis>=6.0",  # For property-based testing
-    "ruff>=0.8",
-    "mypy>=1.13",
+    "pytest>=9.0.3",
+    "pytest-asyncio>=1.3.0",
+    "pytest-cov>=7.1.0",
+    "hypothesis>=6.151.13",  # For property-based testing
+    "ruff>=0.15.10",
+    "mypy>=1.20.1",
     "sqlalchemy>=2.0",  # For testing
     "greenlet>=3.0",  # For SQLAlchemy async
     "aiosqlite>=0.20",  # For async SQLite testing
