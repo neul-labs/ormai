@@ -6,8 +6,8 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { mkdtempSync, rmSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
-import { JsonlAuditStore, createJsonlAuditStore } from '../../src/store/jsonl.js';
-import { createAuditRecord } from '../../src/store/models.js';
+import { JsonlAuditStore, createJsonlAuditStore } from '@ormai/store';
+import { createAuditRecord } from '@ormai/core';
 
 function makeRecord(overrides: Record<string, unknown> = {}): ReturnType<typeof createAuditRecord> {
   return createAuditRecord({

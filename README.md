@@ -56,7 +56,8 @@ Works with your existing models—no schema changes required:
 - **SQLAlchemy** (sync & async)
 - **Tortoise ORM**
 - **Peewee**
-- **Django** (coming soon)
+- **Django**
+- **SQLModel**
 
 ## Documentation
 
@@ -120,6 +121,8 @@ print([t.name for t in toolset.tools.values()])
 uv add ormai[sqlalchemy]
 uv add ormai[tortoise]
 uv add ormai[peewee]
+uv add ormai[django]
+uv add ormai[sqlmodel]
 
 # Or all adapters
 uv add ormai[all]
@@ -165,7 +168,7 @@ See [policy documentation](https://docs.neullabs.com/ormai/policies) for field r
 └──────────────────────────┬──────────────────────────────────┘
                            │ parameterized queries only
 ┌──────────────────────────▼──────────────────────────────────┐
-│               Your ORM (SQLAlchemy / Tortoise / Peewee)     │
+│          Your ORM (SQLAlchemy / Tortoise / Peewee / Django) │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -186,6 +189,16 @@ We benchmarked against the [Spider dataset](https://yale-lily.github.io/spider)�
 uv add ormai[benchmark]
 uv run python examples/spider_demo.py run --limit 20
 ```
+
+## TypeScript Edition
+
+OrmAI is also available for TypeScript/Node.js with support for Prisma, Drizzle, and TypeORM:
+
+```bash
+npm install @ormai/core @ormai/prisma
+```
+
+See [`ormai-ts/`](./ormai-ts/) for the full TypeScript monorepo with 9 published packages.
 
 ## Examples
 
@@ -209,7 +222,7 @@ See [contributing guide](https://docs.neullabs.com/ormai/contributing) for devel
 
 <div align="center">
 
-**[Documentation](https://docs.neullabs.com/ormai)** · **[GitHub](https://github.com/neul-labs/ormai)** · **[PyPI](https://pypi.org/project/ormai/)**
+**[Documentation](https://docs.neullabs.com/ormai)** · **[GitHub](https://github.com/neul-labs/ormai)** · **[PyPI](https://pypi.org/project/ormai/)** · **[npm](https://www.npmjs.com/package/@ormai/core)**
 
 MIT License · Built by [Neul Labs](https://neullabs.com)
 

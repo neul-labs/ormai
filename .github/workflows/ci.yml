@@ -205,6 +205,10 @@ jobs:
         working-directory: ormai-ts
         run: npm ci
 
+      - name: Build packages
+        working-directory: ormai-ts
+        run: npm run build
+
       - name: Run tests
         working-directory: ormai-ts
         run: npm run test:run
@@ -281,7 +285,7 @@ jobs:
         id: current-version
         working-directory: ormai-ts
         run: |
-          VERSION=$(node -p "require('./package.json').version")
+          VERSION=$(node -p "require('./packages/core/package.json').version")
           echo "current_version=$VERSION" >> $GITHUB_OUTPUT
           echo "Current version: $VERSION"
 

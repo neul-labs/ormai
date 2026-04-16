@@ -1,0 +1,79 @@
+{
+  "name": "@ormai/integrations",
+  "version": "0.1.0",
+  "description": "Agent framework integrations for OrmAI — Vercel AI SDK, LangChain, OpenAI, Anthropic, LlamaIndex, Mastra",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "prepublishOnly": "npm run build",
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "lint": "eslint src --ext .ts",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "keywords": [
+    "orm", "ai", "agents", "langchain", "vercel-ai", "openai",
+    "anthropic", "llamaindex", "mastra", "agent-tools", "llm-tools"
+  ],
+  "author": "Dipankar Sarkar <me@dipankar.name>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/neul-labs/ormai",
+    "directory": "ormai-ts/packages/integrations"
+  },
+  "homepage": "https://github.com/neul-labs/ormai/tree/main/ormai-ts/packages/integrations",
+  "bugs": {
+    "url": "https://github.com/neul-labs/ormai/issues"
+  },
+  "dependencies": {
+    "@ormai/core": "*",
+    "zod-to-json-schema": "^3.23.5"
+  },
+  "peerDependencies": {
+    "@langchain/core": "^0.2.0 || ^0.3.0",
+    "ai": "^3.0.0 || ^4.0.0",
+    "llamaindex": "^0.6.0 || ^0.8.0",
+    "@mastra/core": "^0.1.0",
+    "openai": "^4.0.0",
+    "@anthropic-ai/sdk": "^0.30.0 || ^0.32.0"
+  },
+  "peerDependenciesMeta": {
+    "@langchain/core": { "optional": true },
+    "ai": { "optional": true },
+    "llamaindex": { "optional": true },
+    "@mastra/core": { "optional": true },
+    "openai": { "optional": true },
+    "@anthropic-ai/sdk": { "optional": true }
+  },
+  "devDependencies": {
+    "@types/node": "^25.0.9",
+    "tsup": "^8.3.5",
+    "typescript": "^6.0.2",
+    "vitest": "^4.0.17"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

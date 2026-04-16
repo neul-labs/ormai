@@ -14,7 +14,7 @@ import {
   CostBudgetSchema,
   DEFAULT_COST_WEIGHTS,
   createQueryCostEstimator,
-} from '../../src/policy/costs.js';
+} from '@ormai/core';
 
 describe('createCostBreakdown', () => {
   it('should create breakdown with all costs at zero', () => {

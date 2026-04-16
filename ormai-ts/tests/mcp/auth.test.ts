@@ -11,8 +11,8 @@ import {
   principalFromHeaders,
   combineAuthMiddlewares,
   createDevAuth,
-} from '../../src/mcp/auth.js';
-import type { Principal } from '../../src/core/context.js';
+} from '@ormai/mcp';
+import type { Principal } from '@ormai/core';
 
 function createHmacToken(payload: Record<string, unknown>, secret: string, algorithm: string = 'sha256'): string {
   const header = Buffer.from(JSON.stringify({ alg: `HS${algorithm.replace('sha', '')}`, typ: 'JWT' })).toString('base64url');

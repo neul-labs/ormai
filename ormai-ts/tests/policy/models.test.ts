@@ -17,7 +17,7 @@ import {
   DEFAULT_BUDGET,
   DEFAULT_ROW_POLICY,
   DEFAULT_WRITE_POLICY,
-} from '../../src/policy/models.js';
+} from '@ormai/core';
 
 describe('FieldActionSchema', () => {
   it('should accept valid actions', () => {

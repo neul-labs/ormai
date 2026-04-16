@@ -4,14 +4,17 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { z } from 'zod';
-import { withAudit, createAuditedToolRegistry } from '../../src/store/middleware.js';
-import type { AuditMiddlewareOptions } from '../../src/store/middleware.js';
-import type { AuditStore } from '../../src/store/base.js';
-import type { AuditRecord } from '../../src/store/models.js';
-import type { Tool } from '../../src/tools/base.js';
-import { OrmAIError, ErrorCodes } from '../../src/core/errors.js';
-import { createPrincipal } from '../../src/core/context.js';
-import type { RunContext } from '../../src/core/context.js';
+import { withAudit, createAuditedToolRegistry } from '@ormai/store';
+import type { AuditMiddlewareOptions } from '@ormai/store';
+import {
+  type AuditStore,
+  type AuditRecord,
+  type Tool,
+  OrmAIError,
+  ErrorCodes,
+  createPrincipal,
+  type RunContext,
+} from '@ormai/core';
 
 function makeContext(): RunContext {
   return {

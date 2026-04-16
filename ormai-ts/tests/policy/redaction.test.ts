@@ -12,8 +12,8 @@ import {
   maskCard,
   hashSha256,
   maskValue,
-} from '../../src/policy/redaction.js';
-import { ModelPolicySchema } from '../../src/policy/models.js';
+  ModelPolicySchema,
+} from '@ormai/core';
 
 describe('maskEmail', () => {
   it('should mask email showing first char and domain', () => {

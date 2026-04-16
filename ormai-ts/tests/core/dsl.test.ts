@@ -19,7 +19,7 @@ import {
   filter,
   orderBy,
   include,
-} from '../../src/core/dsl.js';
+} from '@ormai/core';
 
 describe('FilterOpSchema', () => {
   it('should accept valid filter operators', () => {

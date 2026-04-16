@@ -3,9 +3,12 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { ScopeInjector, createScopeInjector } from '../../src/policy/scoping.js';
-import { RowPolicySchema } from '../../src/policy/models.js';
-import { createContext } from '../../src/core/context.js';
+import {
+  ScopeInjector,
+  createScopeInjector,
+  RowPolicySchema,
+  createContext,
+} from '@ormai/core';
 
 function createTestContext(tenantId = 'tenant-123', userId = 'user-456') {
   return createContext({

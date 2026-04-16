@@ -11,9 +11,11 @@ import {
   ToolRegistry,
   createToolRegistry,
   type ToolResult,
-} from '../../src/tools/base.js';
-import { createContext, type RunContext } from '../../src/core/context.js';
-import { OrmAIError, ErrorCodes } from '../../src/core/errors.js';
+  createContext,
+  type RunContext,
+  OrmAIError,
+  ErrorCodes,
+} from '@ormai/core';
 
 function createTestContext(): RunContext {
   return createContext({

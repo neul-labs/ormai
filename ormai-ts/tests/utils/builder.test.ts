@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { PolicyBuilder, createPolicyBuilder } from '../../src/utils/builder.js';
+import { PolicyBuilder, createPolicyBuilder } from '@ormai/utils';
 
 describe('PolicyBuilder', () => {
   describe('constructor', () => {

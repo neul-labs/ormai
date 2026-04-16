@@ -9,9 +9,9 @@ import {
   createComplexityScorer,
   createBudgetEnforcer,
   DEFAULT_COMPLEXITY_WEIGHTS,
-} from '../../src/policy/budgets.js';
-import { BudgetSchema } from '../../src/policy/models.js';
-import { QueryBudgetExceededError } from '../../src/core/errors.js';
+  BudgetSchema,
+  QueryBudgetExceededError,
+} from '@ormai/core';
 
 describe('DEFAULT_COMPLEXITY_WEIGHTS', () => {
   it('should have expected default values', () => {

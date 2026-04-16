@@ -1,0 +1,66 @@
+{
+  "name": "@ormai/core",
+  "version": "0.1.0",
+  "description": "Core types, policy engine, adapter interfaces, and schemas for OrmAI",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "prepublishOnly": "npm run build",
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "lint": "eslint src --ext .ts",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "keywords": [
+    "orm", "ai", "agents", "agent-tools", "capability-runtime",
+    "database", "policy", "audit", "security", "tenant-isolation",
+    "multi-tenant", "data-governance", "privacy", "access-control",
+    "zod", "llm-tools"
+  ],
+  "author": "Dipankar Sarkar <me@dipankar.name>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/neul-labs/ormai",
+    "directory": "ormai-ts/packages/core"
+  },
+  "homepage": "https://github.com/neul-labs/ormai/tree/main/ormai-ts/packages/core",
+  "bugs": {
+    "url": "https://github.com/neul-labs/ormai/issues"
+  },
+  "dependencies": {
+    "zod": "^4.3.6",
+    "zod-to-json-schema": "^3.23.5"
+  },
+  "devDependencies": {
+    "@types/node": "^25.0.9",
+    "tsup": "^8.3.5",
+    "typescript": "^6.0.2",
+    "vitest": "^4.0.17"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

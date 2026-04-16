@@ -3,16 +3,18 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { PolicyEngine, PolicyDecision } from '../../src/policy/engine.js';
-import { PolicySchema, type Policy } from '../../src/policy/models.js';
-import type { SchemaMetadata } from '../../src/core/types.js';
-import { createContext } from '../../src/core/context.js';
 import {
+  PolicyEngine,
+  PolicyDecision,
+  PolicySchema,
+  type Policy,
+  type SchemaMetadata,
+  createContext,
   ModelNotAllowedError,
   FieldNotAllowedError,
   TenantScopeRequiredError,
   WriteDisabledError,
-} from '../../src/core/errors.js';
+} from '@ormai/core';
 
 // Test fixtures
 const testSchema: SchemaMetadata = {

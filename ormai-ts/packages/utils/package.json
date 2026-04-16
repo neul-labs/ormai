@@ -1,0 +1,64 @@
+{
+  "name": "@ormai/utils",
+  "version": "0.1.0",
+  "description": "Utilities for OrmAI — PolicyBuilder, defaults profiles, toolset factory, testing helpers",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "prepublishOnly": "npm run build",
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "lint": "eslint src --ext .ts",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "keywords": [
+    "orm", "ai", "agents", "policy-builder", "testing",
+    "database", "policy", "audit", "llm-tools"
+  ],
+  "author": "Dipankar Sarkar <me@dipankar.name>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/neul-labs/ormai",
+    "directory": "ormai-ts/packages/utils"
+  },
+  "homepage": "https://github.com/neul-labs/ormai/tree/main/ormai-ts/packages/utils",
+  "bugs": {
+    "url": "https://github.com/neul-labs/ormai/issues"
+  },
+  "dependencies": {
+    "@ormai/core": "*",
+    "@ormai/tools": "*",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/node": "^25.0.9",
+    "tsup": "^8.3.5",
+    "typescript": "^6.0.2",
+    "vitest": "^4.0.17"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

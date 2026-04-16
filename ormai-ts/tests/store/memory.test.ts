@@ -3,8 +3,8 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { InMemoryAuditStore } from '../../src/store/memory.js';
-import { createAuditRecord } from '../../src/store/models.js';
+import { InMemoryAuditStore } from '@ormai/store';
+import { createAuditRecord } from '@ormai/core';
 
 function makeRecord(overrides: Record<string, unknown> = {}): ReturnType<typeof createAuditRecord> {
   return createAuditRecord({

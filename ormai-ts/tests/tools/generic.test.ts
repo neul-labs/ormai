@@ -13,11 +13,22 @@ import {
   DeleteTool,
   BulkUpdateTool,
   createGenericTools,
-} from '../../src/tools/generic.js';
-import { PolicySchema, type Policy } from '../../src/policy/models.js';
-import type { SchemaMetadata } from '../../src/core/types.js';
-import { createContext, type RunContext } from '../../src/core/context.js';
-import type { OrmAdapter, CompiledQuery, CompiledGet, CompiledAggregate, CompiledCreate, CompiledUpdate, CompiledDelete, CompiledBulkUpdate } from '../../src/adapters/base.js';
+} from '@ormai/tools';
+import {
+  PolicySchema,
+  type Policy,
+  type SchemaMetadata,
+  type RunContext,
+  createContext,
+  type OrmAdapter,
+  type CompiledQuery,
+  type CompiledGet,
+  type CompiledAggregate,
+  type CompiledCreate,
+  type CompiledUpdate,
+  type CompiledDelete,
+  type CompiledBulkUpdate,
+} from '@ormai/core';
 
 // Test fixtures
 const testSchema: SchemaMetadata = {

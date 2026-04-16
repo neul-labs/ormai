@@ -17,7 +17,7 @@ import {
   isOrmAIError,
   wrapError,
   ErrorCodes,
-} from '../../src/core/errors.js';
+} from '@ormai/core';
 
 describe('OrmAIError', () => {
   it('should create error with code and message', () => {

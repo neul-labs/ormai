@@ -11,7 +11,7 @@ import {
   isRunContext,
   type Principal,
   type RunContext,
-} from '../../src/core/context.js';
+} from '@ormai/core';
 
 describe('createPrincipal', () => {
   it('should create a principal with required fields', () => {

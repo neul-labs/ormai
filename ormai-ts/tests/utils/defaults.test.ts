@@ -11,7 +11,7 @@ import {
   getDefaultsProfile,
   budgetFromProfile,
   writePolicyFromProfile,
-} from '../../src/utils/defaults.js';
+} from '@ormai/utils';
 
 describe('DefaultsProfileSchema', () => {
   it('should parse prod mode', () => {

@@ -1,21 +1,44 @@
-# OrmAI TypeScript Edition
+# OrmAI TypeScript
 
-A policy-governed, auditable database capability layer for TypeScript/Node.js applications. OrmAI-TS enables AI agents to safely interact with databases through structured tools while enforcing security policies, tenant isolation, and comprehensive audit logging.
+[![npm version](https://img.shields.io/npm/v/@ormai/core)](https://www.npmjs.com/package/@ormai/core) [![MIT License](https://img.shields.io/npm/l/@ormai/core)](https://github.com/neul-labs/ormai/blob/main/ormai-ts/packages/core/LICENSE) [![CI](https://img.shields.io/github/actions/workflow/status/neul-labs/ormai/test.yml?label=tests)](https://github.com/neul-labs/ormai/actions)
 
-## Features
+**Give your AI agents database access without the risk.**
 
-- **Policy-Governed Access** - Field-level allowlists, tenant scoping, and budget controls
-- **Multi-ORM Support** - Prisma, Drizzle, and TypeORM adapters
-- **Full CRUD Operations** - Query, get, aggregate, create, update, delete, bulk update
-- **Agent Framework Integrations** - Vercel AI SDK, LangChain.js, LlamaIndex, Mastra, OpenAI, Anthropic
-- **MCP Server** - Model Context Protocol server with authentication
-- **Audit Logging** - Comprehensive logging with before/after snapshots
-- **Type Safety** - Full TypeScript support with Zod validation
+OrmAI wraps your existing ORM models in a policy-enforced runtime. Your agents get typed tools for querying and writing data — while you keep control over what they can see and do.
+
+## Packages
+
+This is a monorepo containing the following packages:
+
+| Package | Version | Description |
+|---------|---------|-------------|
+| [`@ormai/core`](./packages/core/) | [![npm](https://img.shields.io/npm/v/@ormai/core)](https://www.npmjs.com/package/@ormai/core) | Core types, policy engine, adapter/tool/store interfaces, DSL schemas |
+| [`@ormai/prisma`](./packages/prisma/) | [![npm](https://img.shields.io/npm/v/@ormai/prisma)](https://www.npmjs.com/package/@ormai/prisma) | Prisma ORM adapter |
+| [`@ormai/drizzle`](./packages/drizzle/) | [![npm](https://img.shields.io/npm/v/@ormai/drizzle)](https://www.npmjs.com/package/@ormai/drizzle) | Drizzle ORM adapter |
+| [`@ormai/typeorm`](./packages/typeorm/) | [![npm](https://img.shields.io/npm/v/@ormai/typeorm)](https://www.npmjs.com/package/@ormai/typeorm) | TypeORM adapter |
+| [`@ormai/tools`](./packages/tools/) | [![npm](https://img.shields.io/npm/v/@ormai/tools)](https://www.npmjs.com/package/@ormai/tools) | Generic database tools (query, get, aggregate, create, update, delete) |
+| [`@ormai/store`](./packages/store/) | [![npm](https://img.shields.io/npm/v/@ormai/store)](https://www.npmjs.com/package/@ormai/store) | Audit logging stores (in-memory, JSONL) and middleware |
+| [`@ormai/mcp`](./packages/mcp/) | [![npm](https://img.shields.io/npm/v/@ormai/mcp)](https://www.npmjs.com/package/@ormai/mcp) | Model Context Protocol server with auth |
+| [`@ormai/integrations`](./packages/integrations/) | [![npm](https://img.shields.io/npm/v/@ormai/integrations)](https://www.npmjs.com/package/@ormai/integrations) | Agent framework integrations (Vercel AI, LangChain, OpenAI, Anthropic, LlamaIndex, Mastra) |
+| [`@ormai/utils`](./packages/utils/) | [![npm](https://img.shields.io/npm/v/@ormai/utils)](https://www.npmjs.com/package/@ormai/utils) | PolicyBuilder, defaults profiles, quickSetup, testing helpers |
 
 ## Installation
 
 ```bash
+# Core (required)
 npm install @ormai/core
+
+# Choose your ORM adapter
+npm install @ormai/prisma        # + npm install @prisma/client
+npm install @ormai/drizzle       # + npm install drizzle-orm
+npm install @ormai/typeorm       # + npm install typeorm
+
+# Optional packages
+npm install @ormai/tools          # Generic database tools
+npm install @ormai/store          # Audit logging
+npm install @ormai/mcp            # MCP server (requires @modelcontextprotocol/sdk)
+npm install @ormai/integrations   # Agent framework adapters
+npm install @ormai/utils          # PolicyBuilder and testing helpers
 ```
 
 ## Quick Start
@@ -24,35 +47,25 @@ npm install @ormai/core
 
 ```typescript
 import { PrismaClient } from '@prisma/client';
-import {
-  PrismaAdapter,
-  PolicyBuilder,
-  createToolset,
-  createContext,
-} from '@ormai/core';
+import { PrismaAdapter } from '@ormai/prisma';
+import { PolicyBuilder, createContext } from '@ormai/core';
+import { createGenericTools } from '@ormai/tools';
 
 const prisma = new PrismaClient();
-
-// Create adapter
 const adapter = new PrismaAdapter({ prisma });
 
-// Introspect schema
 const schema = await adapter.introspect();
 
-// Build policy
 const policy = new PolicyBuilder('prod')
   .registerModels(['Customer', 'Order', 'Product'])
   .tenantScope('tenantId')
   .denyFields('*password*')
   .maskFields('*email*')
-  .allowRelations('Order', ['customer', 'items'])
   .enableWrites(['Order'])
   .build();
 
-// Create toolset
-const registry = createToolset({ adapter, policy, schema });
+const tools = createGenericTools({ adapter, policy, schema });
 
-// Create execution context
 const ctx = createContext({
   tenantId: 'tenant-123',
   userId: 'user-456',
@@ -61,8 +74,7 @@ const ctx = createContext({
 });
 
 // Use tools
-const queryTool = registry.get('db.query');
-const result = await queryTool.execute({
+const result = await tools[0].execute({
   model: 'Order',
   where: [{ field: 'status', op: 'eq', value: 'pending' }],
   take: 10,
@@ -72,39 +84,23 @@ const result = await queryTool.execute({
 ### With Vercel AI SDK
 
 ```typescript
-import { toVercelAITools } from '@ormai/core';
+import { toVercelAITools } from '@ormai/integrations';
 import { generateText } from 'ai';
 import { openai } from '@ai-sdk/openai';
 
-const tools = await toVercelAITools(registry.list(), ctx);
+const agentTools = await toVercelAITools(registry.list(), ctx);
 
 const result = await generateText({
   model: openai('gpt-4o'),
-  tools,
+  tools: agentTools,
   prompt: 'Find all pending orders for the current tenant',
-});
-```
-
-### With LangChain.js
-
-```typescript
-import { toLangChainTools } from '@ormai/core';
-import { ChatOpenAI } from '@langchain/openai';
-import { AgentExecutor, createToolCallingAgent } from 'langchain/agents';
-
-const tools = await toLangChainTools(registry.list(), ctx);
-
-const agent = createToolCallingAgent({
-  llm: new ChatOpenAI({ model: 'gpt-4o' }),
-  tools,
-  prompt: hubPrompt,
 });
 ```
 
 ### MCP Server
 
 ```typescript
-import { createMcpServer, createJwtAuth, createContextFactory } from '@ormai/core';
+import { createMcpServer, createJwtAuth, createContextFactory } from '@ormai/mcp';
 
 const server = createMcpServer({
   name: 'my-db-server',
@@ -119,22 +115,7 @@ const server = createMcpServer({
   }),
 });
 
-// Start stdio server for Claude Desktop
 await server.runStdio();
-```
-
-## Module Structure
-
-```
-ormai-ts/
-├── core/           # Context, DSL schemas, errors, types
-├── policy/         # Policy engine, scoping, redaction, budgets
-├── adapters/       # Prisma, Drizzle, TypeORM adapters
-├── tools/          # Generic database tools
-├── store/          # Audit logging (in-memory, JSONL)
-├── mcp/            # MCP server with auth middleware
-├── integrations/   # Agent framework adapters
-└── utils/          # PolicyBuilder, factories, testing helpers
 ```
 
 ## Available Tools
@@ -153,81 +134,61 @@ ormai-ts/
 ## Policy Configuration
 
 ```typescript
+import { PolicyBuilder } from '@ormai/core';
+
 const policy = new PolicyBuilder('prod')
-  // Register models
   .registerModels(['Customer', 'Order', 'Product'])
-
-  // Tenant isolation
   .tenantScope('tenantId')
-
-  // Field security
   .denyFields('*password*')
-  .denyFields('*secret*')
   .maskFields('*email*')
-
-  // Relations
   .allowRelations('Order', ['customer', 'items'])
-
-  // Write permissions
   .enableWrites(['Order'], {
     allowCreate: true,
     allowUpdate: true,
     allowDelete: false,
     maxAffectedRows: 10,
   })
-
-  // Budget controls
   .defaultBudgetConfig({
     maxRows: 100,
     maxIncludesDepth: 2,
     statementTimeoutMs: 5000,
   })
-
   .build();
 ```
 
 ## Agent Framework Integrations
 
-| Framework | Function | Description |
-|-----------|----------|-------------|
-| Vercel AI SDK | `toVercelAITools()` | Returns tools for `generateText`/`streamText` |
-| LangChain.js | `toLangChainTools()` | Returns `DynamicStructuredTool[]` |
-| LlamaIndex.ts | `toLlamaIndexTools()` | Returns `FunctionTool[]` |
-| Mastra | `toMastraTools()` | Returns Mastra-compatible tools |
-| OpenAI SDK | `toOpenAITools()` | Returns OpenAI function definitions |
-| Anthropic SDK | `toAnthropicTools()` | Returns Claude tool definitions |
-| Generic | `toJsonSchemas()` | Returns JSON Schema definitions |
+| Framework | Package | Function |
+|-----------|---------|----------|
+| Vercel AI SDK | `@ormai/integrations` | `toVercelAITools()` |
+| LangChain.js | `@ormai/integrations` | `toLangChainTools()` |
+| OpenAI SDK | `@ormai/integrations` | `toOpenAITools()` |
+| Anthropic SDK | `@ormai/integrations` | `toAnthropicTools()` |
+| LlamaIndex.ts | `@ormai/integrations` | `toLlamaIndexTools()` |
+| Mastra | `@ormai/integrations` | `toMastraTools()` |
 
 ## Audit Logging
 
 ```typescript
-import { JsonlAuditStore, withAudit } from '@ormai/core';
+import { JsonlAuditStore, withAudit } from '@ormai/store';
 
-// Create audit store
 const auditStore = new JsonlAuditStore('./audit.jsonl');
 
-// Wrap tools with audit logging
 const auditedTool = withAudit(tool, auditStore, {
   includeInputs: true,
   includeOutputs: true,
   redactInputFields: ['password'],
 });
 
-// Execute with automatic audit logging
 const result = await auditedTool.execute(input, ctx);
 ```
 
 ## Error Handling
 
-OrmAI-TS provides structured errors with retry hints:
-
 ```typescript
 import {
   ModelNotAllowedError,
-  FieldNotAllowedError,
-  TenantScopeRequiredError,
   QueryBudgetExceededError,
-  WriteDisabledError,
 } from '@ormai/core';
 
 try {
@@ -242,33 +203,24 @@ try {
 }
 ```
 
-## API Reference
+## Development
 
-### Core Exports
+```bash
+# Install dependencies
+npm install
 
-- `createContext()` - Create execution context
-- `createPrincipal()` - Create principal (identity)
-- `PolicyEngine` - Validate requests against policies
-- `PolicyBuilder` - Fluent policy construction
+# Build all packages
+npm run build
 
-### Adapters
+# Run tests
+npm test
 
-- `PrismaAdapter` - Prisma ORM adapter
-- `DrizzleAdapter` - Drizzle ORM adapter
-- `TypeORMAdapter` - TypeORM adapter
+# Type check
+npm run typecheck
 
-### Tools
-
-- `ToolRegistry` - Register and manage tools
-- `createGenericTools()` - Create all 8 database tools
-- `BaseTool` - Base class for custom tools
-
-### MCP
-
-- `McpServer` - MCP server implementation
-- `createMcpServer()` - Create configured MCP server
-- `createJwtAuth()` - JWT authentication middleware
-- `createApiKeyAuth()` - API key authentication
+# Lint
+npm run lint
+```
 
 ## License
 

@@ -3,12 +3,16 @@
  */
 
 import { describe, it, expect, vi } from 'vitest';
-import { PolicySchema } from '../../src/policy/models.js';
-import type { SchemaMetadata } from '../../src/core/types.js';
-import type { RunContext } from '../../src/core/context.js';
-import { createContext } from '../../src/core/context.js';
-import { createCompiledQuery, createCompiledMutation, BaseOrmAdapter } from '../../src/adapters/base.js';
-import { AdapterNotImplementedError } from '../../src/core/errors.js';
+import {
+  PolicySchema,
+  type SchemaMetadata,
+  type RunContext,
+  createContext,
+  AdapterNotImplementedError,
+  createCompiledQuery,
+  createCompiledMutation,
+  BaseOrmAdapter,
+} from '@ormai/core';
 
 // Test schema
 const testSchema: SchemaMetadata = {

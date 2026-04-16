@@ -9,7 +9,7 @@ import {
   isSuccess,
   toLogDict,
   createAuditRecord,
-} from '../../src/store/models.js';
+} from '@ormai/core';
 
 describe('ErrorInfoSchema', () => {
   it('should parse a valid ErrorInfo', () => {

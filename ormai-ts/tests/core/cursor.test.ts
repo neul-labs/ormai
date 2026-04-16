@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { CursorEncoder, buildKeysetCondition } from '../../src/core/cursor.js';
+import { CursorEncoder, buildKeysetCondition } from '@ormai/core';
 
 describe('CursorEncoder', () => {
   describe('offset cursors', () => {
