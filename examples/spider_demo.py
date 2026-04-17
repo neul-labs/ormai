@@ -2,9 +2,8 @@
 """
 OrmAI Spider2 Benchmark Demo
 
-A compelling demo comparing OrmAI's tool-based approach vs raw text-to-SQL
-using the Spider2-Lite benchmark dataset. Features a split-screen rich CLI with
-concurrent execution across GPT-4 and Claude.
+Compares OrmAI's tool-based approach vs raw text-to-SQL using the Spider2-Lite
+benchmark dataset with concurrent execution across GPT and Claude.
 
 Usage:
     # Download Spider2-Lite dataset (first-time setup)
@@ -30,16 +29,12 @@ import re
 import sqlite3
 import subprocess
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
 from rich.console import Console
-from rich.layout import Layout
-from rich.live import Live
-from rich.panel import Panel
 from rich.table import Table
-from rich.text import Text
 
 # ============================================================================
 # Constants
@@ -128,20 +123,6 @@ class ApproachResult:
     was_unsafe: bool = False  # Text-to-SQL unsafe query
     generated_sql: str | None = None
     tool_call: dict[str, Any] | None = None
-
-
-@dataclass
-class BenchmarkState:
-    """Current state of the benchmark run."""
-
-    current_question: str = ""
-    current_db: str = ""
-    current_ormai_action: str = ""
-    current_sql: str = ""
-    ormai_gpt4: Metrics = field(default_factory=Metrics)
-    ormai_claude: Metrics = field(default_factory=Metrics)
-    sql_gpt4: Metrics = field(default_factory=Metrics)
-    sql_claude: Metrics = field(default_factory=Metrics)
 
 
 # ============================================================================
@@ -860,137 +841,35 @@ class RawSQLApproach:
 
 
 # ============================================================================
-# Rich UI
+# Summary
 # ============================================================================
 
 
-class DemoUI:
-    """Rich CLI interface for the benchmark demo."""
+def print_summary(metrics: dict[tuple[str, str], Metrics]) -> None:
+    """Print the final benchmark results summary table."""
+    table = Table(title="Benchmark Results Summary")
 
-    def __init__(self):
-        self.console = Console()
-        self.state = BenchmarkState()
+    table.add_column("Approach", style="bold")
+    table.add_column("LLM")
+    table.add_column("Correct", style="green")
+    table.add_column("Errors", style="red")
+    table.add_column("Blocked/Unsafe", style="yellow")
+    table.add_column("Accuracy")
 
-    def create_layout(self) -> Layout:
-        """Create the split-screen layout."""
-        layout = Layout()
-
-        layout.split_column(
-            Layout(name="header", size=3),
-            Layout(name="main", ratio=1),
-            Layout(name="footer", size=6),
+    for (approach, llm_name), m in sorted(metrics.items()):
+        is_ormai = approach == "ormai"
+        blocked = str(m.policy_blocked) if is_ormai else str(m.unsafe_detected)
+        display_approach = "OrmAI" if is_ormai else "Text-to-SQL"
+        table.add_row(
+            display_approach,
+            llm_name,
+            str(m.correct),
+            str(m.execution_errors),
+            blocked,
+            f"{m.accuracy:.1f}%",
         )
 
-        layout["main"].split_row(
-            Layout(name="ormai", ratio=1),
-            Layout(name="text_to_sql", ratio=1),
-        )
-
-        return layout
-
-    def render_header(self, total: int) -> Panel:
-        """Render the header panel."""
-        return Panel(
-            Text(
-                f"  Spider2-Lite Benchmark Demo  |  Questions: {total}  |  "
-                f"LLMs: GPT + Claude",
-                justify="center",
-            ),
-            style="bold white on blue",
-        )
-
-    def render_metrics_panel(
-        self, title: str, metrics_gpt4: Metrics, metrics_claude: Metrics, is_ormai: bool
-    ) -> Panel:
-        """Render a metrics panel for one approach."""
-        table = Table(show_header=False, box=None, padding=(0, 1))
-        table.add_column("LLM", width=8)
-        table.add_column("Progress", width=20)
-        table.add_column("Stats", width=30)
-
-        for name, m in [("gpt-5-nano", metrics_gpt4), ("claude", metrics_claude)]:
-            # Progress bar representation
-            pct = m.progress
-            filled = int(pct / 5)
-            bar = "[green]" + "━" * filled + "[/green][dim]" + "━" * (20 - filled) + "[/dim]"
-
-            # Stats
-            if is_ormai:
-                stats = f"[green]✓ {m.correct}[/green]  [red]✗ {m.execution_errors}[/red]  [cyan]🛡️ {m.policy_blocked}[/cyan]"
-            else:
-                stats = f"[green]✓ {m.correct}[/green]  [red]✗ {m.execution_errors}[/red]  [yellow]⚠️ {m.unsafe_detected}[/yellow]"
-
-            table.add_row(name, f"{bar} {pct:.0f}%", stats)
-            table.add_row("", "", "")
-
-        style = "green" if is_ormai else "yellow"
-        return Panel(table, title=f"[bold]{title}[/bold]", border_style=style)
-
-    def render_footer(self) -> Panel:
-        """Render the current question panel."""
-        content = Table(show_header=False, box=None)
-        content.add_column("Label", width=10)
-        content.add_column("Value")
-
-        content.add_row("[bold]DB:[/bold]", self.state.current_db)
-        content.add_row("[bold]Q:[/bold]", self.state.current_question[:70] + "..." if len(self.state.current_question) > 70 else self.state.current_question)
-        content.add_row("[bold]OrmAI:[/bold]", self.state.current_ormai_action[:60] if self.state.current_ormai_action else "")
-        content.add_row("[bold]SQL:[/bold]", self.state.current_sql[:60] if self.state.current_sql else "")
-
-        return Panel(content, title="[bold]Current Question[/bold]")
-
-    def render(self, total: int) -> Layout:
-        """Render the full layout."""
-        layout = self.create_layout()
-
-        layout["header"].update(self.render_header(total))
-        layout["ormai"].update(
-            self.render_metrics_panel(
-                "OrmAI (Safe)",
-                self.state.ormai_gpt4,
-                self.state.ormai_claude,
-                is_ormai=True,
-            )
-        )
-        layout["text_to_sql"].update(
-            self.render_metrics_panel(
-                "Text-to-SQL",
-                self.state.sql_gpt4,
-                self.state.sql_claude,
-                is_ormai=False,
-            )
-        )
-        layout["footer"].update(self.render_footer())
-
-        return layout
-
-    def render_summary(self) -> Table:
-        """Render the final summary table."""
-        table = Table(title="Benchmark Results Summary")
-
-        table.add_column("Approach", style="bold")
-        table.add_column("LLM")
-        table.add_column("Correct", style="green")
-        table.add_column("Errors", style="red")
-        table.add_column("Blocked/Unsafe", style="yellow")
-        table.add_column("Accuracy")
-
-        for approach, is_ormai, m_gpt4, m_claude in [
-            ("OrmAI", True, self.state.ormai_gpt4, self.state.ormai_claude),
-            ("Text-to-SQL", False, self.state.sql_gpt4, self.state.sql_claude),
-        ]:
-            for name, m in [("gpt-5-nano", m_gpt4), ("claude", m_claude)]:
-                blocked = str(m.policy_blocked) if is_ormai else str(m.unsafe_detected)
-                table.add_row(
-                    approach,
-                    name,
-                    str(m.correct),
-                    str(m.execution_errors),
-                    blocked,
-                    f"{m.accuracy:.1f}%",
-                )
-
-        return table
+    console.print(table)
 
 
 # ============================================================================
@@ -1005,33 +884,35 @@ class BenchmarkRunner:
         self,
         dataset: Spider2Dataset,
         llms: list[LLMProvider],
-        ui: DemoUI,
         verbose: bool = False,
     ):
         self.dataset = dataset
         self.llms = llms
-        self.ui = ui
         self.verbose = verbose
+        self.metrics: dict[tuple[str, str], Metrics] = {}
 
     async def run(
         self,
         examples: list[SpiderExample],
         concurrency: int = 4,
     ) -> None:
-        """Run the benchmark with live UI updates."""
-        # Initialize metrics
-        for llm in self.llms:
-            for metrics in [
-                self.ui.state.ormai_gpt4 if llm.name == "gpt-5-nano" else self.ui.state.ormai_claude,
-                self.ui.state.sql_gpt4 if llm.name == "gpt-5-nano" else self.ui.state.sql_claude,
-            ]:
-                metrics.total = len(examples)
-
+        """Run the benchmark with pretty progress logging."""
         # Create approaches for each LLM
         approaches = []
         for llm in self.llms:
             approaches.append(("ormai", llm, OrmAIApproach(llm, self.dataset)))
             approaches.append(("sql", llm, RawSQLApproach(llm, self.dataset)))
+
+        # Initialize metrics
+        for approach_name, llm, _ in approaches:
+            m = Metrics()
+            m.total = len(examples)
+            self.metrics[(approach_name, llm.name)] = m
+
+        # Track progress counters per approach/llm
+        counters: dict[tuple[str, str], int] = {
+            (a, llm.name): 0 for a, llm, _ in approaches
+        }
 
         # Semaphore for rate limiting
         semaphore = asyncio.Semaphore(concurrency)
@@ -1045,44 +926,43 @@ class BenchmarkRunner:
             async with semaphore:
                 result = await approach.execute(example)
 
-                # Update metrics
-                if approach_name == "ormai":
-                    metrics = (
-                        self.ui.state.ormai_gpt4
-                        if llm.name == "gpt-5-nano"
-                        else self.ui.state.ormai_claude
-                    )
-                else:
-                    metrics = (
-                        self.ui.state.sql_gpt4
-                        if llm.name == "gpt-5-nano"
-                        else self.ui.state.sql_claude
-                    )
+                key = (approach_name, llm.name)
+                metrics = self.metrics[key]
+                counters[key] += 1
+                n = counters[key]
 
                 if result.success:
-                    # Simple correctness check (results not empty)
                     if result.result:
                         metrics.correct += 1
+                        console.print(
+                            f"  [green]\\[{approach_name}/{llm.name}] "
+                            f"{n}/{metrics.total}  {example.instance_id}: correct[/green]"
+                        )
                     else:
                         metrics.incorrect += 1
+                        console.print(
+                            f"  [dim]\\[{approach_name}/{llm.name}] "
+                            f"{n}/{metrics.total}  {example.instance_id}: empty result[/dim]"
+                        )
                 elif result.was_blocked:
                     metrics.policy_blocked += 1
+                    console.print(
+                        f"  [cyan]\\[{approach_name}/{llm.name}] "
+                        f"{n}/{metrics.total}  {example.instance_id}: policy blocked[/cyan]"
+                    )
                 elif result.was_unsafe:
                     metrics.unsafe_detected += 1
+                    console.print(
+                        f"  [yellow]\\[{approach_name}/{llm.name}] "
+                        f"{n}/{metrics.total}  {example.instance_id}: unsafe query[/yellow]"
+                    )
                 else:
                     metrics.execution_errors += 1
-                    if self.verbose:
-                        console.print(f"[red][{approach_name}/{llm.name}] {example.instance_id}: {result.error}[/red]")
-
-                # Update UI state for latest question
-                self.ui.state.current_question = example.question
-                self.ui.state.current_db = example.db_id
-                if result.tool_call:
-                    self.ui.state.current_ormai_action = (
-                        f"{result.tool_call['name']}({json.dumps(result.tool_call['arguments'])})"
+                    error_msg = f": {result.error}" if self.verbose else ""
+                    console.print(
+                        f"  [red]\\[{approach_name}/{llm.name}] "
+                        f"{n}/{metrics.total}  {example.instance_id}: error{error_msg}[/red]"
                     )
-                if result.generated_sql:
-                    self.ui.state.current_sql = result.generated_sql
 
         # Create all tasks
         tasks = []
@@ -1091,19 +971,18 @@ class BenchmarkRunner:
                 task = process_example(example, approach_name, llm, approach)
                 tasks.append(task)
 
-        # Process all tasks concurrently
+        # Run
         total = len(tasks)
-        print(f"\n{'='*60}")
-        print(f"Running {total} tasks ({len(examples)} examples x {len(approaches)} approaches)...")
-        print(f"{'='*60}\n")
+        console.print(
+            f"\n[bold]Running {total} tasks "
+            f"({len(examples)} examples x {len(approaches)} approaches)...[/bold]\n"
+        )
 
         await asyncio.gather(*tasks, return_exceptions=True)
 
-        # Show summary table
-        print(f"\n{'='*60}")
-        print("BENCHMARK RESULTS")
-        print(f"{'='*60}")
-        console.print(self.ui.render_summary())
+        # Show summary
+        console.print()
+        print_summary(self.metrics)
 
 
 # ============================================================================
@@ -1166,8 +1045,7 @@ async def cmd_run(args: argparse.Namespace) -> None:
         return
 
     # Run benchmark
-    ui = DemoUI()
-    runner = BenchmarkRunner(dataset, llms, ui, verbose=args.verbose)
+    runner = BenchmarkRunner(dataset, llms, verbose=args.verbose)
 
     try:
         await runner.run(examples, concurrency=args.concurrency)
