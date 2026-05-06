@@ -31,7 +31,7 @@ export function toLlamaIndexTools<T extends Tool<unknown, unknown>[]>(
   return tools.map((tool) => ({
     name: tool.name,
     description: tool.description,
-    parameters: zodToJsonSchema(tool.inputSchema),
+    parameters: zodToJsonSchema(tool.inputSchema as any),
     fn: async (input: Record<string, unknown>) => {
       const result = await tool.execute(input, ctx);
       return JSON.stringify(result);
@@ -69,7 +69,7 @@ export async function createLlamaIndexTools<T extends Tool<unknown, unknown>[]>(
         {
           name: tool.name,
           description: tool.description,
-          parameters: zodToJsonSchema(tool.inputSchema),
+          parameters: zodToJsonSchema(tool.inputSchema as any),
         }
       )
     );

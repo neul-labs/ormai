@@ -84,7 +84,7 @@ export class McpServer<DB> {
       this.tools.set(name, tool);
 
       // Convert Zod schema to JSON Schema
-      const jsonSchema = zodToJsonSchema(tool.inputSchema, { target: 'openApi3' });
+      const jsonSchema = zodToJsonSchema(tool.inputSchema as any, { target: 'openApi3' });
       const schema = (typeof jsonSchema === 'object' && jsonSchema !== null)
         ? jsonSchema
         : { type: 'object', properties: {} };

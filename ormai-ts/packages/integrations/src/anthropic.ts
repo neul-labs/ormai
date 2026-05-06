@@ -28,7 +28,7 @@ export function toAnthropicTools<T extends Tool<unknown, unknown>[]>(
   return tools.map((tool) => ({
     name: tool.name,
     description: tool.description,
-    input_schema: zodToJsonSchema(tool.inputSchema),
+    input_schema: zodToJsonSchema(tool.inputSchema as any),
   }));
 }
 

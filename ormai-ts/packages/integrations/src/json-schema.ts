@@ -26,7 +26,7 @@ export function toJsonSchema<Input, Output>(tool: Tool<Input, Output>): JsonSche
   return {
     name: tool.name,
     description: tool.description,
-    inputSchema: zodToJsonSchema(tool.inputSchema),
+    inputSchema: zodToJsonSchema(tool.inputSchema as any),
   };
 }
 

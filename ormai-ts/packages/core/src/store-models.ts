@@ -12,7 +12,7 @@ export const ErrorInfoSchema = z
     type: z.string(),
     message: z.string(),
     code: z.string().optional(),
-    details: z.record(z.unknown()).default({}),
+    details: z.record(z.string(), z.unknown()).default({}),
   })
   .readonly();
 
@@ -44,10 +44,10 @@ export const AuditRecordSchema = z
     durationMs: z.number().optional(),
 
     /** Request details (sanitized - no sensitive data) */
-    inputs: z.record(z.unknown()).default({}),
+    inputs: z.record(z.string(), z.unknown()).default({}),
 
     /** Response data (sanitized) */
-    outputs: z.record(z.unknown()).optional(),
+    outputs: z.record(z.string(), z.unknown()).optional(),
 
     /** Policy decisions made during execution */
     policyDecisions: z.array(z.string()).default([]),
@@ -60,14 +60,14 @@ export const AuditRecordSchema = z
     error: ErrorInfoSchema.optional(),
 
     /** Optional before/after snapshots for write operations */
-    beforeSnapshot: z.record(z.unknown()).optional(),
-    afterSnapshot: z.record(z.unknown()).optional(),
+    beforeSnapshot: z.record(z.string(), z.unknown()).optional(),
+    afterSnapshot: z.record(z.string(), z.unknown()).optional(),
 
     /** Reason for write operations */
     reason: z.string().optional(),
 
     /** Additional metadata */
-    metadata: z.record(z.unknown()).optional(),
+    metadata: z.record(z.string(), z.unknown()).optional(),
   })
   .readonly();
 

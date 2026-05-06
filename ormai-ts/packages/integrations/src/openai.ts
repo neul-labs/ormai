@@ -36,7 +36,7 @@ export function toOpenAIFunctions<T extends Tool<unknown, unknown>[]>(
   return tools.map((tool) => ({
     name: tool.name,
     description: tool.description,
-    parameters: zodToJsonSchema(tool.inputSchema),
+    parameters: zodToJsonSchema(tool.inputSchema as any),
   }));
 }
 
@@ -54,7 +54,7 @@ export function toOpenAITools<T extends Tool<unknown, unknown>[]>(
     function: {
       name: tool.name,
       description: tool.description,
-      parameters: zodToJsonSchema(tool.inputSchema),
+      parameters: zodToJsonSchema(tool.inputSchema as any),
     },
   }));
 }

@@ -198,7 +198,7 @@ export type AggregateRequest = z.infer<typeof AggregateRequestSchema>;
  */
 export const QueryResultSchema = z
   .object({
-    data: z.array(z.record(z.unknown())).default([]),
+    data: z.array(z.record(z.string(), z.unknown())).default([]),
     nextCursor: z.string().nullable().default(null),
     hasMore: z.boolean().default(false),
     totalCount: z.number().int().nullable().default(null),
@@ -212,7 +212,7 @@ export type QueryResult = z.infer<typeof QueryResultSchema>;
  */
 export const GetResultSchema = z
   .object({
-    data: z.record(z.unknown()).nullable().default(null),
+    data: z.record(z.string(), z.unknown()).nullable().default(null),
     found: z.boolean().default(false),
   })
   .readonly();
@@ -254,7 +254,7 @@ export type AggregateResult = z.infer<typeof AggregateResultSchema>;
 export const CreateRequestSchema = z
   .object({
     model: z.string().min(1).describe('The model/table name'),
-    data: z.record(z.unknown()).describe('Field values for the new record'),
+    data: z.record(z.string(), z.unknown()).describe('Field values for the new record'),
     reason: z.string().optional().describe('Reason for the mutation (required by some policies)'),
     returnFields: z.array(z.string()).optional().describe('Fields to return after creation'),
   })
@@ -277,7 +277,7 @@ export const UpdateRequestSchema = z
   .object({
     model: z.string().min(1).describe('The model/table name'),
     id: z.unknown().describe('The primary key of the record to update'),
-    data: z.record(z.unknown()).describe('Fields to update'),
+    data: z.record(z.string(), z.unknown()).describe('Fields to update'),
     reason: z.string().optional().describe('Reason for the mutation'),
     returnFields: z.array(z.string()).optional().describe('Fields to return after update'),
   })
@@ -333,7 +333,7 @@ export const BulkUpdateRequestSchema = z
       .min(1)
       .max(100)
       .describe('Primary keys of records to update'),
-    data: z.record(z.unknown()).describe('Fields to update on all records'),
+    data: z.record(z.string(), z.unknown()).describe('Fields to update on all records'),
     reason: z.string().optional().describe('Reason for the mutation'),
   })
   .readonly();
@@ -345,7 +345,7 @@ export type BulkUpdateRequest = z.infer<typeof BulkUpdateRequestSchema>;
  */
 export const CreateResultSchema = z
   .object({
-    data: z.record(z.unknown()).default({}),
+    data: z.record(z.string(), z.unknown()).default({}),
     id: z.unknown().describe('Primary key of created record'),
     success: z.boolean().default(true),
   })
@@ -358,7 +358,7 @@ export type CreateResult = z.infer<typeof CreateResultSchema>;
  */
 export const UpdateResultSchema = z
   .object({
-    data: z.record(z.unknown()).nullable().default(null),
+    data: z.record(z.string(), z.unknown()).nullable().default(null),
     success: z.boolean().default(true),
     found: z.boolean().default(true),
   })

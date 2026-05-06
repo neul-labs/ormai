@@ -31,7 +31,7 @@ export function toLangChainTools<T extends Tool<unknown, unknown>[]>(
   return tools.map((tool) => ({
     name: tool.name,
     description: tool.description,
-    schema: zodToJsonSchema(tool.inputSchema),
+    schema: zodToJsonSchema(tool.inputSchema as any),
     func: async (input: unknown) => {
       const result = await tool.execute(input, ctx);
       return JSON.stringify(result);

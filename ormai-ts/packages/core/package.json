@@ -34,10 +34,22 @@
     "clean": "rm -rf dist"
   },
   "keywords": [
-    "orm", "ai", "agents", "agent-tools", "capability-runtime",
-    "database", "policy", "audit", "security", "tenant-isolation",
-    "multi-tenant", "data-governance", "privacy", "access-control",
-    "zod", "llm-tools"
+    "orm",
+    "ai",
+    "agents",
+    "agent-tools",
+    "capability-runtime",
+    "database",
+    "policy",
+    "audit",
+    "security",
+    "tenant-isolation",
+    "multi-tenant",
+    "data-governance",
+    "privacy",
+    "access-control",
+    "zod",
+    "llm-tools"
   ],
   "author": "Dipankar Sarkar <me@dipankar.name>",
   "license": "MIT",
@@ -52,7 +64,7 @@
   },
   "dependencies": {
     "zod": "^4.3.6",
-    "zod-to-json-schema": "^3.23.5"
+    "zod-to-json-schema": "^3.25.2"
   },
   "devDependencies": {
     "@types/node": "^25.0.9",

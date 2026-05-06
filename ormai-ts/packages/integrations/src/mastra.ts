@@ -31,7 +31,7 @@ export function toMastraTools<T extends Tool<unknown, unknown>[]>(
   return tools.map((tool) => ({
     name: tool.name,
     description: tool.description,
-    inputSchema: zodToJsonSchema(tool.inputSchema),
+    inputSchema: zodToJsonSchema(tool.inputSchema as any),
     execute: async (input: Record<string, unknown>) => {
       return tool.execute(input, ctx);
     },

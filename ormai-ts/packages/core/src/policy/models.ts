@@ -177,19 +177,19 @@ export const ModelPolicySchema = z
     writable: z.boolean().default(false),
 
     /** Field-level policies (field name -> policy) */
-    fields: z.record(FieldPolicySchema).default({}),
+    fields: z.record(z.string(), FieldPolicySchema).default({}),
 
     /** Default field action for fields not in the fields dict */
     defaultFieldAction: FieldActionSchema.default('allow'),
 
     /** Relation policies (relation name -> policy) */
-    relations: z.record(RelationPolicySchema).default({}),
+    relations: z.record(z.string(), RelationPolicySchema).default({}),
 
     /** Row-level security policy */
     rowPolicy: RowPolicySchema.optional(),
 
     /** Write policy */
-    writePolicy: WritePolicySchema.default({}),
+    writePolicy: WritePolicySchema.default(() => WritePolicySchema.parse({})),
 
     /** Budget overrides for this model */
     budget: BudgetSchema.optional(),
@@ -247,13 +247,13 @@ export const ModelPolicyUtils = {
 export const PolicySchema = z
   .object({
     /** Model-specific policies */
-    models: z.record(ModelPolicySchema).default({}),
+    models: z.record(z.string(), ModelPolicySchema).default({}),
 
     /** Default budget applied to all models unless overridden */
-    defaultBudget: BudgetSchema.default({}),
+    defaultBudget: BudgetSchema.default(() => BudgetSchema.parse({})),
 
     /** Default row policy applied to all models unless overridden */
-    defaultRowPolicy: RowPolicySchema.default({}),
+    defaultRowPolicy: RowPolicySchema.default(() => RowPolicySchema.parse({})),
 
     /** Global field patterns to deny (e.g., "*password*", "*secret*") */
     globalDenyPatterns: z.array(z.string()).default([]),

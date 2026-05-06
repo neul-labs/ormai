@@ -14,6 +14,7 @@ import type {
   DeleteResult,
   GetRequest,
   GetResult,
+  IncludeClause,
   QueryRequest,
   QueryResult,
   UpdateRequest,
@@ -186,7 +187,7 @@ export class TypeORMAdapter extends BaseOrmAdapter<
     ];
 
     // Compile includes
-    const includes = request.include?.map((inc) => inc.relation) ?? [];
+    const includes = request.include?.map((inc: IncludeClause) => inc.relation) ?? [];
 
     const compiled = this.compiler.compileQuery({
       model: request.model,
@@ -295,7 +296,7 @@ export class TypeORMAdapter extends BaseOrmAdapter<
     const allFilters = [pkFilter, ...decision.injectedFilters];
 
     // Compile includes
-    const includes = request.include?.map((inc) => inc.relation) ?? [];
+    const includes = request.include?.map((inc: IncludeClause) => inc.relation) ?? [];
 
     const compiled = this.compiler.compileQuery({
       model: request.model,

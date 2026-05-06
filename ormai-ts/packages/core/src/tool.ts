@@ -2,7 +2,7 @@
  * Base tool class and result types.
  */
 
-import type { ZodType, ZodTypeDef } from 'zod';
+import type { ZodType } from 'zod';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 import type { RunContext } from './core/context.js';
 import { isOrmAIError } from './core/errors.js';
@@ -48,7 +48,7 @@ export interface Tool<Input, Output> {
   readonly description: string;
 
   /** Zod schema for input validation */
-  readonly inputSchema: ZodType<Input, ZodTypeDef, unknown>;
+  readonly inputSchema: ZodType<Input, unknown>;
 
   /**
    * Execute the tool with the given input and context.
@@ -70,7 +70,7 @@ export interface Tool<Input, Output> {
 export abstract class BaseTool<Input, Output> implements Tool<Input, Output> {
   abstract readonly name: string;
   abstract readonly description: string;
-  abstract readonly inputSchema: ZodType<Input, ZodTypeDef, unknown>;
+  abstract readonly inputSchema: ZodType<Input, unknown>;
 
   abstract execute(input: Input, ctx: RunContext): Promise<Output>;
 
@@ -107,7 +107,7 @@ export abstract class BaseTool<Input, Output> implements Tool<Input, Output> {
     return {
       name: this.name,
       description: this.description,
-      parameters: zodToJsonSchema(this.inputSchema),
+      parameters: zodToJsonSchema(this.inputSchema as any),
     };
   }
 }
@@ -165,7 +165,7 @@ export class ToolRegistry {
       return {
         name: tool.name,
         description: tool.description,
-        parameters: zodToJsonSchema(tool.inputSchema),
+        parameters: zodToJsonSchema(tool.inputSchema as any),
       };
     });
   }

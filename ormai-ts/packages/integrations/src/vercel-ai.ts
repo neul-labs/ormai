@@ -32,7 +32,7 @@ export function toVercelAITools<T extends Tool<unknown, unknown>[]>(
   for (const tool of tools) {
     result[tool.name] = {
       description: tool.description,
-      parameters: zodToJsonSchema(tool.inputSchema),
+      parameters: zodToJsonSchema(tool.inputSchema as any),
       execute: async (input: unknown) => {
         return tool.execute(input, ctx);
       },

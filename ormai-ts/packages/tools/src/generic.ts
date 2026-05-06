@@ -178,11 +178,11 @@ export class DescribeSchemaTool extends BaseTool<DescribeSchemaInput, SchemaDesc
 const QueryInputSchema = z.object({
   model: z.string().describe('The model to query'),
   select: z.array(z.string()).optional().describe('Fields to select (defaults to all allowed)'),
-  where: z.array(z.record(z.unknown())).optional().describe('Filter conditions'),
-  orderBy: z.array(z.record(z.unknown())).optional().describe('Sort order'),
+  where: z.array(z.record(z.string(), z.unknown())).optional().describe('Filter conditions'),
+  orderBy: z.array(z.record(z.string(), z.unknown())).optional().describe('Sort order'),
   take: z.number().int().min(1).default(25).describe('Max rows to return'),
   cursor: z.string().optional().describe('Pagination cursor'),
-  include: z.array(z.record(z.unknown())).optional().describe('Relations to include'),
+  include: z.array(z.record(z.string(), z.unknown())).optional().describe('Relations to include'),
 });
 
 type QueryInput = z.infer<typeof QueryInputSchema>;
@@ -233,7 +233,7 @@ const GetInputSchema = z.object({
   model: z.string().describe('The model to get from'),
   id: z.unknown().describe('The primary key value'),
   select: z.array(z.string()).optional().describe('Fields to select'),
-  include: z.array(z.record(z.unknown())).optional().describe('Relations to include'),
+  include: z.array(z.record(z.string(), z.unknown())).optional().describe('Relations to include'),
 });
 
 type GetInput = z.infer<typeof GetInputSchema>;
@@ -275,7 +275,7 @@ const AggregateInputSchema = z.object({
   model: z.string().describe('The model to aggregate'),
   operation: z.enum(['count', 'sum', 'avg', 'min', 'max']).describe('Aggregation operation'),
   field: z.string().optional().describe('Field to aggregate (required for sum/avg/min/max)'),
-  where: z.array(z.record(z.unknown())).optional().describe('Filter conditions'),
+  where: z.array(z.record(z.string(), z.unknown())).optional().describe('Filter conditions'),
 });
 
 type AggregateInput = z.infer<typeof AggregateInputSchema>;
@@ -315,7 +315,7 @@ export class AggregateTool extends BaseTool<AggregateInput, AggregateResult> {
 
 const CreateInputSchema = z.object({
   model: z.string().describe('The model to create'),
-  data: z.record(z.unknown()).describe('Field values for the new record'),
+  data: z.record(z.string(), z.unknown()).describe('Field values for the new record'),
   reason: z.string().optional().describe('Reason for the mutation'),
   returnFields: z.array(z.string()).optional().describe('Fields to return after creation'),
 });
@@ -358,7 +358,7 @@ export class CreateTool extends BaseTool<CreateInput, CreateResult> {
 const UpdateInputSchema = z.object({
   model: z.string().describe('The model to update'),
   id: z.unknown().describe('The primary key of the record to update'),
-  data: z.record(z.unknown()).describe('Fields to update'),
+  data: z.record(z.string(), z.unknown()).describe('Fields to update'),
   reason: z.string().optional().describe('Reason for the mutation'),
   returnFields: z.array(z.string()).optional().describe('Fields to return after update'),
 });
@@ -444,7 +444,7 @@ export class DeleteTool extends BaseTool<DeleteInput, DeleteResult> {
 const BulkUpdateInputSchema = z.object({
   model: z.string().describe('The model to update'),
   ids: z.array(z.unknown()).min(1).describe('Primary keys of records to update'),
-  data: z.record(z.unknown()).describe('Fields to update on all records'),
+  data: z.record(z.string(), z.unknown()).describe('Fields to update on all records'),
   reason: z.string().optional().describe('Reason for the mutation'),
 });
 

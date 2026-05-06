@@ -16,6 +16,7 @@ import type {
   DeleteResult,
   GetRequest,
   GetResult,
+  OrderClause,
   QueryRequest,
   QueryResult,
   UpdateRequest,
@@ -294,7 +295,7 @@ export class PrismaAdapter extends BaseOrmAdapter<
       const schema = await this.introspect();
       const lastRecord = results[results.length - 1];
       const model = schema.models[request.model];
-      const orderFields = request.orderBy?.map((o) => o.field) ?? [model.primaryKey];
+      const orderFields = request.orderBy?.map((o: OrderClause) => o.field) ?? [model.primaryKey];
       nextCursor = this.cursorEncoder.encodeKeyset(lastRecord, orderFields);
     }
 
