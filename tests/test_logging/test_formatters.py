@@ -3,8 +3,6 @@
 import json
 import logging
 
-import pytest
-
 from ormai.logging.formatters import JSONFormatter, TextFormatter
 
 
@@ -92,7 +90,7 @@ class TestJSONFormatter:
 
     def test_non_serializable_extra_converted_to_string(self):
         formatter = JSONFormatter(include_extra=True)
-        record = _make_record(non_serializable=set([1, 2, 3]))
+        record = _make_record(non_serializable={1, 2, 3})
         output = formatter.format(record)
         data = json.loads(output)
         assert "extra" in data

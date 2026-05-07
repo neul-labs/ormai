@@ -1,7 +1,5 @@
 """Tests for rate limiting middleware."""
 
-import asyncio
-import time
 
 import pytest
 
@@ -9,8 +7,8 @@ from ormai.core.context import Principal
 from ormai.middleware.rate_limit import (
     InMemoryBackend,
     RateLimitConfig,
-    RateLimitError,
     RateLimiter,
+    RateLimitError,
     RateLimitResult,
     create_rate_limiter,
 )

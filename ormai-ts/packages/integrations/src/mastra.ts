@@ -65,7 +65,7 @@ export async function createMastraTools<T extends Tool<unknown, unknown>[]>(
     }
 
     return tools.map((tool) =>
-      (createTool as Function)({
+      (createTool as (...args: unknown[]) => unknown)({
         name: tool.name,
         description: tool.description,
         inputSchema: tool.inputSchema,
@@ -78,6 +78,9 @@ export async function createMastraTools<T extends Tool<unknown, unknown>[]>(
     if ((e as Error).message?.includes('@mastra/core')) {
       throw e;
     }
-    throw new Error('Failed to import @mastra/core. Make sure it is installed: npm install @mastra/core');
+    throw new Error(
+      'Failed to import @mastra/core. Make sure it is installed: npm install @mastra/core',
+      { cause: e },
+    );
   }
 }

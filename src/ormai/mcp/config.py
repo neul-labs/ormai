@@ -60,7 +60,7 @@ class OrmAIServerConfig(McpServerConfig):
     auth_type: str = "none"  # none, jwt, api_key
     auth_secret: str | None = None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Build command and args from settings."""
         if not self.command:
             self.command = "uv"
@@ -162,7 +162,7 @@ class McpConfigGenerator:
         """Generate VSCode MCP extension configuration."""
         servers = []
         for name, config in self.servers.items():
-            server = {
+            server: dict[str, Any] = {
                 "name": name,
                 "command": config.command,
                 "args": config.args,

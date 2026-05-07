@@ -144,12 +144,18 @@ class SQLAlchemyIntrospector:
             if isinstance(sa_type, sa_class):
                 return field_type
 
-        # Check for UUID
+        # Check type name for common SQLAlchemy/SQLModel types
         type_name = type(sa_type).__name__.lower()
         if "uuid" in type_name:
             return FieldType.UUID
         if "json" in type_name:
             return FieldType.JSON
+        if "varchar" in type_name or "char" in type_name:
+            return FieldType.STRING
+        if "bool" in type_name:
+            return FieldType.BOOLEAN
+        if "int" in type_name:
+            return FieldType.INTEGER
 
         return FieldType.UNKNOWN
 

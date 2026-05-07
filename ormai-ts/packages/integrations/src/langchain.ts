@@ -91,7 +91,8 @@ export async function createLangChainTools<T extends Tool<unknown, unknown>[]>(
     );
   } catch (e) {
     throw new Error(
-      'Failed to import @langchain/core. Make sure it is installed: npm install @langchain/core'
+      'Failed to import @langchain/core. Make sure it is installed: npm install @langchain/core',
+      { cause: e },
     );
   }
 }

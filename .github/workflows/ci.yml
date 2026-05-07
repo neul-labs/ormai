@@ -236,6 +236,10 @@ jobs:
         working-directory: ormai-ts
         run: npm ci
 
+      - name: Build packages
+        working-directory: ormai-ts
+        run: npm run build
+
       - name: Run lint
         working-directory: ormai-ts
         run: npm run lint
@@ -258,6 +262,10 @@ jobs:
       - name: Install dependencies
         working-directory: ormai-ts
         run: npm ci
+
+      - name: Build packages
+        working-directory: ormai-ts
+        run: npm run build
 
       - name: Run typecheck
         working-directory: ormai-ts

@@ -108,7 +108,7 @@ def django_models():
 @pytest.fixture
 def django_introspector(django_models):
     """Create a Django introspector."""
-    return DjangoIntrospector(models=django_models)
+    return DjangoIntrospector(models_list=django_models)
 
 
 @pytest.fixture

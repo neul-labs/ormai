@@ -575,7 +575,7 @@ export class PrismaAdapter extends BaseOrmAdapter<
 
       return { data: compiled.data ?? null, success: true, found: true };
     } catch (error) {
-      throw new Error(`Update execution failed: ${(error as Error).message}`);
+      throw new Error(`Update execution failed: ${(error as Error).message}`, { cause: error });
     }
   }
 
@@ -615,7 +615,7 @@ export class PrismaAdapter extends BaseOrmAdapter<
         };
       }
     } catch (error) {
-      throw new Error(`Delete execution failed: ${(error as Error).message}`);
+      throw new Error(`Delete execution failed: ${(error as Error).message}`, { cause: error });
     }
   }
 
@@ -641,7 +641,7 @@ export class PrismaAdapter extends BaseOrmAdapter<
         failedIds: [],
       };
     } catch (error) {
-      throw new Error(`Bulk update execution failed: ${(error as Error).message}`);
+      throw new Error(`Bulk update execution failed: ${(error as Error).message}`, { cause: error });
     }
   }
 }

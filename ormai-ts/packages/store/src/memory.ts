@@ -23,7 +23,7 @@ export class InMemoryAuditStore implements AuditStore {
   async query(options: AuditQueryOptions): Promise<AuditRecord[]> {
     const { tenantId, principalId, toolName, startTime, endTime, limit = 100, offset = 0 } = options;
 
-    let results: AuditRecord[] = [];
+    const results: AuditRecord[] = [];
 
     for (const record of this.records.values()) {
       // Apply filters

@@ -74,6 +74,9 @@ export async function createLlamaIndexTools<T extends Tool<unknown, unknown>[]>(
       )
     );
   } catch (e) {
-    throw new Error('Failed to import llamaindex. Make sure it is installed: npm install llamaindex');
+    throw new Error(
+      'Failed to import llamaindex. Make sure it is installed: npm install llamaindex',
+      { cause: e },
+    );
   }
 }

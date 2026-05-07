@@ -2,8 +2,6 @@
 
 import logging
 
-import pytest
-
 from ormai.logging.config import (
     LogFormat,
     LogLevel,

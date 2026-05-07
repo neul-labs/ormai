@@ -151,10 +151,9 @@ class DjangoIntrospector:
 
         return FieldMetadata(
             name=field.name,
-            type=orm_type,
+            field_type=orm_type,
             nullable=field.null,
             primary_key=field.primary_key,
-            unique=field.unique,
             default=self._get_default(field),
         )
 

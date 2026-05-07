@@ -1,6 +1,5 @@
 """Tests for retention policy and manager."""
 
-import asyncio
 from datetime import datetime, timedelta, timezone
 from unittest.mock import AsyncMock, MagicMock
 

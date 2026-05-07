@@ -200,15 +200,14 @@ class Spider2Dataset:
                     DownloadColumn(),
                     TransferSpeedColumn(),
                     console=console,
-                ) as progress:
-                    with httpx.stream("GET", drive_url, follow_redirects=True) as response:
-                        total = int(response.headers.get("content-length", 0))
-                        task = progress.add_task("Downloading databases...", total=total)
+                ) as progress, httpx.stream("GET", drive_url, follow_redirects=True) as response:
+                    total = int(response.headers.get("content-length", 0))
+                    task = progress.add_task("Downloading databases...", total=total)
 
-                        with open(zip_path, "wb") as f:
-                            for chunk in response.iter_bytes(chunk_size=8192):
-                                f.write(chunk)
-                                progress.update(task, advance=len(chunk))
+                    with open(zip_path, "wb") as f:
+                        for chunk in response.iter_bytes(chunk_size=8192):
+                            f.write(chunk)
+                            progress.update(task, advance=len(chunk))
 
                 # Unzip with progress
                 console.print("[yellow]Extracting databases...[/yellow]")

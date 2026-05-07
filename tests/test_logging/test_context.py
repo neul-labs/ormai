@@ -1,8 +1,6 @@
 """Tests for logging context management."""
 
-from unittest.mock import MagicMock
 
-import pytest
 
 from ormai.logging.context import (
     LogContext,

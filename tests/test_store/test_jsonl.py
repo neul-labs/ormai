@@ -9,13 +9,13 @@ from ormai.store.models import AuditRecord
 
 
 def make_record(**kwargs):
-    defaults = dict(
-        id="rec-001",
-        tenant_id="tenant-1",
-        principal_id="user-1",
-        tool_name="query",
-        timestamp=datetime.now(timezone.utc),
-    )
+    defaults = {
+        "id": "rec-001",
+        "tenant_id": "tenant-1",
+        "principal_id": "user-1",
+        "tool_name": "query",
+        "timestamp": datetime.now(timezone.utc),
+    }
     defaults.update(kwargs)
     return AuditRecord(**defaults)
 

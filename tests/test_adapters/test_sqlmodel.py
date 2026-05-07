@@ -37,7 +37,6 @@ if sqlmodel_available:
         OrderDirection,
         QueryRequest,
     )
-    from ormai.core.types import RelationType
     from ormai.policy.models import Budget, ModelPolicy, Policy, RowPolicy
 
     # Test models - defined only if SQLModel is available
@@ -84,18 +83,21 @@ def sqlmodel_models():
 
 
 @pytest.fixture
-def sqlmodel_adapter(sqlmodel_engine, sqlmodel_models):
+def sqlmodel_adapter(sqlmodel_engine, sqlmodel_models, sqlmodel_policy):
     """Create a SQLModel adapter using the factory method."""
-    return SQLModelAdapter.from_models(sqlmodel_engine, *sqlmodel_models)
+    return SQLModelAdapter.from_models(
+        sqlmodel_engine, *sqlmodel_models, policy=sqlmodel_policy
+    )
 
 
 @pytest.fixture
-def sqlmodel_adapter_direct(sqlmodel_engine, sqlmodel_models):
+def sqlmodel_adapter_direct(sqlmodel_engine, sqlmodel_models, sqlmodel_policy):
     """Create a SQLModel adapter using direct initialization."""
     return SQLModelAdapter(
         engine=sqlmodel_engine,
         session_factory=lambda: Session(sqlmodel_engine),
         models=sqlmodel_models,
+        policy=sqlmodel_policy,
     )
 
 

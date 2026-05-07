@@ -108,7 +108,7 @@ class CursorEncoder:
         data = self._decode(cursor)
         if data.cursor_type != CursorType.OFFSET:
             raise ValueError("Expected offset cursor")
-        return data.values.get("offset", 0)
+        return int(data.values.get("offset", 0))
 
     def encode_keyset(
         self,
