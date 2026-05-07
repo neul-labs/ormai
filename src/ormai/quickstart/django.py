@@ -44,7 +44,7 @@ class DjangoMount:
 
 
 def mount_django(
-    models: list[type],
+    models: list[type[Any]],
     *,
     app_config: Any | None = None,
     tenant_field: str | None = "tenant_id",

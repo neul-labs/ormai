@@ -49,7 +49,7 @@ class TortoiseAdapter(OrmAdapter):
 
     def __init__(
         self,
-        models: list[type],
+        models: list[type[Any]],
         policy: Policy,
         connection_name: str = "default",
     ) -> None:

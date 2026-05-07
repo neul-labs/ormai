@@ -51,7 +51,7 @@ class PeeweeAdapter(OrmAdapter):
     def __init__(
         self,
         database: Database,
-        models: list[type],
+        models: list[type[Any]],
         policy: Policy,
     ) -> None:
         """

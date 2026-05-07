@@ -5,6 +5,8 @@ SQLModel is built on SQLAlchemy, so this adapter wraps the SQLAlchemy adapter
 with SQLModel-specific conveniences.
 """
 
+from collections.abc import Iterator
+from contextlib import contextmanager
 from typing import Any
 
 from sqlalchemy.engine import Engine
@@ -18,7 +20,7 @@ try:
     HAS_SQLMODEL = True
 except ImportError:
     HAS_SQLMODEL = False
-    SQLModel = None  # type: ignore
+    SQLModel: Any = None
 
 
 class SQLModelAdapter(SQLAlchemyAdapter):
@@ -51,7 +53,7 @@ class SQLModelAdapter(SQLAlchemyAdapter):
     def __init__(
         self,
         engine: Engine,
-        models: list[type] | None = None,
+        models: list[type[Any]] | None = None,
         policy: Any = None,
         session_factory: Any = None,
     ) -> None:
@@ -77,7 +79,7 @@ class SQLModelAdapter(SQLAlchemyAdapter):
         )
 
         if session_factory is not None:
-            self._session_manager = _SQLModelSessionManager(engine, session_factory)
+            self.session_manager = _SQLModelSessionManager(engine, session_factory)
 
         self._sqlmodel_classes = models
 
@@ -120,5 +122,15 @@ class _SQLModelSessionManager:
         self._engine = engine
         self._session_factory = session_factory
 
-    def session(self):
-        return self._session_factory()
+    @contextmanager
+    def session(self) -> Iterator[Any]:
+        """Context manager for sessions."""
+        session = self._session_factory()
+        try:
+            yield session
+            session.commit()
+        except Exception:
+            session.rollback()
+            raise
+        finally:
+            session.close()

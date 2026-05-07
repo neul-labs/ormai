@@ -112,7 +112,7 @@ class MultiTenantFixture:
             principal=Principal(
                 tenant_id=tenant_id,
                 user_id=user_id,
-                roles=roles,
+                roles=tuple(roles),
             ),
             request_id=str(uuid4()),
             now=datetime.now(timezone.utc),
@@ -333,7 +333,7 @@ def make_context(
         principal=Principal(
             tenant_id=tenant_id,
             user_id=user_id,
-            roles=roles or ["user"],
+            roles=tuple(roles or ["user"]),
         ),
         request_id=str(uuid4()),
         now=datetime.now(timezone.utc),

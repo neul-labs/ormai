@@ -22,7 +22,7 @@ class TortoiseIntrospector:
     Introspects Tortoise ORM models to build schema metadata.
     """
 
-    def __init__(self, models: list[type]) -> None:
+    def __init__(self, models: list[type[Any]]) -> None:
         """
         Initialize the introspector.
 

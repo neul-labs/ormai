@@ -47,7 +47,7 @@ class PeeweeMount:
 
 def mount_peewee(
     database: Database,
-    models: list[type],
+    models: list[type[Any]],
     *,
     tenant_field: str | None = "tenant_id",
     profile: str | DefaultsProfile = "prod",

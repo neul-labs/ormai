@@ -3,6 +3,7 @@ Policy builder for fluent policy construction.
 """
 
 import fnmatch
+from typing import Any
 
 from ormai.core.types import SchemaMetadata
 from ormai.policy.models import (
@@ -80,7 +81,7 @@ class PolicyBuilder:
 
     def register_models(
         self,
-        models: list[type] | list[str],
+        models: list[type[Any]] | list[str],
         readable: bool = True,
         writable: bool | None = None,
     ) -> "PolicyBuilder":

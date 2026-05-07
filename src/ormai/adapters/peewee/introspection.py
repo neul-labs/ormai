@@ -22,7 +22,7 @@ class PeeweeIntrospector:
     Introspects Peewee models to build schema metadata.
     """
 
-    def __init__(self, models: list[type]) -> None:
+    def __init__(self, models: list[type[Any]]) -> None:
         """
         Initialize the introspector.
 

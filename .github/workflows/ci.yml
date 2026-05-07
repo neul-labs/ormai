@@ -203,7 +203,7 @@ jobs:
 
       - name: Install dependencies
         working-directory: ormai-ts
-        run: npm ci
+        run: npm install
 
       - name: Build packages
         working-directory: ormai-ts
@@ -234,7 +234,7 @@ jobs:
 
       - name: Install dependencies
         working-directory: ormai-ts
-        run: npm ci
+        run: npm install
 
       - name: Build packages
         working-directory: ormai-ts
@@ -261,7 +261,7 @@ jobs:
 
       - name: Install dependencies
         working-directory: ormai-ts
-        run: npm ci
+        run: npm install
 
       - name: Build packages
         working-directory: ormai-ts

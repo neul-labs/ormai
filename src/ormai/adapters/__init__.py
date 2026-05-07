@@ -13,35 +13,35 @@ __all__ = [
 
 
 # Lazy imports for specific adapters to avoid requiring all dependencies
-def get_sqlalchemy_adapter():
+def get_sqlalchemy_adapter() -> type:
     """Get the SQLAlchemy adapter class."""
     from ormai.adapters.sqlalchemy import SQLAlchemyAdapter
 
     return SQLAlchemyAdapter
 
 
-def get_tortoise_adapter():
+def get_tortoise_adapter() -> type:
     """Get the Tortoise ORM adapter class."""
     from ormai.adapters.tortoise import TortoiseAdapter
 
     return TortoiseAdapter
 
 
-def get_peewee_adapter():
+def get_peewee_adapter() -> type:
     """Get the Peewee adapter class."""
     from ormai.adapters.peewee import PeeweeAdapter
 
     return PeeweeAdapter
 
 
-def get_django_adapter():
+def get_django_adapter() -> type:
     """Get the Django ORM adapter class."""
     from ormai.adapters.django import DjangoAdapter
 
     return DjangoAdapter
 
 
-def get_sqlmodel_adapter():
+def get_sqlmodel_adapter() -> type:
     """Get the SQLModel adapter class."""
     from ormai.adapters.sqlmodel import SQLModelAdapter
 

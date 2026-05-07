@@ -34,7 +34,7 @@ class SQLAlchemyIntrospector:
     Introspects SQLAlchemy models to extract schema metadata.
     """
 
-    def __init__(self, models: list[type]) -> None:
+    def __init__(self, models: list[type[Any]]) -> None:
         """
         Initialize with a list of SQLAlchemy model classes.
 
@@ -143,6 +143,13 @@ class SQLAlchemyIntrospector:
         for sa_class, field_type in type_mapping.items():
             if isinstance(sa_type, sa_class):
                 return field_type
+
+        # Handle SQLModel TypeDecorator wrappers (e.g. AutoString)
+        if hasattr(sa_type, "impl"):
+            impl_type = sa_type.impl
+            for sa_class, field_type in type_mapping.items():
+                if isinstance(impl_type, sa_class):
+                    return field_type
 
         # Check type name for common SQLAlchemy/SQLModel types
         type_name = type(sa_type).__name__.lower()

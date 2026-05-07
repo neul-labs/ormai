@@ -72,6 +72,10 @@ class PolicyEngine:
         self.schema = schema
         self._validator = PolicyValidator(policy, schema, self)
 
+    def validate_model_access(self, model: str, readable: bool = True) -> ModelPolicy | None:
+        """Validate model access and return the model policy."""
+        return self._validator.validate_model_access(model, readable)
+
     def validate_query(
         self,
         request: QueryRequest,

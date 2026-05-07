@@ -51,7 +51,7 @@ class SQLAlchemyAdapter(OrmAdapter):
     def __init__(
         self,
         engine: Engine | AsyncEngine,
-        models: list[type],
+        models: list[type[Any]],
         policy: Policy,
         session_manager: SessionManager | None = None,
     ) -> None:

@@ -48,7 +48,7 @@ class OrmAIMount:
 
 def mount_sqlalchemy(
     engine: Engine | AsyncEngine,
-    models: list[type],
+    models: list[type[Any]],
     *,
     tenant_field: str | None = "tenant_id",
     profile: str | DefaultsProfile = "prod",

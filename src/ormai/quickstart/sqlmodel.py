@@ -48,7 +48,7 @@ class SQLModelMount:
 
 def mount_sqlmodel(
     engine: Engine | AsyncEngine,
-    models: list[type],
+    models: list[type[Any]],
     *,
     tenant_field: str | None = "tenant_id",
     profile: str = "prod",

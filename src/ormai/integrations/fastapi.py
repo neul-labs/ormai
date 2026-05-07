@@ -105,9 +105,12 @@ class OrmAIRouter:
         @self.router.get("/tools/{name}")
         async def get_tool(name: str) -> dict[str, Any]:
             """Get a specific tool's schema."""
-            if name not in self.toolset.tools:
+            if name not in self.toolset:
                 raise HTTPException(status_code=404, detail=f"Tool not found: {name}")
-            return self.toolset.tools[name].get_schema()
+            tool = self.toolset.get(name)
+            if tool is None:
+                raise HTTPException(status_code=404, detail=f"Tool not found: {name}")
+            return tool.get_schema()
 
         @self.router.post("/call")
         async def call_tool(

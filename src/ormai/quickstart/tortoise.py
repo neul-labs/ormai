@@ -44,7 +44,7 @@ class TortoiseMount:
 
 
 def mount_tortoise(
-    models: list[type],
+    models: list[type[Any]],
     *,
     tenant_field: str | None = "tenant_id",
     connection_name: str = "default",

@@ -45,7 +45,7 @@ class CompiledQuery:
     query: Any
 
     # Original request for reference
-    request: QueryRequest | GetRequest | AggregateRequest
+    request: QueryRequest | GetRequest | AggregateRequest | CreateRequest | UpdateRequest | DeleteRequest | BulkUpdateRequest
 
     # Policy used during compilation (for redaction during execution)
     policy: Policy | None = None

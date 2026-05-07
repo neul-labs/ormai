@@ -222,7 +222,7 @@ async def check_database(adapter: OrmAdapter) -> ComponentHealth:
     start = time.perf_counter()
     try:
         # Try to get schema as a simple connectivity test
-        schema = adapter.introspect()
+        schema = await adapter.introspect()
         latency = (time.perf_counter() - start) * 1000
 
         return ComponentHealth(
