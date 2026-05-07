@@ -41,7 +41,7 @@ jobs:
           enable-cache: true
 
       - name: Install build tools
-        run: uv pip install build twine
+        run: uv pip install --system build twine
 
       - name: Validate package
         run: |
@@ -68,7 +68,7 @@ jobs:
           enable-cache: true
 
       - name: Install build
-        run: uv pip install build
+        run: uv pip install --system build
 
       - name: Build package
         run: python -m build
@@ -104,7 +104,7 @@ jobs:
 
       - name: Install dependencies
         working-directory: ormai-ts
-        run: npm ci
+        run: npm install
 
       - name: Typecheck
         working-directory: ormai-ts
@@ -116,7 +116,7 @@ jobs:
 
       - name: Test
         working-directory: ormai-ts
-        run: npm run test:run
+        run: npm run test
 
   publish-npm:
     name: Publish to NPM
@@ -135,7 +135,7 @@ jobs:
 
       - name: Install dependencies
         working-directory: ormai-ts
-        run: npm ci
+        run: npm install
 
       - name: Build packages
         working-directory: ormai-ts
