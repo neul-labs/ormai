@@ -100,7 +100,7 @@ export interface TypeORMDeleteResult {
  * TypeORM entity manager interface.
  */
 export interface TypeORMEntityManager {
-  getRepository: <T>(entity: string | Function) => TypeORMRepository<T>;
+  getRepository: <T>(entity: string | ((...args: unknown[]) => unknown)) => TypeORMRepository<T>;
   transaction: <T>(fn: (entityManager: TypeORMEntityManager) => Promise<T>) => Promise<T>;
 }
 
@@ -109,7 +109,7 @@ export interface TypeORMEntityManager {
  */
 export interface TypeORMAdapterDataSource extends TypeORMDataSource {
   manager: TypeORMEntityManager;
-  getRepository: <T>(entity: string | Function) => TypeORMRepository<T>;
+  getRepository: <T>(entity: string | ((...args: unknown[]) => unknown)) => TypeORMRepository<T>;
   transaction: <T>(fn: (entityManager: TypeORMEntityManager) => Promise<T>) => Promise<T>;
 }
 
@@ -270,7 +270,7 @@ export class TypeORMAdapter extends BaseOrmAdapter<
         totalCount: null,
       };
     } catch (error) {
-      throw new Error(`Query execution failed: ${(error as Error).message}`);
+      throw new Error(`Query execution failed: ${(error as Error).message}`, { cause: error });
     }
   }
 
@@ -439,7 +439,7 @@ export class TypeORMAdapter extends BaseOrmAdapter<
         rowCount,
       };
     } catch (error) {
-      throw new Error(`Aggregate execution failed: ${(error as Error).message}`);
+      throw new Error(`Aggregate execution failed: ${(error as Error).message}`, { cause: error });
     }
   }
 
@@ -497,7 +497,7 @@ export class TypeORMAdapter extends BaseOrmAdapter<
         success: true,
       };
     } catch (error) {
-      throw new Error(`Create failed: ${(error as Error).message}`);
+      throw new Error(`Create failed: ${(error as Error).message}`, { cause: error });
     }
   }
 
@@ -569,7 +569,7 @@ export class TypeORMAdapter extends BaseOrmAdapter<
         found: (result.affected ?? 0) > 0,
       };
     } catch (error) {
-      throw new Error(`Update failed: ${(error as Error).message}`);
+      throw new Error(`Update failed: ${(error as Error).message}`, { cause: error });
     }
   }
 
@@ -667,7 +667,7 @@ export class TypeORMAdapter extends BaseOrmAdapter<
         };
       }
     } catch (error) {
-      throw new Error(`Delete failed: ${(error as Error).message}`);
+      throw new Error(`Delete failed: ${(error as Error).message}`, { cause: error });
     }
   }
 
@@ -736,7 +736,7 @@ export class TypeORMAdapter extends BaseOrmAdapter<
         failedIds: [],
       };
     } catch (error) {
-      throw new Error(`Bulk update failed: ${(error as Error).message}`);
+      throw new Error(`Bulk update failed: ${(error as Error).message}`, { cause: error });
     }
   }
 

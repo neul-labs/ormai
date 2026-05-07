@@ -277,7 +277,7 @@ export class DrizzleAdapter extends BaseOrmAdapter<DrizzleDB, CompiledDrizzleQue
         totalCount: null,
       };
     } catch (error) {
-      throw new Error(`Query execution failed: ${(error as Error).message}`);
+      throw new Error(`Query execution failed: ${(error as Error).message}`, { cause: error });
     }
   }
 
@@ -479,7 +479,7 @@ export class DrizzleAdapter extends BaseOrmAdapter<DrizzleDB, CompiledDrizzleQue
         rowCount: rows.length,
       };
     } catch (error) {
-      throw new Error(`Aggregate execution failed: ${(error as Error).message}`);
+      throw new Error(`Aggregate execution failed: ${(error as Error).message}`, { cause: error });
     }
   }
 
@@ -545,7 +545,7 @@ export class DrizzleAdapter extends BaseOrmAdapter<DrizzleDB, CompiledDrizzleQue
         success: true,
       };
     } catch (error) {
-      throw new Error(`Create failed: ${(error as Error).message}`);
+      throw new Error(`Create failed: ${(error as Error).message}`, { cause: error });
     }
   }
 
@@ -616,7 +616,7 @@ export class DrizzleAdapter extends BaseOrmAdapter<DrizzleDB, CompiledDrizzleQue
         found: result.length > 0,
       };
     } catch (error) {
-      throw new Error(`Update failed: ${(error as Error).message}`);
+      throw new Error(`Update failed: ${(error as Error).message}`, { cause: error });
     }
   }
 
@@ -719,7 +719,7 @@ export class DrizzleAdapter extends BaseOrmAdapter<DrizzleDB, CompiledDrizzleQue
         };
       }
     } catch (error) {
-      throw new Error(`Delete failed: ${(error as Error).message}`);
+      throw new Error(`Delete failed: ${(error as Error).message}`, { cause: error });
     }
   }
 
@@ -787,7 +787,7 @@ export class DrizzleAdapter extends BaseOrmAdapter<DrizzleDB, CompiledDrizzleQue
         failedIds: [],
       };
     } catch (error) {
-      throw new Error(`Bulk update failed: ${(error as Error).message}`);
+      throw new Error(`Bulk update failed: ${(error as Error).message}`, { cause: error });
     }
   }
 

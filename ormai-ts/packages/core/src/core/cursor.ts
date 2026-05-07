@@ -201,7 +201,7 @@ export class CursorEncoder {
 
       return data;
     } catch (e) {
-      throw new Error(`Invalid cursor: ${e instanceof Error ? e.message : String(e)}`);
+      throw new Error(`Invalid cursor: ${e instanceof Error ? e.message : String(e)}`, { cause: e });
     }
   }
 

@@ -17,7 +17,7 @@ import type {
 export interface TypeORMColumnMetadata {
   propertyName: string;
   databaseName: string;
-  type: string | Function;
+  type: string | ((...args: unknown[]) => unknown);
   isPrimary: boolean;
   isNullable: boolean;
   default?: unknown;
@@ -30,7 +30,7 @@ export interface TypeORMRelationMetadata {
   propertyName: string;
   relationType: 'one-to-one' | 'one-to-many' | 'many-to-one' | 'many-to-many';
   inverseSidePropertyPath?: string;
-  type: string | Function;
+  type: string | ((...args: unknown[]) => unknown);
 }
 
 /**
@@ -49,7 +49,7 @@ export interface TypeORMEntityMetadata {
  */
 export interface TypeORMDataSource {
   entityMetadatas: TypeORMEntityMetadata[];
-  getMetadata: (entity: string | Function) => TypeORMEntityMetadata;
+  getMetadata: (entity: string | ((...args: unknown[]) => unknown)) => TypeORMEntityMetadata;
 }
 
 /**
@@ -100,7 +100,7 @@ export class TypeORMIntrospector {
       const relations: Record<string, RelationMetadata> = {};
       for (const relation of entityMetadata.relations) {
         const targetName = typeof relation.type === 'function'
-          ? (relation.type as Function).name
+          ? (relation.type as (...args: unknown[]) => unknown).name
           : String(relation.type);
 
         relations[relation.propertyName] = {
@@ -129,7 +129,7 @@ export class TypeORMIntrospector {
   /**
    * Map TypeORM column type to OrmAI field type.
    */
-  private mapColumnType(type: string | Function): FieldType {
+  private mapColumnType(type: string | ((...args: unknown[]) => unknown)): FieldType {
     const typeStr = typeof type === 'function' ? type.name.toLowerCase() : String(type).toLowerCase();
 
     // String types

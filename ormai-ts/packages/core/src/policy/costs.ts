@@ -232,7 +232,7 @@ export class QueryCostEstimator {
   }
 
   private estimateFilteredRows(request: QueryRequest, stats: TableStats): number {
-    let rows = stats.estimatedRowCount;
+    const rows = stats.estimatedRowCount;
 
     if (!request.where) {
       return Math.min(rows, request.take);
