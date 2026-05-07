@@ -312,4 +312,4 @@ class TestSQLModelExecution:
             result = await sqlmodel_adapter.execute_query(compiled, ctx)
 
         assert result.data == []
-        assert result.total == 0
+        assert result.total_count == 0
