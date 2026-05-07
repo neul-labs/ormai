@@ -266,8 +266,8 @@ class PeeweeAdapter(OrmAdapter):
     def _run_in_transaction(
         self,
         fn: Callable[..., T],
-        args: tuple,
-        kwargs: dict,
+        args: tuple[Any, ...],
+        kwargs: dict[str, Any],
     ) -> T:
         """Run function in transaction synchronously."""
         with self.database.atomic():
@@ -277,7 +277,7 @@ class PeeweeAdapter(OrmAdapter):
         self,
         rows: list[Any],
         model_class: type,
-        includes: list,
+        includes: list[Any],
     ) -> list[Any]:
         """Apply prefetching for related models."""
         if not includes:
@@ -325,7 +325,7 @@ class PeeweeAdapter(OrmAdapter):
         for field in fields:
             value = getattr(row, field, None)
             # Handle datetime serialization
-            if hasattr(value, "isoformat"):
+            if value is not None and hasattr(value, "isoformat"):
                 value = value.isoformat()
             data[field] = value
 

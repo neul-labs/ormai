@@ -71,7 +71,7 @@ class TestMultiTenantFixture:
 
         assert ctx.principal.tenant_id == "tenant-1"
         assert ctx.principal.user_id == "user-tenant-1"  # Default user
-        assert ctx.principal.roles == ["user"]
+        assert ctx.principal.roles == ("user",)
         assert ctx.request_id is not None
 
     def test_context_for_with_user(self):
@@ -83,7 +83,7 @@ class TestMultiTenantFixture:
         ctx = fixture.context_for("tenant-1", user_id="admin-1")
 
         assert ctx.principal.user_id == "admin-1"
-        assert ctx.principal.roles == ["admin"]
+        assert ctx.principal.roles == ("admin",)
 
     def test_context_for_with_explicit_roles(self):
         """Test creating context with explicit roles."""
@@ -92,7 +92,7 @@ class TestMultiTenantFixture:
 
         ctx = fixture.context_for("tenant-1", roles=["admin", "support"])
 
-        assert ctx.principal.roles == ["admin", "support"]
+        assert ctx.principal.roles == ("admin", "support")
 
     def test_get_tenant_data(self):
         """Test getting tenant data."""
@@ -351,7 +351,7 @@ class TestContextHelpers:
 
         assert ctx.principal.tenant_id == "test-tenant"
         assert ctx.principal.user_id == "test-user"
-        assert ctx.principal.roles == ["admin"]
+        assert ctx.principal.roles == ("admin",)
         assert ctx.request_id is not None
         assert ctx.now is not None
 
@@ -361,7 +361,7 @@ class TestContextHelpers:
 
         assert ctx.principal.tenant_id == "test-tenant"
         assert ctx.principal.user_id == "test-user"
-        assert ctx.principal.roles == ["user"]
+        assert ctx.principal.roles == ("user",)
 
     def test_make_admin_context(self):
         """Test make_admin_context helper."""
@@ -369,11 +369,11 @@ class TestContextHelpers:
 
         assert ctx.principal.tenant_id == "test-tenant"
         assert ctx.principal.user_id == "admin"
-        assert ctx.principal.roles == ["admin"]
+        assert ctx.principal.roles == ("admin",)
 
     def test_make_admin_context_custom_tenant(self):
         """Test make_admin_context with custom tenant."""
         ctx = make_admin_context(tenant_id="acme")
 
         assert ctx.principal.tenant_id == "acme"
-        assert ctx.principal.roles == ["admin"]
+        assert ctx.principal.roles == ("admin",)

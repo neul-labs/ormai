@@ -25,6 +25,11 @@ class Principal:
     roles: tuple[str, ...] = field(default_factory=tuple)
     metadata: dict[str, Any] = field(default_factory=dict)
 
+    def __post_init__(self) -> None:
+        """Normalize roles to tuple."""
+        if isinstance(self.roles, list):
+            object.__setattr__(self, "roles", tuple(self.roles))
+
     def has_role(self, role: str) -> bool:
         """Check if the principal has a specific role."""
         return role in self.roles

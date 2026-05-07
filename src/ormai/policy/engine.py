@@ -5,8 +5,6 @@ The PolicyEngine is the central point for policy evaluation. It validates
 requests against policies and provides decisions for query compilation.
 """
 
-from typing import TYPE_CHECKING
-
 from pydantic import BaseModel, Field
 
 from ormai.core.context import RunContext
@@ -29,9 +27,7 @@ from ormai.core.types import SchemaMetadata
 from ormai.policy.models import Budget, ModelPolicy, Policy
 from ormai.policy.validation import PolicyValidator
 
-if TYPE_CHECKING:
-    from ormai.policy.engine import PolicyEngine
-
+__all__ = ["PolicyDecision", "PolicyEngine"]
 
 class PolicyDecision(BaseModel):
     """
@@ -365,8 +361,9 @@ class PolicyEngine:
 
         if len(request.ids) > write_policy.max_affected_rows:
             raise MaxAffectedRowsExceededError(
-                limit=write_policy.max_affected_rows,
-                requested=len(request.ids),
+                operation="bulk_update",
+                max_rows=write_policy.max_affected_rows,
+                affected_rows=len(request.ids),
             )
 
         # Validate fields

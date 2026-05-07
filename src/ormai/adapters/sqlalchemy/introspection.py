@@ -62,7 +62,7 @@ class SQLAlchemyIntrospector:
 
     def _introspect_model(self, model: type) -> ModelMetadata:
         """Introspect a single model."""
-        mapper = inspect(model)
+        mapper: Any = inspect(model)
 
         # Get table name
         table_name = mapper.mapped_table.name
@@ -103,7 +103,7 @@ class SQLAlchemyIntrospector:
             description=column.doc,
         )
 
-    def _introspect_relationship(self, rel: RelationshipProperty) -> RelationMetadata:
+    def _introspect_relationship(self, rel: RelationshipProperty[Any]) -> RelationMetadata:
         """Introspect a relationship."""
         # Determine relationship type
         if rel.uselist:

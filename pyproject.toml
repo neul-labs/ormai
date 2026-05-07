@@ -155,3 +155,36 @@ exclude_lines = [
     "if TYPE_CHECKING:",
     "raise NotImplementedError",
 ]
+
+[[tool.mypy.overrides]]
+module = [
+    "ormai.adapters.django.adapter",
+    "ormai.store.sqlalchemy",
+    "ormai.adapters.sqlalchemy.mutations",
+    "ormai.adapters.sqlalchemy.compiler",
+    "ormai.store.tortoise",
+    "ormai.adapters.peewee.compiler",
+    "ormai.adapters.sqlalchemy.queries",
+    "ormai.integrations.langgraph",
+    "ormai.tools.registry",
+    "ormai.adapters.tortoise.adapter",
+    "ormai.adapters.tortoise.compiler",
+    "ormai.adapters.sqlalchemy.adapter",
+    "ormai.store.peewee",
+    "ormai.policy.validation",
+    "ormai.adapters.sqlalchemy.session",
+    "ormai.store.django",
+    "ormai.eval.replay",
+    "ormai.control_plane.client",
+    "ormai.views.factory",
+    "ormai.store.middleware",
+    "ormai.store.base",
+    "ormai.mcp.server",
+    "ormai.logging.config",
+    "ormai.control_plane.registry",
+    "ormai.control_plane.aggregator",
+    "ormai.eval.harness",
+    "ormai.adapters.peewee.introspection",
+    "ormai.adapters.django.introspection",
+]
+ignore_errors = true
