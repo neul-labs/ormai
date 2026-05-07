@@ -134,6 +134,31 @@ class PolicyEngine:
 
         return decision
 
+    def filter_select_fields(
+        self,
+        model: str,
+        select: list[str] | None,
+        model_policy: ModelPolicy,
+    ) -> list[str]:
+        """
+        Filter requested fields against policy-allowed fields.
+
+        Args:
+            model: Model name
+            select: Requested fields (None means all allowed)
+            model_policy: Policy for the model
+
+        Returns:
+            List of fields that are both requested and allowed
+        """
+        schema_model = self.schema.get_model(model)
+        all_fields = list(schema_model.fields.keys()) if schema_model else []
+        allowed = model_policy.get_allowed_fields(all_fields)
+
+        if select:
+            return [f for f in select if f in allowed]
+        return allowed
+
     def validate_get(
         self,
         request: GetRequest,

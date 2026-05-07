@@ -303,8 +303,13 @@ class TestSQLModelExecution:
         )
 
         with Session(sqlmodel_engine) as session:
-            test_context.db = session
-            result = await sqlmodel_adapter.execute_query(compiled, test_context)
+            ctx = RunContext(
+                principal=test_context.principal,
+                request_id=test_context.request_id,
+                now=test_context.now,
+                db=session,
+            )
+            result = await sqlmodel_adapter.execute_query(compiled, ctx)
 
         assert result.data == []
         assert result.total == 0
