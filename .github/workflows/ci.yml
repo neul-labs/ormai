@@ -116,7 +116,7 @@ jobs:
           enable-cache: true
 
       - name: Install build tools
-        run: uv pip install build twine
+        run: uv pip install --system build twine
 
       - name: Validate package
         run: |
@@ -211,7 +211,7 @@ jobs:
 
       - name: Run tests
         working-directory: ormai-ts
-        run: npm run test:run
+        run: npm run test
 
       - name: Upload coverage
         working-directory: ormai-ts

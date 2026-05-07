@@ -26,7 +26,7 @@ from ormai.core.errors import (
     WriteDisabledError,
 )
 from ormai.core.types import SchemaMetadata
-from ormai.policy.models import Budget, Policy
+from ormai.policy.models import Budget, ModelPolicy, Policy
 from ormai.policy.validation import PolicyValidator
 
 if TYPE_CHECKING:

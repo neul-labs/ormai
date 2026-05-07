@@ -10,17 +10,18 @@ from contextlib import contextmanager
 from typing import Any
 
 from sqlalchemy.engine import Engine
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ormai.adapters.sqlalchemy import SQLAlchemyAdapter
 from ormai.core.types import SchemaMetadata
 
+HAS_SQLMODEL = False
 try:
-    from sqlmodel import SQLModel
+    from sqlmodel import SQLModel  # noqa: F401
 
     HAS_SQLMODEL = True
 except ImportError:
-    HAS_SQLMODEL = False
-    SQLModel: Any = None
+    pass
 
 
 class SQLModelAdapter(SQLAlchemyAdapter):
@@ -52,7 +53,7 @@ class SQLModelAdapter(SQLAlchemyAdapter):
 
     def __init__(
         self,
-        engine: Engine,
+        engine: Engine | AsyncEngine,
         models: list[type[Any]] | None = None,
         policy: Any = None,
         session_factory: Any = None,
@@ -79,7 +80,7 @@ class SQLModelAdapter(SQLAlchemyAdapter):
         )
 
         if session_factory is not None:
-            self.session_manager = _SQLModelSessionManager(engine, session_factory)
+            self._session_manager = _SQLModelSessionManager(engine, session_factory)
 
         self._sqlmodel_classes = models
 
@@ -90,7 +91,7 @@ class SQLModelAdapter(SQLAlchemyAdapter):
     @classmethod
     def from_models(
         cls,
-        engine: Engine,
+        engine: Engine | AsyncEngine,
         *model_classes: type,
         policy: Any = None,
     ) -> "SQLModelAdapter":
@@ -118,7 +119,7 @@ class SQLModelAdapter(SQLAlchemyAdapter):
 class _SQLModelSessionManager:
     """Simple session manager that wraps a session factory."""
 
-    def __init__(self, engine: Engine, session_factory: Any) -> None:
+    def __init__(self, engine: Engine | AsyncEngine, session_factory: Any) -> None:
         self._engine = engine
         self._session_factory = session_factory
 

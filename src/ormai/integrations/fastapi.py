@@ -110,7 +110,7 @@ class OrmAIRouter:
             tool = self.toolset.get(name)
             if tool is None:
                 raise HTTPException(status_code=404, detail=f"Tool not found: {name}")
-            return tool.get_schema()
+            return tool.get_json_schema()
 
         @self.router.post("/call")
         async def call_tool(
