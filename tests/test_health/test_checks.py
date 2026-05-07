@@ -185,7 +185,7 @@ class TestCheckDatabase:
 
         mock_schema = SchemaMetadata(models={})
         mock_adapter = MagicMock()
-        mock_adapter.introspect.return_value = mock_schema
+        mock_adapter.introspect = AsyncMock(return_value=mock_schema)
 
         result = await check_database(mock_adapter)
         assert result.status == HealthStatus.HEALTHY
@@ -209,7 +209,7 @@ class TestCheckDatabase:
             }
         )
         mock_adapter = MagicMock()
-        mock_adapter.introspect.return_value = mock_schema
+        mock_adapter.introspect = AsyncMock(return_value=mock_schema)
 
         result = await check_database(mock_adapter)
         assert result.status == HealthStatus.HEALTHY

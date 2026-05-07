@@ -86,6 +86,8 @@ class DjangoAdapter(OrmAdapter):
 
     def _get_model(self, model_name: str) -> type[models.Model]:
         """Get the Django model class by name."""
+        if not self._model_map:
+            self.sync_introspect()
         if model_name not in self._model_map:
             raise ModelNotAllowedError(
                 model_name,

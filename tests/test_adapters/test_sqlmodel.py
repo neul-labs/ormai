@@ -286,9 +286,11 @@ class TestSQLModelExecution:
 
     @pytest.mark.asyncio
     async def test_execute_empty_query(
-        self, sqlmodel_adapter, sqlmodel_policy, test_context
+        self, sqlmodel_adapter, sqlmodel_policy, test_context, sqlmodel_engine
     ):
         """Test executing a query on empty database."""
+        from sqlmodel import Session
+
         schema = await sqlmodel_adapter.introspect()
 
         request = QueryRequest(
@@ -300,7 +302,9 @@ class TestSQLModelExecution:
             request, test_context, sqlmodel_policy, schema
         )
 
-        result = await sqlmodel_adapter.execute_query(compiled, test_context)
+        with Session(sqlmodel_engine) as session:
+            test_context.db = session
+            result = await sqlmodel_adapter.execute_query(compiled, test_context)
 
         assert result.data == []
         assert result.total == 0
