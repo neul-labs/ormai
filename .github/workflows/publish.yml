@@ -15,7 +15,6 @@ on:
 
 permissions:
   contents: read
-  id-token: write
 
 env:
   NODE_VERSION: "20"
@@ -106,13 +105,13 @@ jobs:
         working-directory: ormai-ts
         run: npm install
 
-      - name: Typecheck
-        working-directory: ormai-ts
-        run: npm run typecheck
-
       - name: Build
         working-directory: ormai-ts
         run: npm run build
+
+      - name: Typecheck
+        working-directory: ormai-ts
+        run: npm run typecheck
 
       - name: Test
         working-directory: ormai-ts
