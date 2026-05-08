@@ -127,6 +127,8 @@ jobs:
     name: Version Check
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    permissions:
+      contents: write
     outputs:
       version_changed: ${{ steps.version-check.outputs.version_changed }}
       current_version: ${{ steps.current-version.outputs.current_version }}
@@ -275,6 +277,8 @@ jobs:
     name: Version Check ormai-ts
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    permissions:
+      contents: write
     outputs:
       version_changed: ${{ steps.version-check.outputs.version_changed }}
       current_version: ${{ steps.current-version.outputs.current_version }}
