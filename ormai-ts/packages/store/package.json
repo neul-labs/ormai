@@ -1,6 +1,6 @@
 {
   "name": "@ormai/store",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Audit logging stores for OrmAI — in-memory, JSONL, and middleware",
   "type": "module",
   "main": "./dist/index.cjs",

@@ -1,6 +1,6 @@
 [project]
 name = "ormai"
-version = "0.2.0"
+version = "0.2.1"
 description = "ORM-native capability runtime for safe, typed, auditable agent database access"
 readme = "README.md"
 license = { text = "MIT" }

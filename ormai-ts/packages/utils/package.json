@@ -1,6 +1,6 @@
 {
   "name": "@ormai/utils",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Utilities for OrmAI — PolicyBuilder, defaults profiles, toolset factory, testing helpers",
   "type": "module",
   "main": "./dist/index.cjs",

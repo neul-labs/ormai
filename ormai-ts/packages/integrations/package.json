@@ -1,6 +1,6 @@
 {
   "name": "@ormai/integrations",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Agent framework integrations for OrmAI — Vercel AI SDK, LangChain, OpenAI, Anthropic, LlamaIndex, Mastra",
   "type": "module",
   "main": "./dist/index.cjs",

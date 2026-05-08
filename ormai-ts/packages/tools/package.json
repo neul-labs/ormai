@@ -1,6 +1,6 @@
 {
   "name": "@ormai/tools",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Generic database tools for OrmAI — query, get, aggregate, create, update, delete",
   "type": "module",
   "main": "./dist/index.cjs",

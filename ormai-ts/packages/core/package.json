@@ -1,6 +1,6 @@
 {
   "name": "@ormai/core",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Core types, policy engine, adapter interfaces, and schemas for OrmAI",
   "type": "module",
   "main": "./dist/index.cjs",
