@@ -50,12 +50,12 @@
   "dependencies": {
     "@ormai/core": "*",
     "@ormai/tools": "*",
-    "zod": "^4.3.6"
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/node": "^25.0.9",
     "tsup": "^8.3.5",
-    "typescript": "^6.0.2",
+    "typescript": "^6.0.3",
     "vitest": "^4.0.17"
   },
   "engines": {
