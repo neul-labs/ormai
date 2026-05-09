@@ -33,15 +33,25 @@
     "clean": "rm -rf dist"
   },
   "keywords": [
-    "orm", "ai", "agents", "typeorm", "agent-tools",
-    "database", "policy", "audit", "security", "tenant-isolation",
-    "multi-tenant", "data-governance", "llm-tools"
+    "orm",
+    "ai",
+    "agents",
+    "typeorm",
+    "agent-tools",
+    "database",
+    "policy",
+    "audit",
+    "security",
+    "tenant-isolation",
+    "multi-tenant",
+    "data-governance",
+    "llm-tools"
   ],
   "author": "Dipankar Sarkar <me@dipankar.name>",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/neul-labs/ormai",
+    "url": "git+https://github.com/neul-labs/ormai",
     "directory": "ormai-ts/packages/typeorm"
   },
   "homepage": "https://github.com/neul-labs/ormai/tree/main/ormai-ts/packages/typeorm",

@@ -33,14 +33,22 @@
     "clean": "rm -rf dist"
   },
   "keywords": [
-    "orm", "ai", "agents", "mcp", "model-context-protocol",
-    "database", "policy", "audit", "security", "llm-tools"
+    "orm",
+    "ai",
+    "agents",
+    "mcp",
+    "model-context-protocol",
+    "database",
+    "policy",
+    "audit",
+    "security",
+    "llm-tools"
   ],
   "author": "Dipankar Sarkar <me@dipankar.name>",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/neul-labs/ormai",
+    "url": "git+https://github.com/neul-labs/ormai",
     "directory": "ormai-ts/packages/mcp"
   },
   "homepage": "https://github.com/neul-labs/ormai/tree/main/ormai-ts/packages/mcp",

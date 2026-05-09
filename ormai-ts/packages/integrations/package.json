@@ -33,14 +33,23 @@
     "clean": "rm -rf dist"
   },
   "keywords": [
-    "orm", "ai", "agents", "langchain", "vercel-ai", "openai",
-    "anthropic", "llamaindex", "mastra", "agent-tools", "llm-tools"
+    "orm",
+    "ai",
+    "agents",
+    "langchain",
+    "vercel-ai",
+    "openai",
+    "anthropic",
+    "llamaindex",
+    "mastra",
+    "agent-tools",
+    "llm-tools"
   ],
   "author": "Dipankar Sarkar <me@dipankar.name>",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/neul-labs/ormai",
+    "url": "git+https://github.com/neul-labs/ormai",
     "directory": "ormai-ts/packages/integrations"
   },
   "homepage": "https://github.com/neul-labs/ormai/tree/main/ormai-ts/packages/integrations",
@@ -60,12 +69,24 @@
     "@anthropic-ai/sdk": "^0.30.0 || ^0.32.0"
   },
   "peerDependenciesMeta": {
-    "@langchain/core": { "optional": true },
-    "ai": { "optional": true },
-    "llamaindex": { "optional": true },
-    "@mastra/core": { "optional": true },
-    "openai": { "optional": true },
-    "@anthropic-ai/sdk": { "optional": true }
+    "@langchain/core": {
+      "optional": true
+    },
+    "ai": {
+      "optional": true
+    },
+    "llamaindex": {
+      "optional": true
+    },
+    "@mastra/core": {
+      "optional": true
+    },
+    "openai": {
+      "optional": true
+    },
+    "@anthropic-ai/sdk": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@types/node": "^25.0.9",

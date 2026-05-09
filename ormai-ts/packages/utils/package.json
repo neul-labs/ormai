@@ -33,14 +33,21 @@
     "clean": "rm -rf dist"
   },
   "keywords": [
-    "orm", "ai", "agents", "policy-builder", "testing",
-    "database", "policy", "audit", "llm-tools"
+    "orm",
+    "ai",
+    "agents",
+    "policy-builder",
+    "testing",
+    "database",
+    "policy",
+    "audit",
+    "llm-tools"
   ],
   "author": "Dipankar Sarkar <me@dipankar.name>",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/neul-labs/ormai",
+    "url": "git+https://github.com/neul-labs/ormai",
     "directory": "ormai-ts/packages/utils"
   },
   "homepage": "https://github.com/neul-labs/ormai/tree/main/ormai-ts/packages/utils",
