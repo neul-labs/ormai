@@ -1,29 +1,52 @@
 # OrmAI
 
 [![PyPI Version](https://img.shields.io/pypi/v/ormai)](https://pypi.org/project/ormai/)
+[![npm version](https://img.shields.io/npm/v/@ormai/core)](https://www.npmjs.com/package/@ormai/core)
 [![Python Versions](https://img.shields.io/pypi/pyversions/ormai)](https://pypi.org/project/ormai/)
 [![MIT License](https://img.shields.io/pypi/l/ormai)](https://github.com/neul-labs/ormai/blob/main/LICENSE)
-[![Tests](https://img.shields.io/github/actions/workflow/status/neul-labs/ormai/test.yml?label=tests)](https://github.com/neul-labs/ormai/actions)
+[![CI](https://img.shields.io/github/actions/workflow/status/neul-labs/ormai/ci.yml?label=tests)](https://github.com/neul-labs/ormai/actions)
 
 **Give your AI agents database access without the risk.**
 
-OrmAI wraps your existing ORM models in a policy-enforced runtime. Your agents get typed tools for querying and writing data—while you keep control over what they can see and do.
+OrmAI wraps your existing ORM models in a policy-enforced runtime. Your agents get typed tools for querying and writing data — while you keep control over what they can see and do. No raw SQL. No prompt injection into your database. Just safe, auditable, tenant-scoped database tools.
+
+**Available for Python and TypeScript/Node.js.**
+
+---
 
 ## Why OrmAI?
 
-Building AI agents that interact with your database? You've probably thought about:
+Building AI agents that interact with your database? You have probably thought about:
 
-- **"What if the agent reads sensitive data?"** → Field-level policies hide or mask PII automatically
-- **"What if it runs wild queries?"** → Query budgets and row limits prevent runaway costs
-- **"How do I audit what it did?"** → Every operation is logged with full context
-- **"What about multi-tenant isolation?"** → Tenant scoping is built-in, not bolted on
+- **"What if the agent reads sensitive data?"** → Field-level policies hide or mask PII automatically.
+- **"What if it runs wild queries?"** → Query budgets and row limits prevent runaway costs.
+- **"How do I audit what it did?"** → Every operation is logged with full context.
+- **"What about multi-tenant isolation?"** → Tenant scoping is built-in, not bolted on.
+- **"Which ORM do we use?"** → Works with SQLAlchemy, Prisma, Drizzle, TypeORM, Tortoise, Django, SQLModel, and Peewee.
 
-OrmAI solves these at the ORM layer—not the prompt layer. No SQL injection. No prompt hacks. Just safe, typed database tools.
+OrmAI solves these at the ORM layer — not the prompt layer.
 
-## 30-Second Setup
+---
+
+## Pick Your Stack
+
+| | **Python** | **TypeScript / Node.js** |
+|---|---|---|
+| **Package** | `pip install ormai` | `npm install @ormai/core` |
+| **ORMs** | SQLAlchemy, Tortoise, Django, SQLModel, Peewee | Prisma, Drizzle, TypeORM |
+| **Integrations** | OpenAI, LangChain, LlamaIndex, MCP, FastAPI | Vercel AI SDK, LangChain.js, OpenAI, Anthropic, LlamaIndex.ts, Mastra, MCP |
+| **Quickstart** | [`ormai.quickstart`](https://docs.neullabs.com/ormai) | [`@ormai/utils`](https://docs.neullabs.com/ormai) |
+| **Docs** | [Python Guide](https://docs.neullabs.com/ormai/python) | [TS Guide](https://docs.neullabs.com/ormai/typescript) |
+
+---
+
+## Python Quick Start
 
 ```bash
-uv add ormai[sqlalchemy]
+# With your ORM of choice
+pip install ormai[sqlalchemy]
+# or
+pip install ormai[prisma]
 ```
 
 ```python
@@ -31,108 +54,151 @@ from ormai.quickstart import mount_sqlalchemy
 from ormai.utils import DEFAULT_DEV
 
 # Your existing SQLAlchemy models + session
-toolset = mount_sqlalchemy(engine=engine, session_factory=Session, policy=DEFAULT_DEV)
+toolset = mount_sqlalchemy(
+    engine=engine,
+    session_factory=Session,
+    policy=DEFAULT_DEV
+)
 
 # Done. Your agent now has: db.query, db.get, db.aggregate, db.describe_schema
 ```
 
-That's it. Pass `toolset.tools` to your agent framework of choice.
+## TypeScript Quick Start
 
-## Quick Wins
+```bash
+# Core (required)
+npm install @ormai/core
 
-| What you want | How OrmAI helps |
-|---------------|-----------------|
-| **Agent can query, not drop tables** | Tools expose read/write ops, never raw SQL |
-| **Hide passwords, tokens, secrets** | `.deny_fields("*password*", "*token*")` |
-| **Mask PII in responses** | `.mask_fields(["email", "phone"])` |
-| **Scope queries to current tenant** | `.tenant_scope("tenant_id")` auto-filters everything |
-| **Know what the agent did** | Every call logged with principal, tenant, trace ID |
-| **Human approval for writes** | `.require_approval(["Order"])` gates mutations |
+# Choose your ORM adapter
+npm install @ormai/prisma
+```
 
-## Supported ORMs
+```typescript
+import { PrismaClient } from '@prisma/client';
+import { PrismaAdapter } from '@ormai/prisma';
+import { PolicyBuilder, createContext } from '@ormai/core';
+import { createGenericTools } from '@ormai/tools';
 
-Works with your existing models—no schema changes required:
+const prisma = new PrismaClient();
+const adapter = new PrismaAdapter({ prisma });
+const schema = await adapter.introspect();
 
-- **SQLAlchemy** (sync & async)
-- **Tortoise ORM**
-- **Peewee**
-- **Django**
-- **SQLModel**
+const policy = new PolicyBuilder('prod')
+  .registerModels(['Customer', 'Order'])
+  .tenantScope('tenantId')
+  .denyFields('*password*')
+  .maskFields('*email*')
+  .build();
 
-## Documentation
+const tools = createGenericTools({ adapter, policy, schema });
 
-**[docs.neullabs.com/ormai](https://docs.neullabs.com/ormai)** — Full guides, API reference, and examples
+const ctx = createContext({
+  tenantId: 'tenant-123',
+  userId: 'user-456',
+  db: prisma,
+  roles: ['admin'],
+});
 
-- [Getting Started](https://docs.neullabs.com/ormai/getting-started) — Install, configure, integrate
-- [Policy Configuration](https://docs.neullabs.com/ormai/policies) — Field rules, tenant scoping, write controls
-- [Production Checklist](https://docs.neullabs.com/ormai/production) — Security, rate limiting, observability
-- [API Reference](https://docs.neullabs.com/ormai/api) — Full tool and builder reference
+// Your agent now has safe database tools
+const result = await tools[0].execute({
+  model: 'Order',
+  where: [{ field: 'status', op: 'eq', value: 'pending' }],
+  take: 10,
+}, ctx);
+```
 
 ---
 
-## Table of Contents
+## What You Get Out of the Box
 
-- [Quick Start](#quick-start)
-- [Installation](#installation)
-- [Policy Configuration](#policy-configuration)
-- [Architecture](#architecture)
-- [Benchmark Demo](#benchmark-demo)
-- [Contributing](#contributing)
+| Feature | What It Does |
+|---------|-------------|
+| **Read-safe tools** | `db.query`, `db.get`, `db.aggregate`, `db.describe_schema` — no raw SQL |
+| **Write-safe tools** | `db.create`, `db.update`, `db.delete`, `db.bulk_update` — gated by policy |
+| **Field-level policies** | Hide passwords, mask emails, deny sensitive columns automatically |
+| **Tenant scoping** | `.tenantScope('tenant_id')` auto-filters every query per user |
+| **Query budgets** | Max rows, max includes depth, statement timeouts per model |
+| **Audit logging** | Every call logged with principal, tenant, trace ID, input, output |
+| **Human approval gates** | Require reason or approval for writes on sensitive models |
+| **Schema introspection** | Auto-discovers models, fields, relations, primary keys |
+| **Multi-framework** | LangChain, OpenAI, Vercel AI SDK, LlamaIndex, Mastra, FastAPI, MCP |
 
-## Quick Start
+---
 
-```python
-from sqlalchemy import create_engine, Column, Integer, String, ForeignKey
-from sqlalchemy.orm import declarative_base, sessionmaker, relationship
-from ormai.quickstart import mount_sqlalchemy
-from ormai.utils import DEFAULT_DEV
+## Architecture
 
-# Your existing models (unchanged)
-Base = declarative_base()
-
-class Customer(Base):
-    __tablename__ = "customers"
-    id = Column(Integer, primary_key=True)
-    name = Column(String(100))
-    email = Column(String(100))
-
-class Order(Base):
-    __tablename__ = "orders"
-    id = Column(Integer, primary_key=True)
-    customer_id = Column(Integer, ForeignKey("customers.id"))
-    total = Column(Integer)
-    customer = relationship("Customer", backref="orders")
-
-# Mount with one line
-engine = create_engine("sqlite:///./app.db")
-Session = sessionmaker(bind=engine)
-
-toolset = mount_sqlalchemy(engine=engine, session_factory=Session, policy=DEFAULT_DEV)
-
-# Your agent now has safe database tools
-print([t.name for t in toolset.tools.values()])
-# ['db.describe_schema', 'db.query', 'db.get', 'db.aggregate']
 ```
+┌─────────────────────────────────────────────────────────────┐
+│                        Your Agent                           │
+└──────────────────────────┬──────────────────────────────────┘
+                           │ calls tools
+┌──────────────────────────▼──────────────────────────────────┐
+│                    OrmAI Runtime                            │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐│
+│  │   Policy    │  │   Audit     │  │    Tenant Scope     ││
+│  │  Enforcer   │  │   Logger    │  │      Filter         ││
+│  └─────────────┘  └─────────────┘  └─────────────────────┘│
+└──────────────────────────┬──────────────────────────────────┘
+                           │ parameterized queries only
+┌──────────────────────────▼──────────────────────────────────┐
+│          Your ORM (SQLAlchemy / Prisma / Drizzle / ...)   │
+└─────────────────────────────────────────────────────────────┘
+```
+
+OrmAI sits between your agent and your ORM. It compiles agent requests into type-safe ORM queries, enforces policies, logs everything, and returns structured results. Your database never sees raw SQL from the agent.
+
+---
+
+## Documentation
+
+**[docs.neullabs.com/ormai](https://docs.neullabs.com/ormai)** — Full guides, API reference, and examples.
+
+- [Getting Started](https://docs.neullabs.com/ormai/getting-started)
+- [Policy Configuration](https://docs.neullabs.com/ormai/policies)
+- [Production Checklist](https://docs.neullabs.com/ormai/production)
+- [API Reference](https://docs.neullabs.com/ormai/api)
+
+---
 
 ## Installation
 
+### Python
+
 ```bash
-# With your ORM of choice
-uv add ormai[sqlalchemy]
-uv add ormai[tortoise]
-uv add ormai[peewee]
-uv add ormai[django]
-uv add ormai[sqlmodel]
+pip install ormai[sqlalchemy]
+pip install ormai[tortoise]
+pip install ormai[peewee]
+pip install ormai[django]
+pip install ormai[sqlmodel]
 
 # Or all adapters
-uv add ormai[all]
+pip install ormai[all]
 ```
 
-See [installation guide](https://docs.neullabs.com/ormai/getting-started#installation) for pip, development setup, and framework integrations.
+### TypeScript / Node.js
+
+```bash
+# Core (required)
+npm install @ormai/core
+
+# ORM adapters
+npm install @ormai/prisma
+npm install @ormai/drizzle
+npm install @ormai/typeorm
+
+# Optional packages
+npm install @ormai/tools     # Generic database tools
+npm install @ormai/store     # Audit logging
+npm install @ormai/mcp       # MCP server
+npm install @ormai/integrations  # Framework adapters
+npm install @ormai/utils     # PolicyBuilder and helpers
+```
+
+---
 
 ## Policy Configuration
 
-Start with a preset, customize as needed:
+### Python
 
 ```python
 from ormai.utils import PolicyBuilder, DEFAULT_PROD
@@ -148,35 +214,68 @@ policy = (
 )
 ```
 
+### TypeScript
+
+```typescript
+import { PolicyBuilder } from '@ormai/core';
+
+const policy = new PolicyBuilder('prod')
+  .registerModels(['Customer', 'Order', 'Product'])
+  .tenantScope('tenantId')
+  .denyFields('*password*')
+  .maskFields('*email*')
+  .allowRelations('Order', ['customer', 'items'])
+  .enableWrites(['Order'], {
+    allowCreate: true,
+    allowUpdate: true,
+    allowDelete: false,
+    maxAffectedRows: 10,
+  })
+  .defaultBudgetConfig({
+    maxRows: 100,
+    maxIncludesDepth: 2,
+    statementTimeoutMs: 5000,
+  })
+  .build();
+```
+
 **Presets:** `DEFAULT_DEV` (permissive), `DEFAULT_INTERNAL` (moderate), `DEFAULT_PROD` (strict)
 
-See [policy documentation](https://docs.neullabs.com/ormai/policies) for field rules, row limits, approval gates, and advanced patterns.
+---
 
-## Architecture
+## Agent Framework Integrations
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                        Your Agent                           │
-└──────────────────────────┬──────────────────────────────────┘
-                           │ calls tools
-┌──────────────────────────▼──────────────────────────────────┐
-│                    OrmAI Runtime                            │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐  │
-│  │   Policy    │  │   Audit     │  │    Tenant Scope     │  │
-│  │  Enforcer   │  │   Logger    │  │      Filter         │  │
-│  └─────────────┘  └─────────────┘  └─────────────────────┘  │
-└──────────────────────────┬──────────────────────────────────┘
-                           │ parameterized queries only
-┌──────────────────────────▼──────────────────────────────────┐
-│          Your ORM (SQLAlchemy / Tortoise / Peewee / Django) │
-└─────────────────────────────────────────────────────────────┘
-```
+| Framework | Python Package | TypeScript Package |
+|-----------|---------------|-------------------|
+| OpenAI | `ormai` | `@ormai/integrations` |
+| LangChain | `ormai` | `@ormai/integrations` |
+| Vercel AI SDK | — | `@ormai/integrations` |
+| LlamaIndex | `ormai` | `@ormai/integrations` |
+| Mastra | — | `@ormai/integrations` |
+| Anthropic | — | `@ormai/integrations` |
+| FastAPI | `ormai` | — |
+| MCP | `ormai` | `@ormai/mcp` |
 
-See [architecture guide](https://docs.neullabs.com/ormai/architecture) for module details and extension points.
+---
+
+## Supported ORMs
+
+| ORM | Python | TypeScript |
+|-----|--------|------------|
+| SQLAlchemy | ✅ | — |
+| Prisma | — | ✅ |
+| Drizzle | — | ✅ |
+| TypeORM | — | ✅ |
+| SQLModel | ✅ | — |
+| Django ORM | ✅ | — |
+| Tortoise ORM | ✅ | — |
+| Peewee | ✅ | — |
+
+---
 
 ## Benchmark: OrmAI vs Text-to-SQL
 
-We benchmarked against the [Spider dataset](https://yale-lily.github.io/spider)—1034 natural language queries:
+We benchmarked against the [Spider dataset](https://yale-lily.github.io/spider) — 1034 natural language queries:
 
 | Metric | OrmAI | Text-to-SQL |
 |--------|-------|-------------|
@@ -186,34 +285,37 @@ We benchmarked against the [Spider dataset](https://yale-lily.github.io/spider)�
 
 ```bash
 # Try it yourself
-uv add ormai[benchmark]
-uv run python examples/spider_demo.py run --limit 20
+pip install ormai[benchmark]
+python examples/spider_demo.py run --limit 20
 ```
 
-## TypeScript Edition
-
-OrmAI is also available for TypeScript/Node.js with support for Prisma, Drizzle, and TypeORM:
-
-```bash
-npm install @ormai/core @ormai/prisma
-```
-
-See [`ormai-ts/`](./ormai-ts/) for the full TypeScript monorepo with 9 published packages.
+---
 
 ## Examples
 
 - [`examples/spider_demo.py`](./examples/spider_demo.py) — Benchmark demo
-- [`examples/fastapi-sqlalchemy/`](./examples/fastapi-sqlalchemy/) — FastAPI integration
+- [`examples/fastapi-sqlalchemy/`](./examples/fastapi-sqlalchemy/) — FastAPI + SQLAlchemy integration
+- [`ormai-ts/`](./ormai-ts/) — TypeScript monorepo with Prisma, Drizzle, and TypeORM examples
 
-More examples at [docs.neullabs.com/ormai/examples](https://docs.neullabs.com/ormai/examples)
+More examples at [docs.neullabs.com/ormai/examples](https://docs.neullabs.com/ormai/examples).
+
+---
 
 ## Contributing
 
 ```bash
 git clone https://github.com/neul-labs/ormai.git
 cd ormai
+
+# Python
 uv sync --dev
 uv run pytest
+
+# TypeScript
+cd ormai-ts
+npm install
+npm run build
+npm run test
 ```
 
 See [contributing guide](https://docs.neullabs.com/ormai/contributing) for development setup and guidelines.

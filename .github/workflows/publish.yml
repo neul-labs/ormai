@@ -11,19 +11,27 @@ on:
         type: string
   push:
     tags:
+      - 'v*'
       - 'ormai-ts-v*'
 
-permissions:
-  contents: read
-
 env:
+  PYTHON_VERSION: "3.12"
   NODE_VERSION: "20"
 
 jobs:
-  validate:
-    name: Validate
+  # ────────────────────────────────────────────────
+  # Python: Validate
+  # ────────────────────────────────────────────────
+  validate-pypi:
+    name: Validate Python Package
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    if: |
+      github.ref_type == 'tag' && (
+        startsWith(github.ref_name, 'v') ||
+        github.event_name == 'release' ||
+        github.event_name == 'workflow_dispatch'
+      )
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -31,7 +39,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
-          python-version: "3.12"
+          python-version: ${{ env.PYTHON_VERSION }}
           cache: pip
 
       - name: Install uv
@@ -47,10 +55,21 @@ jobs:
           python -m build
           twine check dist/*
 
-  publish:
+  # ────────────────────────────────────────────────
+  # Python: Publish to PyPI (OIDC Trusted Publishing)
+  # ────────────────────────────────────────────────
+  publish-pypi:
     name: Publish to PyPI
     runs-on: ubuntu-latest
-    needs: validate
+    needs: validate-pypi
+    if: |
+      github.ref_type == 'tag' && startsWith(github.ref_name, 'v')
+    environment:
+      name: pypi
+      url: https://pypi.org/project/ormai/
+    permissions:
+      contents: read
+      id-token: write  # Required for OIDC trusted publishing
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -58,7 +77,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
-          python-version: "3.12"
+          python-version: ${{ env.PYTHON_VERSION }}
           cache: pip
 
       - name: Install uv
@@ -74,8 +93,6 @@ jobs:
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          password: ${{ secrets.PYPI_API_TOKEN }}
 
       - name: Create GitHub Release
         if: github.event_name == 'workflow_dispatch' && inputs.version
@@ -86,10 +103,19 @@ jobs:
           draft: false
           prerelease: false
 
+  # ────────────────────────────────────────────────
+  # TypeScript: Validate
+  # ────────────────────────────────────────────────
   validate-npm:
     name: Validate NPM Packages
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    if: |
+      github.ref_type == 'tag' && (
+        startsWith(github.ref_name, 'ormai-ts-v') ||
+        github.event_name == 'release' ||
+        github.event_name == 'workflow_dispatch'
+      )
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -105,7 +131,7 @@ jobs:
         working-directory: ormai-ts
         run: npm install
 
-      - name: Build
+      - name: Build packages
         working-directory: ormai-ts
         run: npm run build
 
@@ -117,11 +143,21 @@ jobs:
         working-directory: ormai-ts
         run: npm run test
 
+  # ────────────────────────────────────────────────
+  # TypeScript: Publish to NPM (OIDC Trusted Publishing)
+  # ────────────────────────────────────────────────
   publish-npm:
     name: Publish to NPM
     runs-on: ubuntu-latest
-    needs: [validate, validate-npm]
-    timeout-minutes: 15
+    needs: validate-npm
+    if: |
+      github.ref_type == 'tag' && startsWith(github.ref_name, 'ormai-ts-v')
+    environment:
+      name: npm
+      url: https://www.npmjs.com/package/@ormai/core
+    permissions:
+      contents: read
+      id-token: write  # Required for OIDC trusted publishing with npm
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -131,6 +167,8 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           registry-url: https://registry.npmjs.org
+          cache: npm
+          cache-dependency-path: ormai-ts/package-lock.json
 
       - name: Install dependencies
         working-directory: ormai-ts
@@ -142,54 +180,36 @@ jobs:
 
       - name: Publish @ormai/core
         working-directory: ormai-ts/packages/core
-        run: npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --provenance --access public
 
       - name: Publish @ormai/tools
         working-directory: ormai-ts/packages/tools
-        run: npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --provenance --access public
 
       - name: Publish @ormai/store
         working-directory: ormai-ts/packages/store
-        run: npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --provenance --access public
 
       - name: Publish @ormai/utils
         working-directory: ormai-ts/packages/utils
-        run: npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --provenance --access public
 
       - name: Publish @ormai/prisma
         working-directory: ormai-ts/packages/prisma
-        run: npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --provenance --access public
 
       - name: Publish @ormai/drizzle
         working-directory: ormai-ts/packages/drizzle
-        run: npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --provenance --access public
 
       - name: Publish @ormai/typeorm
         working-directory: ormai-ts/packages/typeorm
-        run: npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --provenance --access public
 
       - name: Publish @ormai/mcp
         working-directory: ormai-ts/packages/mcp
-        run: npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --provenance --access public
 
       - name: Publish @ormai/integrations
         working-directory: ormai-ts/packages/integrations
-        run: npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --provenance --access public
