@@ -5,6 +5,26 @@ All notable changes to `@ormai/core` are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+## [0.1.1] - 2026-05-09
+
+### Fixed
+- **CI/CD** — All GitHub Actions workflows now pass (test, lint, typecheck, validate, security audit, CodeQL, secrets scan).
+- **TypeScript compilation** — Resolved zod v4 breaking changes (`z.record()` arity, `.default()` factory requirement, `ZodTypeDef` removal) and TypeScript v6 strict narrowing.
+- **Build order** — Fixed cross-package `.d.ts` resolution by running `npm run build` before `npm run typecheck` in CI and publish workflows.
+- **NPM lockfile** — Fixed `npm ci` failure on Linux when lockfile was generated on macOS by switching to `npm install` in CI.
+
+### Changed
+- **Dependencies** — Bumped TypeScript to 6.0.3, Vitest to 4.1.5, and Zod to 4.4.3.
+- **README** — Rewritten with architecture diagrams, feature matrices, framework integration tables, and SEO-friendly keywords.
+- **Publish workflow** — Switched from token-based (`secrets.NPM_TOKEN`) to OIDC trusted publishing with automatic provenance attestations.
+
+### Security
+- Added CodeQL analysis for JavaScript/TypeScript.
+- Added npm audit to scheduled security scans.
+- Added TruffleHog secrets scanning on every push and PR.
+
 ## [0.1.0] - 2025-01-08
 
 ### Added

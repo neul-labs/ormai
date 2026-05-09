@@ -7,8 +7,109 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-05-09
+
+### Fixed
+- **CI/CD** — All GitHub Actions workflows now pass (test, lint, typecheck, validate, security audit, CodeQL, secrets scan).
+- **Python type checking** — Reduced mypy errors from 1200+ to zero in production code; added per-file overrides for deep legacy type debt.
+- **Pytest failures** — Fixed `Principal` roles type mismatch (list to tuple conversion), Django adapter `_model_map` initialization, SQLModel `total_count` assertion, and `FrozenInstanceError` on `RunContext` mutation.
+- **Security workflows** — Fixed TruffleHog base ref on push to main; fixed `npm ci` vs `npm install` lockfile sync issues.
+- **Publish workflow** — Switched to OIDC trusted publishing for PyPI; added job-level environments for protection rules.
+
+### Changed
+- **README** — Completely rewritten with equal Python and TypeScript coverage, architecture diagrams, feature matrices, and SEO-friendly keywords.
+- **Dependencies** — Bumped TypeScript to 6.0.3, Vitest to 4.1.5, and Zod to 4.4.3.
+
+### Security
+- Added CodeQL analysis for Python and JavaScript/TypeScript.
+- Added pip-audit and npm audit to scheduled security scans.
+- Added TruffleHog secrets scanning on every push and PR.
+
+## [0.2.0] - 2025-01-08
+
 ### Added
-- **Spider Benchmark Demo**: New `examples/spider_demo.py` comparing OrmAI vs text-to-SQL
+
+#### Production Readiness
+- **Environment Detection**: `ORMAI_ENV` environment variable for production vs development mode
+- **Rate Limiting**: New `ormai.middleware` module with `RateLimiter` supporting per-tenant/user limits
+- **Health Checks**: New `ormai.health` module with `HealthChecker`, `/health`, `/health/live`, `/health/ready` endpoints
+- **Structured Logging**: New `ormai.logging` module with JSON and text formatters, context injection
+- **Audit Retention**: `RetentionPolicy` and `RetentionManager` for automated log cleanup
+- **Security Scanning**: GitHub Actions workflow for pip-audit, CodeQL, and Gitleaks
+- **Dependabot**: Automated dependency update configuration
+
+#### Security Improvements
+- Production-safe authentication defaults (enforced by default in production)
+- Warnings when running without authentication in production mode
+- Rate limiting integration in MCP server and FastAPI
+
+### Changed
+- `enforce_auth` in `McpServerFactory` now auto-detects based on `ORMAI_ENV` (defaults to True in production)
+- Development principals renamed from `DEFAULT_DEV_*` to `_DEV_*` (internal use only)
+- Improved error logging in background tasks (policy sync, heartbeat, audit flush)
+- Fixed test fixture naming issues across test suite
+
+### Breaking Changes
+- MCP server now requires authentication by default. Set `ORMAI_ENV=development` for local development or provide an `auth` function.
+
+### Migration from 0.1.x
+1. Set `ORMAI_ENV=development` for local development environments
+2. Configure authentication for production deployments
+3. Consider enabling rate limiting for production
+
+## [0.1.0] - 2025-01-08
+
+### Added
+
+#### Core Features
+- ORM-native capability runtime for AI agents
+- Policy-based access control with tenant isolation
+- Field-level redaction for sensitive data
+- Budget enforcement for query cost control
+- Cursor-based pagination (offset and keyset)
+
+#### ORM Adapters
+- SQLAlchemy adapter with sync/async support
+- Tortoise ORM adapter (async)
+- Peewee adapter (sync)
+- Full CRUD operations (create, update, delete, bulk_update) for all adapters
+
+#### Audit Logging
+- Audit logging infrastructure with multiple store backends
+- JSONL file-based store for development
+- SQLAlchemy-based store for production
+- Peewee-based store
+- Tortoise ORM-based store
+- Audit middleware for automatic logging
+
+#### Integrations
+- MCP (Model Context Protocol) server for AI agent integration
+- FastAPI integration
+- LangGraph integration
+
+#### Tools
+- Generic query, get, and aggregate tools
+- Domain-specific tool generation
+- Deferred execution with approval workflows
+
+#### Control Plane
+- Policy registry with versioning
+- Instance management
+- Federated audit aggregation
+- Health monitoring
+
+#### Developer Experience
+- Code generation for views and domain tools
+- Comprehensive type annotations
+- Property-based testing with Hypothesis
+
+### Security
+- Automatic tenant_id injection into all queries
+- Field masking and redaction based on policy
+- Policy validation before query execution
+- Audit trail for all operations
+
+See [ormai-ts/CHANGELOG.md](./ormai-ts/CHANGELOG.md) for TypeScript package changes.
   - Rich split-screen CLI with live progress
   - Concurrent execution across GPT-4 and Claude
   - Safety metrics (policy blocks, unsafe query detection)
