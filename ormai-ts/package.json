@@ -20,7 +20,7 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@types/node": "^25.0.9",
-    "eslint": "^10.3.0",
+    "eslint": "^10.4.0",
     "tsup": "^8.3.5",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.59.2",
