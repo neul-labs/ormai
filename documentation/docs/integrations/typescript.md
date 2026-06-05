@@ -1,103 +1,104 @@
 # TypeScript Edition
 
-OrmAI is available as a TypeScript/Node.js package with full feature parity to the Python version.
+OrmAI ships as a TypeScript/Node.js monorepo at [`ormai-ts/`](https://github.com/neul-labs/ormai/tree/main/ormai-ts) with first-class support for **Prisma**, **Drizzle**, and **TypeORM**.
+
+## Packages
+
+| Package | Description |
+|---|---|
+| `@ormai/core` | Core types, policy engine, adapter/tool/store interfaces, DSL schemas |
+| `@ormai/prisma` | Prisma ORM adapter |
+| `@ormai/drizzle` | Drizzle ORM adapter |
+| `@ormai/typeorm` | TypeORM adapter |
+| `@ormai/tools` | Generic database tools (query, get, aggregate, create, update, delete) |
+| `@ormai/store` | Audit logging stores (in-memory, JSONL) and middleware |
+| `@ormai/mcp` | Model Context Protocol server with auth |
+| `@ormai/integrations` | Agent framework adapters (Vercel AI, LangChain, OpenAI, Anthropic, LlamaIndex, Mastra) |
+| `@ormai/utils` | `PolicyBuilder`, defaults profiles, `quickSetup`, testing helpers |
 
 ## Installation
 
 ```bash
-npm install ormai
-# or
-yarn add ormai
-# or
-pnpm add ormai
+# Core is always required
+npm install @ormai/core
+
+# Pick an ORM adapter
+npm install @ormai/prisma        # also: npm install @prisma/client
+npm install @ormai/drizzle       # also: npm install drizzle-orm
+npm install @ormai/typeorm       # also: npm install typeorm
+
+# Optional
+npm install @ormai/tools          # Generic database tools
+npm install @ormai/store          # Audit logging
+npm install @ormai/mcp            # MCP server
+npm install @ormai/integrations   # Agent framework adapters
+npm install @ormai/utils          # PolicyBuilder and helpers
 ```
 
-## Supported ORMs
-
-| ORM | Status | Package |
-|-----|--------|---------|
-| Prisma | Production | Built-in |
-| Drizzle | Production | Built-in |
-| TypeORM | Production | Built-in |
-
-## Quick Start
-
-### With Prisma
+## Quick Start with Prisma
 
 ```typescript
 import { PrismaClient } from '@prisma/client';
-import { mountPrisma, Principal, RunContext } from 'ormai';
+import { PrismaAdapter } from '@ormai/prisma';
+import { PolicyBuilder, createContext } from '@ormai/core';
+import { createGenericTools } from '@ormai/tools';
 
 const prisma = new PrismaClient();
+const adapter = new PrismaAdapter({ prisma });
+const schema = await adapter.introspect();
 
-// Define policy
-const policy = {
-  models: {
-    User: {
-      allowed: true,
-      fields: {
-        id: { action: 'allow' },
-        email: { action: 'mask' },
-        name: { action: 'allow' },
-      },
-      scoping: { tenantId: 'principal.tenantId' },
-    },
-    Order: {
-      allowed: true,
-      fields: {
-        id: { action: 'allow' },
-        status: { action: 'allow' },
-        total: { action: 'allow' },
-      },
-      scoping: { tenantId: 'principal.tenantId' },
-    },
-  },
-};
+const policy = new PolicyBuilder('prod')
+  .registerModels(['Customer', 'Order', 'Product'])
+  .tenantScope('tenantId')
+  .denyFields('*password*')
+  .maskFields('*email*')
+  .enableWrites(['Order'])
+  .build();
 
-// Mount toolset
-const toolset = mountPrisma(prisma, policy);
+const tools = createGenericTools({ adapter, policy, schema });
 
-// Create context
-const ctx: RunContext = {
-  principal: {
-    tenantId: 'acme-corp',
-    userId: 'user-123',
-    roles: ['member'],
-  },
-};
-
-// Query
-const result = await toolset.query(ctx, {
-  model: 'Order',
-  filters: [{ field: 'status', op: 'eq', value: 'pending' }],
-  limit: 10,
+const ctx = createContext({
+  tenantId: 'tenant-123',
+  userId: 'user-456',
+  db: prisma,
+  roles: ['admin'],
 });
 
-console.log(result.rows);
+const result = await tools[0].execute({
+  model: 'Order',
+  where: [{ field: 'status', op: 'eq', value: 'pending' }],
+  take: 10,
+}, ctx);
 ```
 
-### With Drizzle
+## Quick Start with Drizzle
 
 ```typescript
 import { drizzle } from 'drizzle-orm/node-postgres';
-import { mountDrizzle } from 'ormai';
+import { DrizzleAdapter } from '@ormai/drizzle';
+import { PolicyBuilder, createContext } from '@ormai/core';
+import { createGenericTools } from '@ormai/tools';
 import * as schema from './schema';
 
 const db = drizzle(pool, { schema });
+const adapter = new DrizzleAdapter({ db, schema });
+const introspected = await adapter.introspect();
 
-const toolset = mountDrizzle(db, schema, policy);
+const policy = new PolicyBuilder('prod')
+  .registerModels(['orders', 'customers'])
+  .tenantScope('tenantId')
+  .build();
 
-const result = await toolset.query(ctx, {
-  model: 'orders',
-  filters: [{ field: 'status', op: 'eq', value: 'pending' }],
-});
+const tools = createGenericTools({ adapter, policy, schema: introspected });
 ```
 
-### With TypeORM
+## Quick Start with TypeORM
 
 ```typescript
 import { DataSource } from 'typeorm';
-import { mountTypeORM } from 'ormai';
+import { TypeOrmAdapter } from '@ormai/typeorm';
+import { PolicyBuilder, createContext } from '@ormai/core';
+import { createGenericTools } from '@ormai/tools';
 import { User, Order } from './entities';
 
 const dataSource = new DataSource({
@@ -105,379 +106,136 @@ const dataSource = new DataSource({
   url: process.env.DATABASE_URL,
   entities: [User, Order],
 });
-
 await dataSource.initialize();
 
-const toolset = mountTypeORM(dataSource, policy);
+const adapter = new TypeOrmAdapter({ dataSource });
+const schema = await adapter.introspect();
+
+const policy = new PolicyBuilder('prod')
+  .registerModels(['User', 'Order'])
+  .tenantScope('tenantId')
+  .build();
+
+const tools = createGenericTools({ adapter, policy, schema });
 ```
 
-## Policy Configuration
+## PolicyBuilder
 
-### Zod Schema
-
-Policies are validated with Zod:
+`PolicyBuilder` from `@ormai/core` (re-exported by `@ormai/utils`) is the canonical way to declare policies in TypeScript.
 
 ```typescript
-import { z } from 'zod';
-import { PolicySchema, FieldAction, WriteAction } from 'ormai';
+import { PolicyBuilder } from '@ormai/core';
 
-const policy = PolicySchema.parse({
-  models: {
-    User: {
-      allowed: true,
-      fields: {
-        id: { action: FieldAction.Allow },
-        email: { action: FieldAction.Mask },
-        password: { action: FieldAction.Deny },
-      },
-      scoping: { tenantId: 'principal.tenantId' },
-      writePolicy: {
-        create: WriteAction.Allow,
-        update: WriteAction.Allow,
-        delete: WriteAction.Deny,
-      },
-    },
-  },
-  budget: {
-    maxRows: 1000,
-    maxIncludeDepth: 3,
-  },
+const policy = new PolicyBuilder('prod')
+  .registerModels(['Customer', 'Order', 'Product'])
+  .tenantScope('tenantId')
+  .denyFields('*password*', '*secret*', '*token*')
+  .maskFields('*email*', '*phone*')
+  .allowRelations('Order', ['customer', 'items'])
+  .enableWrites(['Order'], {
+    allowCreate: true,
+    allowUpdate: true,
+    allowDelete: false,
+    maxAffectedRows: 10,
+  })
+  .defaultBudgetConfig({
+    maxRows: 100,
+    maxIncludesDepth: 2,
+    statementTimeoutMs: 5000,
+  })
+  .build();
+```
+
+Profile presets ship in `@ormai/utils`: `DEFAULT_DEV` (permissive), `DEFAULT_INTERNAL` (moderate), `DEFAULT_PROD` (strict).
+
+## Generic Tools
+
+`createGenericTools` returns the standard tool set:
+
+- `db.query` — filter, paginate, include relations
+- `db.get` — fetch a single record by primary key
+- `db.aggregate` — count / sum / avg / min / max with `groupBy`
+- `db.describe_schema` — return the policy-filtered schema
+- `db.create` / `db.update` / `db.delete` / `db.bulk_update` — gated by `enableWrites`
+
+Each tool returns a structured result and never executes raw SQL.
+
+## Agent Framework Integrations
+
+`@ormai/integrations` adapts the tool registry to popular agent frameworks.
+
+### Vercel AI SDK
+
+```typescript
+import { toVercelAITools } from '@ormai/integrations';
+import { generateText } from 'ai';
+import { openai } from '@ai-sdk/openai';
+
+const agentTools = await toVercelAITools(registry.list(), ctx);
+
+const result = await generateText({
+  model: openai('gpt-4o'),
+  tools: agentTools,
+  prompt: 'Find all pending orders for the current tenant',
 });
 ```
 
-### Type Safety
+### Other adapters
 
-Full TypeScript support:
-
-```typescript
-import type { Policy, ModelPolicy, FieldPolicy, Principal, RunContext } from 'ormai';
-
-const modelPolicy: ModelPolicy = {
-  allowed: true,
-  fields: {
-    id: { action: 'allow' },
-  },
-};
-
-const policy: Policy = {
-  models: {
-    User: modelPolicy,
-  },
-};
-```
-
-## API Reference
-
-### Query
-
-```typescript
-interface QueryOptions {
-  model: string;
-  filters?: FilterClause[];
-  select?: string[];
-  order?: OrderClause[];
-  include?: IncludeClause[];
-  limit?: number;
-  cursor?: string;
-}
-
-const result = await toolset.query(ctx, {
-  model: 'Order',
-  filters: [
-    { field: 'status', op: 'eq', value: 'pending' },
-    { field: 'total', op: 'gte', value: 1000 },
-  ],
-  select: ['id', 'status', 'total'],
-  order: [{ field: 'createdAt', direction: 'desc' }],
-  include: [{ relation: 'user', select: ['id', 'name'] }],
-  limit: 20,
-});
-```
-
-### Get
-
-```typescript
-const result = await toolset.get(ctx, {
-  model: 'Order',
-  id: 123,
-  include: [{ relation: 'items' }],
-});
-```
-
-### Aggregate
-
-```typescript
-const result = await toolset.aggregate(ctx, {
-  model: 'Order',
-  filters: [{ field: 'status', op: 'eq', value: 'completed' }],
-  aggregations: [
-    { function: 'count', alias: 'totalOrders' },
-    { function: 'sum', field: 'total', alias: 'revenue' },
-    { function: 'avg', field: 'total', alias: 'avgOrder' },
-  ],
-  groupBy: ['status'],
-});
-```
-
-### Create
-
-```typescript
-const result = await toolset.create(ctx, {
-  model: 'Order',
-  data: {
-    status: 'pending',
-    total: 5000,
-    userId: 'user-123',
-  },
-});
-```
-
-### Update
-
-```typescript
-const result = await toolset.update(ctx, {
-  model: 'Order',
-  id: 123,
-  data: {
-    status: 'confirmed',
-  },
-});
-```
-
-### Delete
-
-```typescript
-const result = await toolset.delete(ctx, {
-  model: 'Order',
-  id: 123,
-});
-```
-
-## Express Integration
-
-```typescript
-import express from 'express';
-import { mountPrisma, Principal, RunContext } from 'ormai';
-
-const app = express();
-app.use(express.json());
-
-const toolset = mountPrisma(prisma, policy);
-
-// Middleware to extract context
-function getContext(req: express.Request): RunContext {
-  return {
-    principal: {
-      tenantId: req.headers['x-tenant-id'] as string,
-      userId: req.headers['x-user-id'] as string,
-      roles: (req.headers['x-roles'] as string)?.split(',') || [],
-    },
-  };
-}
-
-// Query endpoint
-app.post('/api/query', async (req, res) => {
-  try {
-    const ctx = getContext(req);
-    const result = await toolset.query(ctx, req.body);
-    res.json(result);
-  } catch (error) {
-    res.status(400).json({ error: error.message });
-  }
-});
-
-// Get endpoint
-app.post('/api/get', async (req, res) => {
-  try {
-    const ctx = getContext(req);
-    const result = await toolset.get(ctx, req.body);
-    if (!result.success) {
-      return res.status(404).json({ error: 'Not found' });
-    }
-    res.json(result.data);
-  } catch (error) {
-    res.status(400).json({ error: error.message });
-  }
-});
-
-app.listen(3000);
-```
-
-## Next.js Integration
-
-### API Routes
-
-```typescript
-// app/api/query/route.ts
-import { NextRequest, NextResponse } from 'next/server';
-import { toolset } from '@/lib/ormai';
-
-export async function POST(request: NextRequest) {
-  const body = await request.json();
-
-  const ctx = {
-    principal: {
-      tenantId: request.headers.get('x-tenant-id')!,
-      userId: request.headers.get('x-user-id')!,
-    },
-  };
-
-  try {
-    const result = await toolset.query(ctx, body);
-    return NextResponse.json(result);
-  } catch (error) {
-    return NextResponse.json(
-      { error: error.message },
-      { status: 400 }
-    );
-  }
-}
-```
-
-### Server Actions
-
-```typescript
-// app/actions.ts
-'use server';
-
-import { toolset } from '@/lib/ormai';
-import { auth } from '@/lib/auth';
-
-export async function queryOrders(filters: FilterClause[]) {
-  const session = await auth();
-
-  const ctx = {
-    principal: {
-      tenantId: session.user.orgId,
-      userId: session.user.id,
-    },
-  };
-
-  return toolset.query(ctx, {
-    model: 'Order',
-    filters,
-    limit: 50,
-  });
-}
-```
+The same package also exposes adapters for LangChain.js, OpenAI function-calling, Anthropic tool use, LlamaIndex.ts, and Mastra.
 
 ## Audit Logging
 
 ```typescript
-import { JsonlAuditStore, AuditMiddleware } from 'ormai';
+import { JsonlAuditStore, withAudit } from '@ormai/store';
 
 const store = new JsonlAuditStore('./audit.jsonl');
-const middleware = new AuditMiddleware(store, {
-  includeSnapshots: true,
-});
-
-const auditedToolset = middleware.wrap(toolset);
+const auditedTools = tools.map(tool => withAudit(tool, store));
 ```
 
-## Error Handling
+`@ormai/store` also ships an in-memory store for tests and middleware helpers for wrapping a registry.
+
+## MCP Server
 
 ```typescript
 import {
-  OrmAIError,
-  ModelNotAllowedError,
-  QueryBudgetExceededError,
-} from 'ormai';
+  createMcpServer,
+  createJwtAuth,
+  createContextFactory,
+} from '@ormai/mcp';
 
-try {
-  await toolset.query(ctx, { model: 'SecretModel' });
-} catch (error) {
-  if (error instanceof ModelNotAllowedError) {
-    console.log('Model access denied');
-  } else if (error instanceof QueryBudgetExceededError) {
-    console.log('Query too expensive');
-  } else if (error instanceof OrmAIError) {
-    console.log(`OrmAI error: ${error.code}`);
-  }
-}
-```
-
-## Testing
-
-```typescript
-import { describe, it, expect, beforeEach } from 'vitest';
-import { mountPrisma } from 'ormai';
-import { prismaMock } from './mocks';
-
-describe('OrmAI Integration', () => {
-  const toolset = mountPrisma(prismaMock, policy);
-
-  const ctx = {
-    principal: {
-      tenantId: 'test-tenant',
-      userId: 'test-user',
-    },
-  };
-
-  it('should query with tenant scope', async () => {
-    const result = await toolset.query(ctx, {
-      model: 'Order',
-      limit: 10,
-    });
-
-    expect(result.success).toBe(true);
-    // Verify tenant filter was applied
-    expect(prismaMock.order.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: expect.objectContaining({
-          tenantId: 'test-tenant',
-        }),
-      })
-    );
-  });
-
-  it('should reject forbidden model', async () => {
-    await expect(
-      toolset.query(ctx, { model: 'SecretModel' })
-    ).rejects.toThrow(ModelNotAllowedError);
-  });
+const server = createMcpServer({
+  name: 'my-db-server',
+  version: '1.0.0',
+  registry,
+  createContext: createContextFactory({
+    db: prisma,
+    defaultRoles: ['user'],
+  }),
+  authMiddleware: createJwtAuth({
+    secret: process.env.JWT_SECRET!,
+  }),
 });
+
+await server.runStdio();
 ```
 
 ## Feature Comparison
 
-| Feature | Python | TypeScript |
-|---------|--------|------------|
-| Query DSL | ✅ | ✅ |
-| Policies | ✅ | ✅ |
-| Field Actions | ✅ | ✅ |
-| Scoping | ✅ | ✅ |
-| Write Operations | ✅ | ✅ |
-| Audit Logging | ✅ | ✅ |
-| Deferred Execution | ✅ | ✅ |
-| MCP Server | ✅ | ✅ |
-| Code Generation | ✅ | ⚠️ Partial |
-| Eval Framework | ✅ | ⚠️ Partial |
-
-## Migration from Python
-
-The TypeScript API mirrors Python closely:
-
-```python
-# Python
-result = await toolset.query(
-    ctx,
-    model="Order",
-    filters=[{"field": "status", "op": "eq", "value": "pending"}],
-    limit=10,
-)
-```
-
-```typescript
-// TypeScript
-const result = await toolset.query(ctx, {
-  model: 'Order',
-  filters: [{ field: 'status', op: 'eq', value: 'pending' }],
-  limit: 10,
-});
-```
+| Feature | Python (`ormai`) | TypeScript (`@ormai/*`) |
+|---|---|---|
+| Query DSL | Yes | Yes |
+| Policy engine | Yes | Yes |
+| Tenant scoping | Yes | Yes |
+| Write operations | Yes | Yes |
+| Audit logging | Yes | Yes |
+| MCP server | Yes | Yes |
+| Vercel AI / LangChain.js | — | Yes |
+| FastAPI integration | Yes | — |
+| Codegen / eval harness | Yes | Partial |
 
 ## Next Steps
 
-- [FastAPI Integration](fastapi.md) - Python web integration
-- [LangGraph Integration](langgraph.md) - AI agent integration
-- [Multi-Tenant Setup](../guides/multi-tenant.md) - Tenant isolation
+- [FastAPI Integration](fastapi.md) — Python web framework integration
+- [LangGraph Integration](langgraph.md) — Multi-step agent integration
+- [Multi-Tenant Setup](../guides/multi-tenant.md) — Tenant isolation patterns
