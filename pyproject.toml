@@ -35,8 +35,6 @@ classifiers = [
 ]
 
 dependencies = [
-    "datasets>=4.5.0",
-    "openai>=2.14.0",
     "pydantic>=2.0,<3.0",
     "typing-extensions>=4.0",
 ]
@@ -52,17 +50,24 @@ tortoise = [
 peewee = [
     "peewee>=3.17",
 ]
+django = [
+    "django>=4.2",
+]
+sqlmodel = [
+    "sqlmodel>=0.0.14",
+]
 mcp = [
     "mcp>=1.0",
 ]
 benchmark = [
+    "datasets>=4.5.0",
     "rich>=13.0.0",
-    "openai>=1.0.0",
+    "openai>=2.14.0",
     "anthropic>=0.20.0",
     "httpx>=0.25.0",
 ]
 all = [
-    "ormai[sqlalchemy,tortoise,peewee,mcp]",
+    "ormai[sqlalchemy,tortoise,peewee,django,sqlmodel,mcp]",
 ]
 
 [project.urls]
@@ -70,6 +75,7 @@ Homepage = "https://github.com/neul-labs/ormai"
 Documentation = "https://github.com/neul-labs/ormai#readme"
 Repository = "https://github.com/neul-labs/ormai"
 Issues = "https://github.com/neul-labs/ormai/issues"
+Changelog = "https://github.com/neul-labs/ormai/releases"
 
 [build-system]
 requires = ["hatchling"]

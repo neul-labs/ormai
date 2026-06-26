@@ -40,12 +40,12 @@ jobs:
         with:
           enable-cache: true
 
-      - name: Install build
-        run: uv pip install build
+      - name: Install build tools
+        run: uv pip install build twine
 
       - name: Validate package
         run: |
-          python -m build --check
+          python -m build
           twine check dist/*
 
   publish:

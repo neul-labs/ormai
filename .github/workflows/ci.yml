@@ -115,10 +115,13 @@ jobs:
         with:
           enable-cache: true
 
+      - name: Install build tools
+        run: uv pip install build twine
+
       - name: Validate package
         run: |
-          uv run python -m build --check
-          uv run twine check dist/*
+          python -m build
+          twine check dist/*
 
   version-check:
     name: Version Check

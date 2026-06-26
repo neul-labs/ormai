@@ -7,7 +7,12 @@ isolation, and audit logging on top of your current application without exposing
 direct ORM handles to the LLM.
 """
 
-__version__ = "0.1.0"
+from importlib.metadata import PackageNotFoundError, version
+
+try:
+    __version__ = version("ormai")
+except PackageNotFoundError:
+    __version__ = "0.0.0-dev"
 
 from ormai.core.context import Principal, RunContext
 from ormai.core.errors import (
