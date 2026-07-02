@@ -44,14 +44,14 @@
     "security",
     "llm-tools"
   ],
-  "author": "Dipankar Sarkar <me@dipankar.name>",
+  "author": "Neul Labs <contact@neullabs.com>",
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/neul-labs/ormai",
     "directory": "ormai-ts/packages/mcp"
   },
-  "homepage": "https://github.com/neul-labs/ormai/tree/main/ormai-ts/packages/mcp",
+  "homepage": "https://docs.neullabs.com/ormai",
   "bugs": {
     "url": "https://github.com/neul-labs/ormai/issues"
   },

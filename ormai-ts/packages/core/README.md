@@ -4,6 +4,8 @@ Core types, policy engine, adapter/tool/store interfaces, DSL schemas, error tax
 
 [![npm version](https://img.shields.io/npm/v/@ormai/core)](https://www.npmjs.com/package/@ormai/core) [![license](https://img.shields.io/npm/l/@ormai/core)](https://github.com/neul-labs/ormai/blob/main/ormai-ts/packages/core/LICENSE) [![CI](https://img.shields.io/github/actions/workflow/status/neul-labs/ormai/test.yml)](https://github.com/neul-labs/ormai/actions)
 
+**[Website](https://ormai.neullabs.com)** · **[Documentation](https://docs.neullabs.com/ormai)** · **[GitHub](https://github.com/neul-labs/ormai)**
+
 `@ormai/core` is the foundation for all OrmAI packages. It bundles five modules:
 
 - **Core** -- execution context (`RunContext`), DSL schemas for queries/mutations, type definitions for models/fields/relations, cursor encoding, and a structured error taxonomy.
@@ -94,3 +96,15 @@ const result = await registry.get('db.query').execute({
 ## License
 
 MIT
+
+## Part of the Neul Labs toolchain
+
+Part of the [Neul Labs](https://www.neullabs.com) agent-infrastructure toolchain:
+
+| Project | Description |
+| --- | --- |
+| [agentvfs](https://agentvfs.neullabs.com) | Workspace runtime and execution boundary for AI agents. |
+| [memorg](https://memorg.neullabs.com) | Give your LLM a memory that actually works. |
+| [mcp-pay](https://mcp-pay.neullabs.com) | Payment awareness layer for MCP (Model Context Protocol). |
+| [closegate](https://closegate.neullabs.com) | The policy chokepoint for finance AI agents. |
+| [regulus](https://regulus.neullabs.com) | The EU & UK compliance plane for Google ADK. |

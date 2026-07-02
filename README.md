@@ -12,6 +12,8 @@ OrmAI wraps your existing ORM models in a policy-enforced runtime. Your agents g
 
 **Available for Python and TypeScript/Node.js.**
 
+**[Website](https://ormai.neullabs.com)** · **[Documentation](https://docs.neullabs.com/ormai)** · **[GitHub](https://github.com/neul-labs/ormai)**
+
 ---
 
 ## Why OrmAI?
@@ -324,8 +326,20 @@ See [contributing guide](https://docs.neullabs.com/ormai/contributing) for devel
 
 <div align="center">
 
-**[Documentation](https://docs.neullabs.com/ormai)** · **[GitHub](https://github.com/neul-labs/ormai)** · **[PyPI](https://pypi.org/project/ormai/)** · **[npm](https://www.npmjs.com/package/@ormai/core)**
+**[Website](https://ormai.neullabs.com)** · **[Documentation](https://docs.neullabs.com/ormai)** · **[GitHub](https://github.com/neul-labs/ormai)** · **[PyPI](https://pypi.org/project/ormai/)** · **[npm](https://www.npmjs.com/package/@ormai/core)**
 
 MIT License · Built by [Neul Labs](https://neullabs.com)
 
 </div>
+
+## Part of the Neul Labs toolchain
+
+Part of the [Neul Labs](https://www.neullabs.com) agent-infrastructure toolchain:
+
+| Project | Description |
+| --- | --- |
+| [agentvfs](https://agentvfs.neullabs.com) | Workspace runtime and execution boundary for AI agents. |
+| [memorg](https://memorg.neullabs.com) | Give your LLM a memory that actually works. |
+| [mcp-pay](https://mcp-pay.neullabs.com) | Payment awareness layer for MCP (Model Context Protocol). |
+| [closegate](https://closegate.neullabs.com) | The policy chokepoint for finance AI agents. |
+| [regulus](https://regulus.neullabs.com) | The EU & UK compliance plane for Google ADK. |
