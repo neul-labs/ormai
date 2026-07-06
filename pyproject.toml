@@ -62,7 +62,7 @@ mcp = [
 benchmark = [
     "datasets>=4.5.0",
     "rich>=13.0.0",
-    "openai>=2.14.0",
+    "openai>=2.44.0",
     "anthropic>=0.20.0",
     "httpx>=0.25.0",
 ]
