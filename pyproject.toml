@@ -60,7 +60,7 @@ mcp = [
     "mcp>=1.0",
 ]
 benchmark = [
-    "datasets>=4.5.0",
+    "datasets>=5.0.0",
     "rich>=13.0.0",
     "openai>=2.14.0",
     "anthropic>=0.20.0",
