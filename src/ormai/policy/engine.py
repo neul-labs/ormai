@@ -7,6 +7,8 @@ requests against policies and provides decisions for query compilation.
 
 from typing import TYPE_CHECKING
 
+from pydantic import BaseModel, Field
+
 from ormai.core.context import RunContext
 from ormai.core.dsl import (
     AggregateRequest,
@@ -31,7 +33,7 @@ if TYPE_CHECKING:
     from ormai.policy.engine import PolicyEngine
 
 
-class PolicyDecision:
+class PolicyDecision(BaseModel):
     """
     Result of policy evaluation.
 
@@ -39,12 +41,13 @@ class PolicyDecision:
     applied during query compilation or result processing.
     """
 
-    def __init__(self) -> None:
-        self.allowed_fields: list[str] = []
-        self.injected_filters: list[FilterClause] = []
-        self.redaction_rules: dict[str, str] = {}  # field -> action
-        self.budget: Budget | None = None
-        self.decisions: list[str] = []  # Audit log of decisions made
+    model_config = {"frozen": False}
+
+    allowed_fields: list[str] = Field(default_factory=list)
+    injected_filters: list[FilterClause] = Field(default_factory=list)
+    redaction_rules: dict[str, str] = Field(default_factory=dict)
+    budget: Budget | None = Field(default=None)
+    decisions: list[str] = Field(default_factory=list)
 
     def add_decision(self, decision: str) -> None:
         """Add a decision to the audit log."""
@@ -83,9 +86,7 @@ class PolicyEngine:
         decision = PolicyDecision()
 
         # 1. Validate model access
-        model_policy = self._validator.validate_model_access(
-            request.model, readable=True
-        )
+        model_policy = self._validator.validate_model_access(request.model, readable=True)
         decision.add_decision(f"Model '{request.model}' access validated")
 
         # 2. Get and validate budget
@@ -108,9 +109,7 @@ class PolicyEngine:
 
         # 4. Validate relations/includes
         if request.include:
-            self._validator.validate_includes(
-                request.include, request.model, model_policy, budget
-            )
+            self._validator.validate_includes(request.include, request.model, model_policy, budget)
             decision.add_decision(f"Validated {len(request.include)} includes")
 
         # 5. Validate and inject scoping
@@ -144,9 +143,7 @@ class PolicyEngine:
         decision = PolicyDecision()
 
         # Validate model access
-        model_policy = self._validator.validate_model_access(
-            request.model, readable=True
-        )
+        model_policy = self._validator.validate_model_access(request.model, readable=True)
         decision.add_decision(f"Model '{request.model}' access validated")
 
         # Get budget
@@ -187,9 +184,7 @@ class PolicyEngine:
         decision = PolicyDecision()
 
         # Validate model access
-        model_policy = self._validator.validate_model_access(
-            request.model, readable=True
-        )
+        model_policy = self._validator.validate_model_access(request.model, readable=True)
         decision.add_decision(f"Model '{request.model}' access validated")
 
         # Validate field is aggregatable
@@ -246,9 +241,7 @@ class PolicyEngine:
         decision = PolicyDecision()
 
         # Validate model access
-        model_policy = self._validator.validate_model_access(
-            request.model, writable=True
-        )
+        model_policy = self._validator.validate_model_access(request.model, writable=True)
         decision.add_decision(f"Model '{request.model}' write access validated")
 
         # Check if create is allowed
@@ -271,9 +264,7 @@ class PolicyEngine:
             request.model, row_policy, ctx, None
         )
         if decision.injected_filters:
-            decision.add_decision(
-                f"Injected {len(decision.injected_filters)} scope filters"
-            )
+            decision.add_decision(f"Injected {len(decision.injected_filters)} scope filters")
 
         # Collect redaction rules for audit logging
         for field in decision.allowed_fields:
@@ -292,9 +283,7 @@ class PolicyEngine:
         decision = PolicyDecision()
 
         # Validate model access
-        model_policy = self._validator.validate_model_access(
-            request.model, writable=True
-        )
+        model_policy = self._validator.validate_model_access(request.model, writable=True)
         decision.add_decision(f"Model '{request.model}' write access validated")
 
         # Check if update is allowed
@@ -334,9 +323,7 @@ class PolicyEngine:
         decision = PolicyDecision()
 
         # Validate model access
-        model_policy = self._validator.validate_model_access(
-            request.model, writable=True
-        )
+        model_policy = self._validator.validate_model_access(request.model, writable=True)
         decision.add_decision(f"Model '{request.model}' write access validated")
 
         # Check if delete is allowed
@@ -360,9 +347,7 @@ class PolicyEngine:
         decision = PolicyDecision()
 
         # Validate model access
-        model_policy = self._validator.validate_model_access(
-            request.model, writable=True
-        )
+        model_policy = self._validator.validate_model_access(request.model, writable=True)
         decision.add_decision(f"Model '{request.model}' write access validated")
 
         # Check if bulk update is allowed

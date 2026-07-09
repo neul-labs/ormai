@@ -56,11 +56,13 @@ class ToolRegistry:
         """
         tool = self.get(name)
         if tool is None:
-            return ToolResult.fail({
-                "code": "TOOL_NOT_FOUND",
-                "message": f"Tool '{name}' not found",
-                "retry_hints": [f"Available tools: {', '.join(self.list())}"],
-            })
+            return ToolResult.fail(
+                {
+                    "code": "TOOL_NOT_FOUND",
+                    "message": f"Tool '{name}' not found",
+                    "retry_hints": [f"Available tools: {', '.join(self.list())}"],
+                }
+            )
 
         return await tool.run(input, ctx)
 

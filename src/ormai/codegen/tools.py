@@ -4,7 +4,7 @@ Domain tool code generator.
 Generates typed domain tool source files from ORM metadata and policies.
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 from ormai.codegen.generator import CodeGenerator, GeneratedFile, GenerationResult
 from ormai.core.types import ModelMetadata, SchemaMetadata
@@ -57,11 +57,13 @@ class DomainToolGenerator(CodeGenerator):
 
         # Generate main tools file
         tools_content = self._generate_tools_file()
-        result.files.append(GeneratedFile(
-            path=f"{self.module_name}.py",
-            content=tools_content,
-            module_name=self.module_name,
-        ))
+        result.files.append(
+            GeneratedFile(
+                path=f"{self.module_name}.py",
+                content=tools_content,
+                module_name=self.module_name,
+            )
+        )
 
         return result
 
@@ -74,7 +76,7 @@ class DomainToolGenerator(CodeGenerator):
             '"""',
             "Auto-generated domain tools.",
             "",
-            f"Generated at: {datetime.utcnow().isoformat()}",
+            f"Generated at: {datetime.now(timezone.utc).isoformat()}",
             "Do not edit manually - regenerate from schema/policy changes.",
             '"""',
             "",
@@ -133,24 +135,28 @@ class DomainToolGenerator(CodeGenerator):
         lines = []
 
         # Get input
-        lines.extend([
-            f"class Get{model_name}Input(BaseModel):",
-            f'    """Input for getting a single {model_name}."""',
-            "",
-            f"    id: int = Field(..., description=\"ID of the {model_name} to retrieve\")",
-            "",
-        ])
+        lines.extend(
+            [
+                f"class Get{model_name}Input(BaseModel):",
+                f'    """Input for getting a single {model_name}."""',
+                "",
+                f'    id: int = Field(..., description="ID of the {model_name} to retrieve")',
+                "",
+            ]
+        )
 
         # List input
-        lines.extend([
-            f"class List{model_name}Input(BaseModel):",
-            f'    """Input for listing {model_name} records."""',
-            "",
-            "    limit: int = Field(default=10, ge=1, le=100, description=\"Maximum records to return\")",
-            "    offset: int = Field(default=0, ge=0, description=\"Number of records to skip\")",
-            "    order_by: str | None = Field(default=None, description=\"Field to order by\")",
-            "",
-        ])
+        lines.extend(
+            [
+                f"class List{model_name}Input(BaseModel):",
+                f'    """Input for listing {model_name} records."""',
+                "",
+                '    limit: int = Field(default=10, ge=1, le=100, description="Maximum records to return")',
+                '    offset: int = Field(default=0, ge=0, description="Number of records to skip")',
+                '    order_by: str | None = Field(default=None, description="Field to order by")',
+                "",
+            ]
+        )
 
         return lines
 
@@ -164,79 +170,85 @@ class DomainToolGenerator(CodeGenerator):
         snake_name = self._to_snake_case(model_name)
         lines = []
 
-        lines.extend([
-            f"class {model_name}Tools:",
-            f'    """Domain tools for {model_name} operations."""',
-            "",
-            "    def __init__(",
-            "        self,",
-            "        adapter: OrmAdapter,",
-            "        policy: Policy,",
-            "        schema: SchemaMetadata,",
-            "    ) -> None:",
-            "        self.adapter = adapter",
-            "        self.policy = policy",
-            "        self.schema = schema",
-            "",
-        ])
+        lines.extend(
+            [
+                f"class {model_name}Tools:",
+                f'    """Domain tools for {model_name} operations."""',
+                "",
+                "    def __init__(",
+                "        self,",
+                "        adapter: OrmAdapter,",
+                "        policy: Policy,",
+                "        schema: SchemaMetadata,",
+                "    ) -> None:",
+                "        self.adapter = adapter",
+                "        self.policy = policy",
+                "        self.schema = schema",
+                "",
+            ]
+        )
 
         # Get method
-        lines.extend([
-            f"    async def get_{snake_name}(",
-            "        self,",
-            "        ctx: RunContext,",
-            f"        input: Get{model_name}Input,",
-            f"    ) -> {model_name}View | None:",
-            '        """',
-            f"        Get a {model_name} by ID.",
-            "",
-            "        Args:",
-            "            ctx: Run context with principal and session",
-            f"            input: Input containing the {model_name} ID",
-            "",
-            "        Returns:",
-            f"            {model_name}View if found, None otherwise",
-            '        """',
-            f'        request = GetRequest(model="{model_name}", id=input.id)',
-            "        compiled = self.adapter.compile_get(request, ctx, self.policy, self.schema)",
-            "        result = await self.adapter.execute_get(compiled, ctx)",
-            "        if result.data is None:",
-            "            return None",
-            f"        return {model_name}View.model_validate(result.data)",
-            "",
-        ])
+        lines.extend(
+            [
+                f"    async def get_{snake_name}(",
+                "        self,",
+                "        ctx: RunContext,",
+                f"        input: Get{model_name}Input,",
+                f"    ) -> {model_name}View | None:",
+                '        """',
+                f"        Get a {model_name} by ID.",
+                "",
+                "        Args:",
+                "            ctx: Run context with principal and session",
+                f"            input: Input containing the {model_name} ID",
+                "",
+                "        Returns:",
+                f"            {model_name}View if found, None otherwise",
+                '        """',
+                f'        request = GetRequest(model="{model_name}", id=input.id)',
+                "        compiled = self.adapter.compile_get(request, ctx, self.policy, self.schema)",
+                "        result = await self.adapter.execute_get(compiled, ctx)",
+                "        if result.data is None:",
+                "            return None",
+                f"        return {model_name}View.model_validate(result.data)",
+                "",
+            ]
+        )
 
         # List method
-        lines.extend([
-            f"    async def list_{snake_name}s(",
-            "        self,",
-            "        ctx: RunContext,",
-            f"        input: List{model_name}Input,",
-            f"    ) -> list[{model_name}View]:",
-            '        """',
-            f"        List {model_name} records.",
-            "",
-            "        Args:",
-            "            ctx: Run context with principal and session",
-            "            input: Input with pagination options",
-            "",
-            "        Returns:",
-            f"            List of {model_name}View records",
-            '        """',
-            "        order_by = None",
-            "        if input.order_by:",
-            '            order_by = [{"field": input.order_by, "direction": "asc"}]',
-            "        request = QueryRequest(",
-            f'            model="{model_name}",',
-            "            take=input.limit,",
-            "            skip=input.offset,",
-            "            order_by=order_by,",
-            "        )",
-            "        compiled = self.adapter.compile_query(request, ctx, self.policy, self.schema)",
-            "        result = await self.adapter.execute_query(compiled, ctx)",
-            f"        return [{model_name}View.model_validate(row) for row in result.data]",
-            "",
-        ])
+        lines.extend(
+            [
+                f"    async def list_{snake_name}s(",
+                "        self,",
+                "        ctx: RunContext,",
+                f"        input: List{model_name}Input,",
+                f"    ) -> list[{model_name}View]:",
+                '        """',
+                f"        List {model_name} records.",
+                "",
+                "        Args:",
+                "            ctx: Run context with principal and session",
+                "            input: Input with pagination options",
+                "",
+                "        Returns:",
+                f"            List of {model_name}View records",
+                '        """',
+                "        order_by = None",
+                "        if input.order_by:",
+                '            order_by = [{"field": input.order_by, "direction": "asc"}]',
+                "        request = QueryRequest(",
+                f'            model="{model_name}",',
+                "            take=input.limit,",
+                "            skip=input.offset,",
+                "            order_by=order_by,",
+                "        )",
+                "        compiled = self.adapter.compile_query(request, ctx, self.policy, self.schema)",
+                "        result = await self.adapter.execute_query(compiled, ctx)",
+                f"        return [{model_name}View.model_validate(row) for row in result.data]",
+                "",
+            ]
+        )
 
         # Add mutation methods if writable
         if model_policy and model_policy.writable:
@@ -256,90 +268,96 @@ class DomainToolGenerator(CodeGenerator):
 
         # Create method
         if model_policy.write_policy and model_policy.write_policy.allow_create:
-            lines.extend([
-                f"    async def create_{snake_name}(",
-                "        self,",
-                "        ctx: RunContext,",
-                "        data: dict[str, Any],",
-                "        reason: str | None = None,",
-                f"    ) -> {model_name}View:",
-                '        """',
-                f"        Create a new {model_name}.",
-                "",
-                "        Args:",
-                "            ctx: Run context with principal and session",
-                f"            data: Data for the new {model_name}",
-                "            reason: Optional reason for the operation",
-                "",
-                "        Returns:",
-                f"            Created {model_name}View",
-                '        """',
-                f'        request = CreateRequest(model="{model_name}", data=data, reason=reason)',
-                "        compiled = self.adapter.compile_create(request, ctx, self.policy, self.schema)",
-                "        result = await self.adapter.execute_create(compiled, ctx)",
-                f"        return {model_name}View.model_validate(result.data)",
-                "",
-            ])
+            lines.extend(
+                [
+                    f"    async def create_{snake_name}(",
+                    "        self,",
+                    "        ctx: RunContext,",
+                    "        data: dict[str, Any],",
+                    "        reason: str | None = None,",
+                    f"    ) -> {model_name}View:",
+                    '        """',
+                    f"        Create a new {model_name}.",
+                    "",
+                    "        Args:",
+                    "            ctx: Run context with principal and session",
+                    f"            data: Data for the new {model_name}",
+                    "            reason: Optional reason for the operation",
+                    "",
+                    "        Returns:",
+                    f"            Created {model_name}View",
+                    '        """',
+                    f'        request = CreateRequest(model="{model_name}", data=data, reason=reason)',
+                    "        compiled = self.adapter.compile_create(request, ctx, self.policy, self.schema)",
+                    "        result = await self.adapter.execute_create(compiled, ctx)",
+                    f"        return {model_name}View.model_validate(result.data)",
+                    "",
+                ]
+            )
 
         # Update method
         if model_policy.write_policy and model_policy.write_policy.allow_update:
-            lines.extend([
-                f"    async def update_{snake_name}(",
-                "        self,",
-                "        ctx: RunContext,",
-                "        id: int,",
-                "        data: dict[str, Any],",
-                "        reason: str | None = None,",
-                f"    ) -> {model_name}View | None:",
-                '        """',
-                f"        Update a {model_name}.",
-                "",
-                "        Args:",
-                "            ctx: Run context with principal and session",
-                f"            id: ID of the {model_name} to update",
-                "            data: Fields to update",
-                "            reason: Optional reason for the operation",
-                "",
-                "        Returns:",
-                f"            Updated {model_name}View if found, None otherwise",
-                '        """',
-                f'        request = UpdateRequest(model="{model_name}", id=id, data=data, reason=reason)',
-                "        compiled = self.adapter.compile_update(request, ctx, self.policy, self.schema)",
-                "        result = await self.adapter.execute_update(compiled, ctx)",
-                "        if not result.found:",
-                "            return None",
-                f"        return {model_name}View.model_validate(result.data)",
-                "",
-            ])
+            lines.extend(
+                [
+                    f"    async def update_{snake_name}(",
+                    "        self,",
+                    "        ctx: RunContext,",
+                    "        id: int,",
+                    "        data: dict[str, Any],",
+                    "        reason: str | None = None,",
+                    f"    ) -> {model_name}View | None:",
+                    '        """',
+                    f"        Update a {model_name}.",
+                    "",
+                    "        Args:",
+                    "            ctx: Run context with principal and session",
+                    f"            id: ID of the {model_name} to update",
+                    "            data: Fields to update",
+                    "            reason: Optional reason for the operation",
+                    "",
+                    "        Returns:",
+                    f"            Updated {model_name}View if found, None otherwise",
+                    '        """',
+                    f'        request = UpdateRequest(model="{model_name}", id=id, data=data, reason=reason)',
+                    "        compiled = self.adapter.compile_update(request, ctx, self.policy, self.schema)",
+                    "        result = await self.adapter.execute_update(compiled, ctx)",
+                    "        if not result.found:",
+                    "            return None",
+                    f"        return {model_name}View.model_validate(result.data)",
+                    "",
+                ]
+            )
 
         # Delete method
         if model_policy.write_policy and model_policy.write_policy.allow_delete:
-            lines.extend([
-                f"    async def delete_{snake_name}(",
-                "        self,",
-                "        ctx: RunContext,",
-                "        id: int,",
-                "        reason: str | None = None,",
-                "        hard: bool = False,",
-                "    ) -> bool:",
-                '        """',
-                f"        Delete a {model_name}.",
-                "",
-                "        Args:",
-                "            ctx: Run context with principal and session",
-                f"            id: ID of the {model_name} to delete",
-                "            reason: Optional reason for the operation",
-                "            hard: If True, permanently delete; otherwise soft-delete",
-                "",
-                "        Returns:",
-                f"            True if {model_name} was found and deleted",
-                '        """',
-                f'        request = DeleteRequest(model="{model_name}", id=id, reason=reason, hard=hard)',
-                "        compiled = self.adapter.compile_delete(request, ctx, self.policy, self.schema)",
-                "        result = await self.adapter.execute_delete(compiled, ctx)",
-                "        return result.found",
-                "",
-            ])
+            lines.extend(
+                [
+                    f"    async def delete_{snake_name}(",
+                    "        self,",
+                    "        ctx: RunContext,",
+                    "        id: int,",
+                    "        reason: str | None = None,",
+                    "        hard: bool = False,",
+                    "    ) -> bool:",
+                    '        """',
+                    f"        Delete a {model_name}.",
+                    "",
+                    "        Args:",
+                    "            ctx: Run context with principal and session",
+                    f"            id: ID of the {model_name} to delete",
+                    "            reason: Optional reason for the operation",
+                    "            hard: If True, permanently delete; otherwise soft-delete",
+                    "",
+                    "        Returns:",
+                    f"            True if {model_name} was found and deleted",
+                    '        """',
+                    f'        request = DeleteRequest(model="{model_name}", id=id, reason=reason, hard=hard)',
+                    "        compiled = self.adapter.compile_delete(request, ctx, self.policy, self.schema)",
+                    "        result = await self.adapter.execute_delete(compiled, ctx)",
+                    "        return result.found",
+                    "",
+                ]
+            )
 
         return lines
 

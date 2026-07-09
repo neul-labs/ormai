@@ -96,9 +96,7 @@ class DeferredExecutor:
             DeferredResult containing either the result or approval ID
         """
         approval_request = ApprovalRequest.from_create(request, ctx)
-        return await self._execute_with_approval(
-            approval_request, execute_fn, CreateResult
-        )
+        return await self._execute_with_approval(approval_request, execute_fn, CreateResult)
 
     async def execute_update(
         self,
@@ -108,9 +106,7 @@ class DeferredExecutor:
     ) -> DeferredResult[UpdateResult]:
         """Execute an update operation through the approval gate."""
         approval_request = ApprovalRequest.from_update(request, ctx)
-        return await self._execute_with_approval(
-            approval_request, execute_fn, UpdateResult
-        )
+        return await self._execute_with_approval(approval_request, execute_fn, UpdateResult)
 
     async def execute_delete(
         self,
@@ -120,9 +116,7 @@ class DeferredExecutor:
     ) -> DeferredResult[DeleteResult]:
         """Execute a delete operation through the approval gate."""
         approval_request = ApprovalRequest.from_delete(request, ctx)
-        return await self._execute_with_approval(
-            approval_request, execute_fn, DeleteResult
-        )
+        return await self._execute_with_approval(approval_request, execute_fn, DeleteResult)
 
     async def execute_bulk_update(
         self,
@@ -132,9 +126,7 @@ class DeferredExecutor:
     ) -> DeferredResult[BulkUpdateResult]:
         """Execute a bulk update operation through the approval gate."""
         approval_request = ApprovalRequest.from_bulk_update(request, ctx)
-        return await self._execute_with_approval(
-            approval_request, execute_fn, BulkUpdateResult
-        )
+        return await self._execute_with_approval(approval_request, execute_fn, BulkUpdateResult)
 
     async def _execute_with_approval(
         self,

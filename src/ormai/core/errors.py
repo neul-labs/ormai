@@ -303,3 +303,21 @@ class NotFoundError(OrmAIError):
             details={"model": model, "id": id},
             **kwargs,
         )
+
+
+class AdapterError(OrmAIError):
+    """Error raised by an ORM adapter when an operation fails."""
+
+    code = "ADAPTER_ERROR"
+
+    def __init__(
+        self,
+        message: str,
+        adapter: str | None = None,
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(
+            message,
+            details={"adapter": adapter} if adapter else {},
+            **kwargs,
+        )

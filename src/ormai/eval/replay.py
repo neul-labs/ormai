@@ -99,7 +99,13 @@ class ReplayEngine:
         try:
             # Execute the call
             output = await executor(call.tool_name, ctx, call.inputs)
-            result.outputs = output if isinstance(output, dict) else output.model_dump() if hasattr(output, "model_dump") else {"result": output}
+            result.outputs = (
+                output
+                if isinstance(output, dict)
+                else output.model_dump()
+                if hasattr(output, "model_dump")
+                else {"result": output}
+            )
             result.success = True
 
         except Exception as e:
@@ -112,9 +118,7 @@ class ReplayEngine:
         result.duration_ms = (time.perf_counter() - start) * 1000
 
         # Compare outputs
-        result.outputs_match, result.differences = self._compare_outputs(
-            call, result
-        )
+        result.outputs_match, result.differences = self._compare_outputs(call, result)
 
         return result
 
@@ -176,7 +180,11 @@ class ReplayEngine:
             differences.append(f"Original succeeded, replay had error: {result.error}")
 
         # Compare outputs if both succeeded
-        if call.outputs is not None and result.outputs is not None and not self.comparator(call.outputs, result.outputs):
+        if (
+            call.outputs is not None
+            and result.outputs is not None
+            and not self.comparator(call.outputs, result.outputs)
+        ):
             differences.append("Output values differ")
 
         return len(differences) == 0, differences

@@ -84,10 +84,10 @@ class RetryConfig:
             delay = self.base_delay
 
         elif self.strategy == RetryStrategy.EXPONENTIAL:
-            delay = self.base_delay * (2 ** attempt)
+            delay = self.base_delay * (2**attempt)
 
         elif self.strategy == RetryStrategy.EXPONENTIAL_JITTER:
-            delay = self.base_delay * (2 ** attempt)
+            delay = self.base_delay * (2**attempt)
             jitter_range = delay * self.jitter
             delay = delay + random.uniform(-jitter_range, jitter_range)
 
@@ -163,15 +163,12 @@ async def retry_async(
             last_error = e
 
             if attempt >= config.max_retries:
-                logger.warning(
-                    f"Retry exhausted after {attempt + 1} attempts: {e}"
-                )
+                logger.warning(f"Retry exhausted after {attempt + 1} attempts: {e}")
                 raise
 
             delay = config.get_delay(attempt)
             logger.debug(
-                f"Retry attempt {attempt + 1}/{config.max_retries} "
-                f"after {delay:.2f}s due to: {e}"
+                f"Retry attempt {attempt + 1}/{config.max_retries} after {delay:.2f}s due to: {e}"
             )
 
             if on_retry:
@@ -220,15 +217,12 @@ def retry_sync(
             last_error = e
 
             if attempt >= config.max_retries:
-                logger.warning(
-                    f"Retry exhausted after {attempt + 1} attempts: {e}"
-                )
+                logger.warning(f"Retry exhausted after {attempt + 1} attempts: {e}")
                 raise
 
             delay = config.get_delay(attempt)
             logger.debug(
-                f"Retry attempt {attempt + 1}/{config.max_retries} "
-                f"after {delay:.2f}s due to: {e}"
+                f"Retry attempt {attempt + 1}/{config.max_retries} after {delay:.2f}s due to: {e}"
             )
 
             if on_retry:

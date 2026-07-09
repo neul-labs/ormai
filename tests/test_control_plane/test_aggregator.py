@@ -1,6 +1,6 @@
 """Tests for Audit Aggregator."""
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from uuid import uuid4
 
 import pytest
@@ -31,7 +31,7 @@ def make_record(
         tenant_id=tenant_id,
         principal_id=principal_id,
         request_id=str(uuid4()),
-        timestamp=timestamp or datetime.utcnow(),
+        timestamp=timestamp or datetime.now(timezone.utc),
         duration_ms=duration_ms,
         inputs={"model": model} if model else {},
         row_count=row_count,
@@ -100,7 +100,7 @@ class TestInMemoryAuditAggregator:
         self, aggregator: InMemoryAuditAggregator
     ) -> None:
         """Query filters by time range."""
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         old = now - timedelta(hours=2)
         very_old = now - timedelta(hours=5)
 
@@ -158,7 +158,7 @@ class TestInMemoryAuditAggregator:
         self, aggregator: InMemoryAuditAggregator
     ) -> None:
         """Query supports sorting."""
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         for i in range(3):
             await aggregator.ingest(
                 "inst-1",
@@ -222,7 +222,7 @@ class TestInMemoryAuditAggregator:
         self, aggregator: InMemoryAuditAggregator
     ) -> None:
         """Getting recent records works."""
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         for i in range(10):
             await aggregator.ingest(
                 "inst-1",
@@ -356,7 +356,7 @@ class TestFederatedAuditAggregator:
         await aggregator.register_store("inst-1", store1)
         await aggregator.register_store("inst-2", store2)
 
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         await store1.store(make_record(timestamp=now - timedelta(minutes=2)))
         await store2.store(make_record(timestamp=now - timedelta(minutes=1)))
         await store1.store(make_record(timestamp=now))

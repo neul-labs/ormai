@@ -96,9 +96,7 @@ class ApprovalRequest:
         )
 
     @classmethod
-    def from_bulk_update(
-        cls, request: BulkUpdateRequest, ctx: RunContext
-    ) -> "ApprovalRequest":
+    def from_bulk_update(cls, request: BulkUpdateRequest, ctx: RunContext) -> "ApprovalRequest":
         """Create an approval request from a BulkUpdateRequest."""
         return cls(
             operation="bulk_update",
@@ -276,9 +274,7 @@ class InMemoryApprovalQueue(ApprovalGate):
 
     def pending_requests(self) -> list[ApprovalRequest]:
         """Get all pending requests."""
-        return [
-            r for r in self._requests.values() if r.status == ApprovalStatus.PENDING
-        ]
+        return [r for r in self._requests.values() if r.status == ApprovalStatus.PENDING]
 
     def approve(self, request_id: str, decided_by: str = "system") -> bool:
         """

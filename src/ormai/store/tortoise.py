@@ -125,9 +125,7 @@ class TortoiseAuditStore(AuditStore):
 
     async def get(self, record_id: str) -> AuditRecord | None:
         """Retrieve an audit record by ID."""
-        model = await AuditRecordModel.filter(id=record_id).using_db(
-            self.connection_name
-        ).first()
+        model = await AuditRecordModel.filter(id=record_id).using_db(self.connection_name).first()
 
         if model is None:
             return None
@@ -198,9 +196,11 @@ class TortoiseAuditStore(AuditStore):
         Returns:
             Number of records deleted
         """
-        deleted = await AuditRecordModel.filter(
-            timestamp__lt=before
-        ).using_db(self.connection_name).delete()
+        deleted = (
+            await AuditRecordModel.filter(timestamp__lt=before)
+            .using_db(self.connection_name)
+            .delete()
+        )
         return deleted
 
     def _to_record(self, model: AuditRecordModel) -> AuditRecord:

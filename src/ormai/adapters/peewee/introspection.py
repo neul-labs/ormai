@@ -151,9 +151,7 @@ class PeeweeIntrospector:
             primary_key=is_pk,
         )
 
-    def _introspect_relation(
-        self, name: str, field: Any
-    ) -> RelationMetadata | None:
+    def _introspect_relation(self, name: str, field: Any) -> RelationMetadata | None:
         """Introspect a relation field."""
         from peewee import ForeignKeyField
 
@@ -171,4 +169,5 @@ class PeeweeIntrospector:
     def _is_foreign_key(self, field: Any) -> bool:
         """Check if a field is a foreign key."""
         from peewee import ForeignKeyField
+
         return isinstance(field, ForeignKeyField)

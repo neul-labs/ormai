@@ -212,9 +212,7 @@ class SQLAlchemyAdapter(OrmAdapter):
         schema: SchemaMetadata,
     ) -> CompiledQuery:
         """Compile a bulk update request."""
-        return self._mutation_executor.compile_bulk_update(
-            request, ctx, policy, schema
-        )
+        return self._mutation_executor.compile_bulk_update(request, ctx, policy, schema)
 
     # =========================================================================
     # MUTATION EXECUTION (delegated to MutationExecutor)
@@ -286,9 +284,7 @@ class SQLAlchemyAdapter(OrmAdapter):
         """
         if model_name not in self._redactor_cache:
             model_policy = self.policy.get_model_policy(model_name)
-            self._redactor_cache[model_name] = (
-                Redactor(model_policy) if model_policy else None
-            )
+            self._redactor_cache[model_name] = Redactor(model_policy) if model_policy else None
         return self._redactor_cache[model_name]
 
     def _invalidate_redactor_cache(self, model_name: str | None = None) -> None:
@@ -311,9 +307,7 @@ class SQLAlchemyAdapter(OrmAdapter):
     ) -> list[dict[str, Any]]:
         """Convert ORM rows to dicts with redaction."""
         redactor = self._get_redactor(model_name)
-        return [
-            self._row_to_dict(row, fields, model_name, redactor) for row in rows
-        ]
+        return [self._row_to_dict(row, fields, model_name, redactor) for row in rows]
 
     def _row_to_dict(
         self,

@@ -15,7 +15,7 @@ A policy-governed, auditable database capability layer for TypeScript/Node.js ap
 ## Installation
 
 ```bash
-npm install ormai-ts
+npm install @ormai/core
 ```
 
 ## Quick Start
@@ -29,7 +29,7 @@ import {
   PolicyBuilder,
   createToolset,
   createContext,
-} from 'ormai-ts';
+} from '@ormai/core';
 
 const prisma = new PrismaClient();
 
@@ -72,7 +72,7 @@ const result = await queryTool.execute({
 ### With Vercel AI SDK
 
 ```typescript
-import { toVercelAITools } from 'ormai-ts';
+import { toVercelAITools } from '@ormai/core';
 import { generateText } from 'ai';
 import { openai } from '@ai-sdk/openai';
 
@@ -88,7 +88,7 @@ const result = await generateText({
 ### With LangChain.js
 
 ```typescript
-import { toLangChainTools } from 'ormai-ts';
+import { toLangChainTools } from '@ormai/core';
 import { ChatOpenAI } from '@langchain/openai';
 import { AgentExecutor, createToolCallingAgent } from 'langchain/agents';
 
@@ -104,7 +104,7 @@ const agent = createToolCallingAgent({
 ### MCP Server
 
 ```typescript
-import { createMcpServer, createJwtAuth, createContextFactory } from 'ormai-ts';
+import { createMcpServer, createJwtAuth, createContextFactory } from '@ormai/core';
 
 const server = createMcpServer({
   name: 'my-db-server',
@@ -201,7 +201,7 @@ const policy = new PolicyBuilder('prod')
 ## Audit Logging
 
 ```typescript
-import { JsonlAuditStore, withAudit } from 'ormai-ts';
+import { JsonlAuditStore, withAudit } from '@ormai/core';
 
 // Create audit store
 const auditStore = new JsonlAuditStore('./audit.jsonl');
@@ -228,7 +228,7 @@ import {
   TenantScopeRequiredError,
   QueryBudgetExceededError,
   WriteDisabledError,
-} from 'ormai-ts';
+} from '@ormai/core';
 
 try {
   await tool.execute(input, ctx);

@@ -141,17 +141,11 @@ class QueryInput(BaseModel):
     select: list[str] | None = Field(
         default=None, description="Fields to select (defaults to all allowed)"
     )
-    where: list[dict[str, Any]] | None = Field(
-        default=None, description="Filter conditions"
-    )
-    order_by: list[dict[str, Any]] | None = Field(
-        default=None, description="Sort order"
-    )
+    where: list[dict[str, Any]] | None = Field(default=None, description="Filter conditions")
+    order_by: list[dict[str, Any]] | None = Field(default=None, description="Sort order")
     take: int = Field(default=25, ge=1, le=100, description="Max rows to return")
     cursor: str | None = Field(default=None, description="Pagination cursor")
-    include: list[dict[str, Any]] | None = Field(
-        default=None, description="Relations to include"
-    )
+    include: list[dict[str, Any]] | None = Field(default=None, description="Relations to include")
 
 
 class QueryTool(Tool[QueryInput, QueryResult]):
@@ -182,10 +176,14 @@ class QueryTool(Tool[QueryInput, QueryResult]):
             model=input.model,
             select=input.select,
             where=[FilterClause.model_validate(f) for f in input.where] if input.where else None,
-            order_by=[OrderClause.model_validate(o) for o in input.order_by] if input.order_by else None,
+            order_by=[OrderClause.model_validate(o) for o in input.order_by]
+            if input.order_by
+            else None,
             take=input.take,
             cursor=input.cursor,
-            include=[IncludeClause.model_validate(i) for i in input.include] if input.include else None,
+            include=[IncludeClause.model_validate(i) for i in input.include]
+            if input.include
+            else None,
         )
 
         # Enforce budget limits before compilation
@@ -206,12 +204,8 @@ class GetInput(BaseModel):
 
     model: str = Field(..., description="The model to get from")
     id: Any = Field(..., description="The primary key value")
-    select: list[str] | None = Field(
-        default=None, description="Fields to select"
-    )
-    include: list[dict[str, Any]] | None = Field(
-        default=None, description="Relations to include"
-    )
+    select: list[str] | None = Field(default=None, description="Fields to select")
+    include: list[dict[str, Any]] | None = Field(default=None, description="Relations to include")
 
 
 class GetTool(Tool[GetInput, GetResult]):
@@ -238,7 +232,9 @@ class GetTool(Tool[GetInput, GetResult]):
             model=input.model,
             id=input.id,
             select=input.select,
-            include=[IncludeClause.model_validate(i) for i in input.include] if input.include else None,
+            include=[IncludeClause.model_validate(i) for i in input.include]
+            if input.include
+            else None,
         )
 
         # Check include depth limit
@@ -246,6 +242,7 @@ class GetTool(Tool[GetInput, GetResult]):
             budget = self.policy.get_budget(input.model)
             if len(request.include) > budget.max_includes_depth:
                 from ormai.core.errors import QueryBudgetExceededError
+
                 raise QueryBudgetExceededError(
                     budget_type="max_includes_depth",
                     limit=budget.max_includes_depth,
@@ -267,9 +264,7 @@ class AggregateInput(BaseModel):
     field: str | None = Field(
         default=None, description="Field to aggregate (required for sum/avg/min/max)"
     )
-    where: list[dict[str, Any]] | None = Field(
-        default=None, description="Filter conditions"
-    )
+    where: list[dict[str, Any]] | None = Field(default=None, description="Filter conditions")
 
 
 class AggregateTool(Tool[AggregateInput, AggregateResult]):

@@ -126,11 +126,15 @@ class DjangoIntrospector:
 
         # Also check for reverse relations
         for rel in model._meta.get_fields():
-            if hasattr(rel, "related_model") and hasattr(rel, "field") and rel.name not in relations:
-                    # This is a reverse relation
-                    rel_meta = self._introspect_reverse_relation(rel)
-                    if rel_meta:
-                        relations[rel.name] = rel_meta
+            if (
+                hasattr(rel, "related_model")
+                and hasattr(rel, "field")
+                and rel.name not in relations
+            ):
+                # This is a reverse relation
+                rel_meta = self._introspect_reverse_relation(rel)
+                if rel_meta:
+                    relations[rel.name] = rel_meta
 
         return ModelMetadata(
             name=model.__name__,

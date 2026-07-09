@@ -115,13 +115,16 @@ class TortoiseIntrospector:
         }
 
         # Handle relation fields separately
-        if isinstance(field, (
-            ForeignKeyFieldInstance,
-            OneToOneFieldInstance,
-            ManyToManyFieldInstance,
-            BackwardFKRelation,
-            BackwardOneToOneRelation,
-        )):
+        if isinstance(
+            field,
+            (
+                ForeignKeyFieldInstance,
+                OneToOneFieldInstance,
+                ManyToManyFieldInstance,
+                BackwardFKRelation,
+                BackwardOneToOneRelation,
+            ),
+        ):
             return None
 
         # Get the field type
@@ -145,7 +148,10 @@ class TortoiseIntrospector:
         )
 
     def _introspect_relation(
-        self, name: str, field: Any, model: type  # noqa: ARG002
+        self,
+        name: str,
+        field: Any,
+        model: type,  # noqa: ARG002
     ) -> RelationMetadata | None:
         """Introspect a relation field."""
         from tortoise.fields.relational import (

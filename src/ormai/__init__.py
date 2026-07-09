@@ -16,8 +16,11 @@ except PackageNotFoundError:
 
 from ormai.core.context import Principal, RunContext
 from ormai.core.errors import (
+    AdapterError,
+    AuthenticationError,
     FieldNotAllowedError,
     ModelNotAllowedError,
+    NotFoundError,
     OrmAIError,
     QueryBudgetExceededError,
     QueryTooBroadError,
@@ -34,8 +37,11 @@ __all__ = [
     "RunContext",
     # Errors
     "OrmAIError",
+    "AdapterError",
+    "AuthenticationError",
     "ModelNotAllowedError",
     "FieldNotAllowedError",
+    "NotFoundError",
     "RelationNotAllowedError",
     "TenantScopeRequiredError",
     "QueryTooBroadError",

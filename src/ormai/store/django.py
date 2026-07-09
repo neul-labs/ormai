@@ -120,7 +120,7 @@ class DjangoAuditStore(AuditStore):
 
     async def store(self, record: AuditRecord) -> None:
         """Store an audit record in the database."""
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         await loop.run_in_executor(None, self._store_sync, record)
 
     def _store_sync(self, record: AuditRecord) -> None:
@@ -133,7 +133,7 @@ class DjangoAuditStore(AuditStore):
 
     async def get(self, record_id: str) -> AuditRecord | None:
         """Retrieve an audit record by ID."""
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         return await loop.run_in_executor(None, self._get_sync, record_id)
 
     def _get_sync(self, record_id: str) -> AuditRecord | None:
@@ -156,7 +156,7 @@ class DjangoAuditStore(AuditStore):
         offset: int = 0,
     ) -> list[AuditRecord]:
         """Query audit records with filters."""
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         return await loop.run_in_executor(
             None,
             self._query_sync,
@@ -218,7 +218,7 @@ class DjangoAuditStore(AuditStore):
         end_time: datetime | None = None,
     ) -> int:
         """Count audit records matching filters."""
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         return await loop.run_in_executor(
             None,
             self._count_sync,
@@ -244,7 +244,7 @@ class DjangoAuditStore(AuditStore):
 
     async def delete_before(self, before: datetime) -> int:
         """Delete audit records older than the given timestamp."""
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         return await loop.run_in_executor(None, self._delete_before_sync, before)
 
     def _delete_before_sync(self, before: datetime) -> int:
@@ -256,7 +256,7 @@ class DjangoAuditStore(AuditStore):
 
     async def bulk_store(self, records: list[AuditRecord]) -> int:
         """Store multiple audit records in a single operation."""
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         return await loop.run_in_executor(None, self._bulk_store_sync, records)
 
     def _bulk_store_sync(self, records: list[AuditRecord]) -> int:

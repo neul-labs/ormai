@@ -342,6 +342,7 @@ class SQLAlchemyCompiler:
     def _get_primary_key_column(self, model_class: type) -> str:
         """Get the primary key column name for a model."""
         from sqlalchemy import inspect
+
         mapper = inspect(model_class)
         pk_cols = [c.key for c in mapper.primary_key]
         if pk_cols:

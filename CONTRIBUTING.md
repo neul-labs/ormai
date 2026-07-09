@@ -6,7 +6,8 @@ Thank you for your interest in contributing to Ormai! This document provides gui
 
 ### Prerequisites
 
-- Python 3.10+
+- Python 3.12+
+- Node.js 18+
 - [uv](https://github.com/astral-sh/uv) package manager
 
 ### Getting Started
@@ -16,11 +17,17 @@ Thank you for your interest in contributing to Ormai! This document provides gui
 git clone https://github.com/neul-labs/ormai.git
 cd ormai
 
-# Install dependencies
+# Install Python dependencies
 uv sync --dev
 
-# Run tests to verify setup
+# Install TypeScript dependencies
+cd ormai-ts && npm ci && cd ..
+
+# Run Python tests to verify setup
 uv run pytest tests/ -v
+
+# Run TypeScript tests
+cd ormai-ts && npm run test:run && cd ..
 ```
 
 ## Development Workflow
@@ -51,6 +58,13 @@ uv run pytest tests/ -v
 
 # Run tests with coverage
 uv run pytest tests/ --cov=src/ormai --cov-report=html
+
+# TypeScript linting and type checking
+cd ormai-ts
+npm run lint
+npm run typecheck
+npm run test:run
+cd ..
 ```
 
 ### Pre-commit Hooks
@@ -102,32 +116,49 @@ uv run pytest tests/ --cov=src/ormai
 
 ```
 ormai/
-├── src/ormai/             # Main source code
-│   ├── adapters/          # ORM adapters (sqlalchemy, tortoise, peewee)
+├── src/ormai/             # Main Python source code
+│   ├── adapters/          # ORM adapters (sqlalchemy, tortoise, peewee, django)
 │   ├── capability/        # Capability-based access control
 │   ├── cli/               # CLI commands
 │   ├── protocols/         # MCP, A2A protocols
 │   └── ...                # Core modules
-├── tests/                 # Test suite
+├── tests/                 # Python test suite
 │   ├── unit/              # Unit tests
 │   ├── integration/       # Integration tests
 │   └── fuzzing/           # Fuzzing/property-based tests
 ├── examples/              # Example applications
 ├── docs/                  # Documentation
 └── ormai-ts/              # TypeScript package
+    ├── src/               # TypeScript source code
+    │   ├── adapters/      # Prisma, Drizzle, TypeORM adapters
+    │   ├── core/          # Context, DSL, errors, types
+    │   ├── policy/        # Policy engine, scoping, redaction
+    │   ├── tools/         # Database tools
+    │   ├── store/          # Audit logging
+    │   ├── mcp/            # MCP server
+    │   └── integrations/   # Agent framework adapters
+    └── tests/             # TypeScript test suite
 ```
 
 ## Adding New Features
 
-### Adding a New ORM Adapter
+### Adding a New ORM Adapter (Python)
 
-1. Create `src/ormai/adapters/your_adapter.py`
-2. Implement the `BaseAdapter` interface
+1. Create `src/ormai/adapters/your_adapter/` directory
+2. Implement the `OrmAdapter` interface from `ormai.adapters.base`
 3. Add to `src/ormai/adapters/__init__.py`
-4. Add tests in `tests/unit/test_adapters_your_adapter.py`
+4. Add tests in `tests/test_adapters/`
 5. Add optional dependency in `pyproject.toml`
 
-### Adding a New Integration
+### Adding a New ORM Adapter (TypeScript)
+
+1. Create `ormai-ts/src/adapters/your_adapter/` directory
+2. Implement the `BaseOrmAdapter` interface from `ormai-ts/src/adapters/base.ts`
+3. Add to `ormai-ts/src/adapters/index.ts`
+4. Add tests in `ormai-ts/tests/adapters/`
+5. Add optional peer dependency in `ormai-ts/package.json`
+
+### Adding a New Integration (Python)
 
 1. Create `src/ormai/integrations/your_integration.py`
 2. Implement the hook or provider interface
@@ -157,7 +188,7 @@ ormai/
 ### Running Tests
 
 ```bash
-# Run all tests
+# Run all Python tests
 uv run pytest tests/ -v
 
 # Run unit tests only
@@ -168,6 +199,15 @@ uv run pytest tests/ --cov=src/ormai
 
 # Run type checking
 uv run mypy src/ormai
+
+# Run all TypeScript tests
+cd ormai-ts && npm run test:run && cd ..
+
+# Run TypeScript type checking
+cd ormai-ts && npm run typecheck && cd ..
+
+# Run TypeScript linting
+cd ormai-ts && npm run lint && cd ..
 ```
 
 ## Documentation

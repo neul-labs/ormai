@@ -1,6 +1,6 @@
 """Tests for Control Plane Server."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 from uuid import uuid4
 
 import pytest
@@ -45,7 +45,7 @@ def make_record(
         tenant_id=tenant_id,
         principal_id=principal_id,
         request_id=str(uuid4()),
-        timestamp=datetime.utcnow(),
+        timestamp=datetime.now(timezone.utc),
         duration_ms=duration_ms,
         inputs={},
         row_count=row_count,
@@ -225,7 +225,7 @@ class TestInstanceManagement:
 
         health = InstanceHealth(
             status=InstanceStatus.ONLINE,
-            last_heartbeat=datetime.utcnow(),
+            last_heartbeat=datetime.now(timezone.utc),
             current_policy_version="v1",
             error_rate=0.01,
             avg_latency_ms=50.0,
@@ -423,7 +423,7 @@ class TestDashboard:
         # Update health to online
         health = InstanceHealth(
             status=InstanceStatus.ONLINE,
-            last_heartbeat=datetime.utcnow(),
+            last_heartbeat=datetime.now(timezone.utc),
         )
         await server.update_instance_health(inst.id, health)
 

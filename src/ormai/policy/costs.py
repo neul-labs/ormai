@@ -196,9 +196,7 @@ class QueryCostEstimator:
         stats = self.table_stats.get(model, TableStats(table_name=model))
 
         # Scan cost for the base data
-        breakdown.scan_cost = (
-            stats.estimated_row_count * self.costs["full_scan_per_row"]
-        )
+        breakdown.scan_cost = stats.estimated_row_count * self.costs["full_scan_per_row"]
 
         # Filter cost if filters provided
         if filters:
@@ -206,16 +204,12 @@ class QueryCostEstimator:
                 breakdown.filter_cost += self._filter_clause_cost(f)
 
         # Aggregate cost
-        breakdown.aggregate_cost = (
-            stats.estimated_row_count * self.costs["aggregate_per_row"]
-        )
+        breakdown.aggregate_cost = stats.estimated_row_count * self.costs["aggregate_per_row"]
 
         # Group by adds significant cost
         if group_by:
             breakdown.aggregate_cost += (
-                stats.estimated_row_count
-                * len(group_by)
-                * self.costs["group_by_per_row"]
+                stats.estimated_row_count * len(group_by) * self.costs["group_by_per_row"]
             )
 
         breakdown.details["operation"] = operation
@@ -224,9 +218,7 @@ class QueryCostEstimator:
 
         return breakdown
 
-    def _estimate_filtered_rows(
-        self, request: QueryRequest, stats: TableStats
-    ) -> int:
+    def _estimate_filtered_rows(self, request: QueryRequest, stats: TableStats) -> int:
         """Estimate number of rows after filtering."""
         rows = stats.estimated_row_count
 
@@ -241,9 +233,7 @@ class QueryCostEstimator:
         filtered_rows = int(rows * selectivity)
         return min(filtered_rows, request.take)
 
-    def _filter_selectivity(
-        self, filter_clause: FilterClause, stats: TableStats
-    ) -> float:
+    def _filter_selectivity(self, filter_clause: FilterClause, stats: TableStats) -> float:
         """Estimate filter selectivity (fraction of rows matching)."""
         # Check if filtering on indexed/unique column
         if filter_clause.field in stats.indexed_columns:
@@ -274,9 +264,7 @@ class QueryCostEstimator:
 
         return selectivity_map.get(filter_clause.op, stats.default_selectivity)
 
-    def _estimate_scan_cost(
-        self, request: QueryRequest, stats: TableStats
-    ) -> float:
+    def _estimate_scan_cost(self, request: QueryRequest, stats: TableStats) -> float:
         """Estimate the cost of scanning data."""
         # Check if we can use an index
         can_use_index = False
@@ -290,9 +278,7 @@ class QueryCostEstimator:
             return stats.estimated_row_count * self.costs["index_scan_per_row"]
         return stats.estimated_row_count * self.costs["full_scan_per_row"]
 
-    def _estimate_filter_cost(
-        self, request: QueryRequest, stats: TableStats
-    ) -> float:
+    def _estimate_filter_cost(self, request: QueryRequest, stats: TableStats) -> float:
         """Estimate cost of evaluating filters."""
         if not request.where:
             return 0.0
@@ -315,17 +301,16 @@ class QueryCostEstimator:
         if op in ("contains", "startswith", "endswith"):
             return self.costs["string_filter"]
         if op == "in":
-            items = (
-                len(filter_clause.value)
-                if isinstance(filter_clause.value, list)
-                else 1
-            )
+            items = len(filter_clause.value) if isinstance(filter_clause.value, list) else 1
             return self.costs["in_filter_per_item"] * items
 
         return self.costs["complex_filter"]
 
     def _estimate_join_cost(
-        self, request: QueryRequest, stats: TableStats, estimated_rows: int  # noqa: ARG002
+        self,
+        request: QueryRequest,
+        stats: TableStats,  # noqa: ARG002
+        estimated_rows: int,
     ) -> float:
         """Estimate cost of includes/joins."""
         if not request.include:
@@ -360,9 +345,7 @@ class QueryCostEstimator:
 
         return base_sort_cost + column_cost
 
-    def _estimate_network_cost(
-        self, request: QueryRequest, estimated_rows: int
-    ) -> float:
+    def _estimate_network_cost(self, request: QueryRequest, estimated_rows: int) -> float:
         """Estimate cost of transferring results."""
         # Limit to actual rows returned
         rows_returned = min(estimated_rows, request.take)
@@ -375,9 +358,7 @@ class QueryCostEstimator:
             + rows_returned * columns * self.costs["network_per_column"]
         )
 
-    def _estimate_memory_cost(
-        self, request: QueryRequest, estimated_rows: int
-    ) -> float:
+    def _estimate_memory_cost(self, request: QueryRequest, estimated_rows: int) -> float:
         """Estimate memory allocation cost."""
         rows_returned = min(estimated_rows, request.take)
         columns = len(request.select) if request.select else 10
@@ -416,14 +397,10 @@ class CostBudget(BaseModel):
         exceeded = []
 
         if breakdown.total > self.max_total_cost:
-            exceeded.append(
-                f"total_cost: {breakdown.total:.1f} > {self.max_total_cost:.1f}"
-            )
+            exceeded.append(f"total_cost: {breakdown.total:.1f} > {self.max_total_cost:.1f}")
 
         if self.max_scan_cost and breakdown.scan_cost > self.max_scan_cost:
-            exceeded.append(
-                f"scan_cost: {breakdown.scan_cost:.1f} > {self.max_scan_cost:.1f}"
-            )
+            exceeded.append(f"scan_cost: {breakdown.scan_cost:.1f} > {self.max_scan_cost:.1f}")
 
         if self.max_filter_cost and breakdown.filter_cost > self.max_filter_cost:
             exceeded.append(
@@ -431,14 +408,10 @@ class CostBudget(BaseModel):
             )
 
         if self.max_join_cost and breakdown.join_cost > self.max_join_cost:
-            exceeded.append(
-                f"join_cost: {breakdown.join_cost:.1f} > {self.max_join_cost:.1f}"
-            )
+            exceeded.append(f"join_cost: {breakdown.join_cost:.1f} > {self.max_join_cost:.1f}")
 
         if self.max_sort_cost and breakdown.sort_cost > self.max_sort_cost:
-            exceeded.append(
-                f"sort_cost: {breakdown.sort_cost:.1f} > {self.max_sort_cost:.1f}"
-            )
+            exceeded.append(f"sort_cost: {breakdown.sort_cost:.1f} > {self.max_sort_cost:.1f}")
 
         if self.max_aggregate_cost and breakdown.aggregate_cost > self.max_aggregate_cost:
             exceeded.append(

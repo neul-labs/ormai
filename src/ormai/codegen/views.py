@@ -4,7 +4,7 @@ View model code generator.
 Generates Pydantic view model source files from ORM metadata and policies.
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 from ormai.codegen.generator import CodeGenerator, GeneratedFile, GenerationResult
 from ormai.core.types import FieldMetadata, FieldType, ModelMetadata, SchemaMetadata
@@ -76,11 +76,13 @@ class ViewCodeGenerator(CodeGenerator):
 
         # Generate main views file
         views_content = self._generate_views_file()
-        result.files.append(GeneratedFile(
-            path=f"{self.module_name}.py",
-            content=views_content,
-            module_name=self.module_name,
-        ))
+        result.files.append(
+            GeneratedFile(
+                path=f"{self.module_name}.py",
+                content=views_content,
+                module_name=self.module_name,
+            )
+        )
 
         return result
 
@@ -90,7 +92,7 @@ class ViewCodeGenerator(CodeGenerator):
             '"""',
             "Auto-generated view models.",
             "",
-            f"Generated at: {datetime.utcnow().isoformat()}",
+            f"Generated at: {datetime.now(timezone.utc).isoformat()}",
             "Do not edit manually - regenerate from schema/policy changes.",
             '"""',
             "",
@@ -123,23 +125,19 @@ class ViewCodeGenerator(CodeGenerator):
             model_policy = self.policy.get_model_policy(model_name)
 
             # Main view (for reads)
-            lines.extend(self._generate_view_class(
-                model_name, model_meta, model_policy, suffix="View"
-            ))
+            lines.extend(
+                self._generate_view_class(model_name, model_meta, model_policy, suffix="View")
+            )
             lines.append("")
 
             # Create view (for create input)
             if self.include_create_views and model_policy and model_policy.writable:
-                lines.extend(self._generate_create_view(
-                    model_name, model_meta, model_policy
-                ))
+                lines.extend(self._generate_create_view(model_name, model_meta, model_policy))
                 lines.append("")
 
             # Update view (for update input)
             if self.include_update_views and model_policy and model_policy.writable:
-                lines.extend(self._generate_update_view(
-                    model_name, model_meta, model_policy
-                ))
+                lines.extend(self._generate_update_view(model_name, model_meta, model_policy))
                 lines.append("")
 
         return "\n".join(lines)
@@ -189,7 +187,7 @@ class ViewCodeGenerator(CodeGenerator):
             f"class {class_name}(BaseModel):",
             f'    """Input model for creating {model_name}."""',
             "",
-            "    model_config = ConfigDict(extra=\"forbid\")",
+            '    model_config = ConfigDict(extra="forbid")',
             "",
         ]
 
@@ -232,7 +230,7 @@ class ViewCodeGenerator(CodeGenerator):
             f"class {class_name}(BaseModel):",
             f'    """Input model for updating {model_name}."""',
             "",
-            "    model_config = ConfigDict(extra=\"forbid\")",
+            '    model_config = ConfigDict(extra="forbid")',
             "",
         ]
 
@@ -254,9 +252,7 @@ class ViewCodeGenerator(CodeGenerator):
                 continue
 
             # All update fields are optional
-            field_line = self._generate_field(
-                field_name, field_meta, for_input=True, optional=True
-            )
+            field_line = self._generate_field(field_name, field_meta, for_input=True, optional=True)
             field_lines.append(field_line)
 
         if field_lines:

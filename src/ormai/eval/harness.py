@@ -146,17 +146,21 @@ class EvalHarness:
             for name, check in self._invariants:
                 try:
                     if not check(replay_result.original, replay_result):
-                        result.invariant_violations.append({
+                        result.invariant_violations.append(
+                            {
+                                "invariant": name,
+                                "call_id": replay_result.original.id,
+                                "tool": replay_result.original.tool_name,
+                            }
+                        )
+                except Exception as e:
+                    result.invariant_violations.append(
+                        {
                             "invariant": name,
                             "call_id": replay_result.original.id,
-                            "tool": replay_result.original.tool_name,
-                        })
-                except Exception as e:
-                    result.invariant_violations.append({
-                        "invariant": name,
-                        "call_id": replay_result.original.id,
-                        "error": str(e),
-                    })
+                            "error": str(e),
+                        }
+                    )
 
         return result
 

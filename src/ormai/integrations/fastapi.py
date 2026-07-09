@@ -15,6 +15,7 @@ from ormai.tools.registry import ToolRegistry
 try:
     from fastapi import APIRouter, HTTPException, Request
     from pydantic import BaseModel
+
     HAS_FASTAPI = True
 except ImportError:
     HAS_FASTAPI = False
@@ -77,9 +78,7 @@ class OrmAIRouter:
             health_checker: Optional health checker for health endpoints
         """
         if not HAS_FASTAPI:
-            raise ImportError(
-                "FastAPI is not installed. Install with: pip install fastapi"
-            )
+            raise ImportError("FastAPI is not installed. Install with: pip install fastapi")
 
         self.toolset = toolset
         self.get_principal = get_principal

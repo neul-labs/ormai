@@ -52,9 +52,7 @@ class MutationExecutor:
         schema: SchemaMetadata,  # noqa: ARG002
     ) -> CompiledQuery:
         """Compile a create request."""
-        decision = self._adapter.compiler.policy_engine.validate_create(
-            request, ctx
-        )
+        decision = self._adapter.compiler.policy_engine.validate_create(request, ctx)
 
         model_class = self._adapter.model_map.get(request.model)
         if model_class is None:
@@ -82,9 +80,7 @@ class MutationExecutor:
         schema: SchemaMetadata,  # noqa: ARG002
     ) -> CompiledQuery:
         """Compile an update request."""
-        decision = self._adapter.compiler.policy_engine.validate_update(
-            request, ctx
-        )
+        decision = self._adapter.compiler.policy_engine.validate_update(request, ctx)
 
         model_class = self._adapter.model_map.get(request.model)
         if model_class is None:
@@ -113,9 +109,7 @@ class MutationExecutor:
         schema: SchemaMetadata,  # noqa: ARG002
     ) -> CompiledQuery:
         """Compile a delete request."""
-        decision = self._adapter.compiler.policy_engine.validate_delete(
-            request, ctx
-        )
+        decision = self._adapter.compiler.policy_engine.validate_delete(request, ctx)
 
         model_class = self._adapter.model_map.get(request.model)
         if model_class is None:
@@ -149,9 +143,7 @@ class MutationExecutor:
         schema: SchemaMetadata,  # noqa: ARG002
     ) -> CompiledQuery:
         """Compile a bulk update request."""
-        decision = self._adapter.compiler.policy_engine.validate_bulk_update(
-            request, ctx
-        )
+        decision = self._adapter.compiler.policy_engine.validate_bulk_update(request, ctx)
 
         model_class = self._adapter.model_map.get(request.model)
         if model_class is None:
@@ -215,9 +207,7 @@ class MutationExecutor:
         if not isinstance(request, CreateRequest):
             raise ValueError("Expected CreateRequest")
 
-        result_data = self._adapter._row_to_dict(
-            instance, compiled.select_fields, request.model
-        )
+        result_data = self._adapter._row_to_dict(instance, compiled.select_fields, request.model)
 
         return CreateResult(
             data=result_data,
@@ -249,9 +239,7 @@ class MutationExecutor:
         if not isinstance(request, CreateRequest):
             raise ValueError("Expected CreateRequest")
 
-        result_data = self._adapter._row_to_dict(
-            instance, compiled.select_fields, request.model
-        )
+        result_data = self._adapter._row_to_dict(instance, compiled.select_fields, request.model)
 
         return CreateResult(
             data=result_data,
@@ -290,9 +278,7 @@ class MutationExecutor:
 
         pk_attr = getattr(model_class, pk_column)
         stmt = update(model_class).where(pk_attr == pk_value).values(**data)
-        stmt = self._adapter._apply_scope_filters(
-            stmt, model_class, compiled.injected_filters
-        )
+        stmt = self._adapter._apply_scope_filters(stmt, model_class, compiled.injected_filters)
 
         result = session.execute(stmt)
         session.flush()
@@ -324,9 +310,7 @@ class MutationExecutor:
 
         pk_attr = getattr(model_class, pk_column)
         stmt = update(model_class).where(pk_attr == pk_value).values(**data)
-        stmt = self._adapter._apply_scope_filters(
-            stmt, model_class, compiled.injected_filters
-        )
+        stmt = self._adapter._apply_scope_filters(stmt, model_class, compiled.injected_filters)
 
         result = await session.execute(stmt)
         await session.flush()
@@ -353,9 +337,7 @@ class MutationExecutor:
         if not isinstance(request, UpdateRequest):
             raise ValueError("Expected UpdateRequest")
 
-        result_data = self._adapter._row_to_dict(
-            row, compiled.select_fields, request.model
-        )
+        result_data = self._adapter._row_to_dict(row, compiled.select_fields, request.model)
         return UpdateResult(data=result_data, success=True, found=True)
 
     def execute_delete(
@@ -379,7 +361,7 @@ class MutationExecutor:
         compiled: CompiledQuery,
     ) -> DeleteResult:
         """Execute delete synchronously."""
-        from datetime import datetime
+        from datetime import datetime, timezone
 
         from sqlalchemy import delete, update
 
@@ -392,15 +374,15 @@ class MutationExecutor:
         pk_attr = getattr(model_class, pk_column)
 
         if soft_delete_field:
-            stmt = update(model_class).where(pk_attr == pk_value).values(
-                **{soft_delete_field: datetime.utcnow()}
+            stmt = (
+                update(model_class)
+                .where(pk_attr == pk_value)
+                .values(**{soft_delete_field: datetime.now(timezone.utc)})
             )
         else:
             stmt = delete(model_class).where(pk_attr == pk_value)
 
-        stmt = self._adapter._apply_scope_filters(
-            stmt, model_class, compiled.injected_filters
-        )
+        stmt = self._adapter._apply_scope_filters(stmt, model_class, compiled.injected_filters)
 
         result = session.execute(stmt)
         session.flush()
@@ -417,7 +399,7 @@ class MutationExecutor:
         compiled: CompiledQuery,
     ) -> DeleteResult:
         """Execute delete asynchronously."""
-        from datetime import datetime
+        from datetime import datetime, timezone
 
         from sqlalchemy import delete, update
 
@@ -430,15 +412,15 @@ class MutationExecutor:
         pk_attr = getattr(model_class, pk_column)
 
         if soft_delete_field:
-            stmt = update(model_class).where(pk_attr == pk_value).values(
-                **{soft_delete_field: datetime.utcnow()}
+            stmt = (
+                update(model_class)
+                .where(pk_attr == pk_value)
+                .values(**{soft_delete_field: datetime.now(timezone.utc)})
             )
         else:
             stmt = delete(model_class).where(pk_attr == pk_value)
 
-        stmt = self._adapter._apply_scope_filters(
-            stmt, model_class, compiled.injected_filters
-        )
+        stmt = self._adapter._apply_scope_filters(stmt, model_class, compiled.injected_filters)
 
         result = await session.execute(stmt)
         await session.flush()
@@ -480,9 +462,7 @@ class MutationExecutor:
 
         pk_attr = getattr(model_class, pk_column)
         stmt = update(model_class).where(pk_attr.in_(pk_values)).values(**data)
-        stmt = self._adapter._apply_scope_filters(
-            stmt, model_class, compiled.injected_filters
-        )
+        stmt = self._adapter._apply_scope_filters(stmt, model_class, compiled.injected_filters)
 
         result = session.execute(stmt)
         session.flush()
@@ -508,9 +488,7 @@ class MutationExecutor:
 
         pk_attr = getattr(model_class, pk_column)
         stmt = update(model_class).where(pk_attr.in_(pk_values)).values(**data)
-        stmt = self._adapter._apply_scope_filters(
-            stmt, model_class, compiled.injected_filters
-        )
+        stmt = self._adapter._apply_scope_filters(stmt, model_class, compiled.injected_filters)
 
         result = await session.execute(stmt)
         await session.flush()

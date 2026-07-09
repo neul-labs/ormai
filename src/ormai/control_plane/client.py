@@ -13,9 +13,7 @@ import logging
 import time
 from collections.abc import Awaitable, Callable
 from contextlib import suppress
-from datetime import datetime
-
-logger = logging.getLogger(__name__)
+from datetime import datetime, timezone
 
 from ormai.control_plane.models import (
     InstanceHealth,
@@ -24,6 +22,8 @@ from ormai.control_plane.models import (
 from ormai.policy.models import Policy
 from ormai.store.base import AuditStore
 from ormai.store.models import AuditRecord
+
+logger = logging.getLogger(__name__)
 
 
 class ControlPlaneClient:
@@ -213,20 +213,12 @@ class ControlPlaneClient:
         now = time.time()
         elapsed = now - self._metrics_reset_time
 
-        error_rate = (
-            self._error_count / self._call_count
-            if self._call_count > 0
-            else 0.0
-        )
-        avg_latency = (
-            self._total_latency_ms / self._call_count
-            if self._call_count > 0
-            else 0.0
-        )
+        error_rate = self._error_count / self._call_count if self._call_count > 0 else 0.0
+        avg_latency = self._total_latency_ms / self._call_count if self._call_count > 0 else 0.0
 
         return InstanceHealth(
             status=InstanceStatus.ONLINE if self._running else InstanceStatus.OFFLINE,
-            last_heartbeat=datetime.utcnow(),
+            last_heartbeat=datetime.now(timezone.utc),
             current_policy_version=self._current_policy_version,
             error_rate=error_rate,
             avg_latency_ms=avg_latency,

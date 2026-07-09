@@ -8,7 +8,7 @@ Provides cross-instance querying, statistics, and analytics.
 import asyncio
 import statistics
 from abc import ABC, abstractmethod
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from ormai.control_plane.models import (
     AuditQuery,
@@ -128,10 +128,8 @@ class InMemoryAuditAggregator(AuditAggregator):
             self._records = self._records[-self._max_records :]
 
         # Remove expired records
-        cutoff = datetime.utcnow() - timedelta(hours=self._retention_hours)
-        self._records = [
-            (iid, r) for iid, r in self._records if r.timestamp > cutoff
-        ]
+        cutoff = datetime.now(timezone.utc) - timedelta(hours=self._retention_hours)
+        self._records = [(iid, r) for iid, r in self._records if r.timestamp > cutoff]
 
     async def query(self, query: AuditQuery) -> AuditQueryResult:
         filtered = []
@@ -179,9 +177,7 @@ class InMemoryAuditAggregator(AuditAggregator):
         if query.sort_by == "timestamp":
             filtered.sort(key=lambda x: x[1].timestamp, reverse=reverse)
         elif query.sort_by == "duration_ms":
-            filtered.sort(
-                key=lambda x: x[1].duration_ms or 0, reverse=reverse
-            )
+            filtered.sort(key=lambda x: x[1].duration_ms or 0, reverse=reverse)
 
         total_count = len(filtered)
 
@@ -202,9 +198,9 @@ class InMemoryAuditAggregator(AuditAggregator):
         instance_id: str | None = None,
     ) -> AuditStats:
         if start_time is None:
-            start_time = datetime.utcnow() - timedelta(hours=1)
+            start_time = datetime.now(timezone.utc) - timedelta(hours=1)
         if end_time is None:
-            end_time = datetime.utcnow()
+            end_time = datetime.now(timezone.utc)
 
         # Filter records in time range
         records = []
@@ -231,9 +227,7 @@ class InMemoryAuditAggregator(AuditAggregator):
 
         for iid, record in records:
             # By tool
-            calls_by_tool[record.tool_name] = (
-                calls_by_tool.get(record.tool_name, 0) + 1
-            )
+            calls_by_tool[record.tool_name] = calls_by_tool.get(record.tool_name, 0) + 1
 
             # By model (from inputs)
             model = record.inputs.get("model")
@@ -333,9 +327,7 @@ class FederatedAuditAggregator(AuditAggregator):
     async def query(self, query: AuditQuery) -> AuditQueryResult:
         # Determine which stores to query
         if query.instance_id:
-            stores_to_query = {
-                query.instance_id: self._stores.get(query.instance_id)
-            }
+            stores_to_query = {query.instance_id: self._stores.get(query.instance_id)}
             stores_to_query = {k: v for k, v in stores_to_query.items() if v}
         else:
             stores_to_query = self._stores.copy()
@@ -421,9 +413,9 @@ class FederatedAuditAggregator(AuditAggregator):
         instance_id: str | None = None,
     ) -> AuditStats:
         if start_time is None:
-            start_time = datetime.utcnow() - timedelta(hours=1)
+            start_time = datetime.now(timezone.utc) - timedelta(hours=1)
         if end_time is None:
-            end_time = datetime.utcnow()
+            end_time = datetime.now(timezone.utc)
 
         # Query all records in time range
         query_result = await self.query(
@@ -449,9 +441,7 @@ class FederatedAuditAggregator(AuditAggregator):
         total_rows = 0
 
         for record in records:
-            calls_by_tool[record.tool_name] = (
-                calls_by_tool.get(record.tool_name, 0) + 1
-            )
+            calls_by_tool[record.tool_name] = calls_by_tool.get(record.tool_name, 0) + 1
 
             model = record.inputs.get("model")
             if model:

@@ -47,6 +47,9 @@ class CompiledQuery:
     # Original request for reference
     request: QueryRequest | GetRequest | AggregateRequest
 
+    # Policy used during compilation (for redaction during execution)
+    policy: Policy | None = None
+
     # Fields to select (after policy filtering)
     select_fields: list[str] = field(default_factory=list)
 
@@ -287,4 +290,5 @@ class OrmAdapter(ABC):
         Adapters may override for better sync support.
         """
         import asyncio
+
         return asyncio.run(self.introspect())

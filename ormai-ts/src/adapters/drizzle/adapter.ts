@@ -24,7 +24,7 @@ import type { Policy } from '../../policy/models.js';
 import { PolicyEngine } from '../../policy/engine.js';
 import { PolicyUtils } from '../../policy/models.js';
 import type { CompiledMutation, CompiledQuery } from '../base.js';
-import { BaseOrmAdapter } from '../base.js';
+import { BaseOrmAdapter, applyRedactionToRecords } from '../base.js';
 import {
   DrizzleCompiler,
   type DrizzleOperators,
@@ -33,6 +33,20 @@ import {
   type CompiledDrizzleMutation,
 } from './compiler.js';
 import { DrizzleIntrospector, type DrizzleRelation, type DrizzleSchema } from './introspection.js';
+
+/**
+ * Drizzle aggregate function builder.
+ *
+ * Used to build SQL-level aggregate queries (COUNT, SUM, AVG, MIN, MAX).
+ * The callback receives the table and column references and should return
+ * a promise resolving to a single-row aggregate result.
+ */
+export type DrizzleAggregateFn = (
+  table: DrizzleTableRef,
+  field: string | null,
+  operation: AggregateRequest['operation'],
+  where?: unknown,
+) => Promise<Record<string, unknown>>;
 
 /**
  * Drizzle database instance type.
@@ -103,6 +117,14 @@ export interface DrizzleAdapterConfig {
 
   /** Model names to expose (optional, defaults to all) */
   models?: string[];
+
+  /**
+   * Server-side aggregate function.
+   * If provided, the adapter uses this for sum/avg/min/max operations
+   * instead of fetching all rows and computing client-side.
+   * For count, the adapter always uses a filtered select for efficiency.
+   */
+  aggregateFn?: DrizzleAggregateFn;
 }
 
 /**
@@ -114,6 +136,7 @@ export class DrizzleAdapter extends BaseOrmAdapter<DrizzleDB, CompiledDrizzleQue
   private readonly operators: DrizzleOperators;
   private readonly relations: Record<string, DrizzleRelation[]>;
   private readonly modelFilter?: string[];
+  private readonly aggregateFn?: DrizzleAggregateFn;
   private readonly compiler: DrizzleCompiler;
   private cachedSchema?: SchemaMetadata;
 
@@ -124,6 +147,7 @@ export class DrizzleAdapter extends BaseOrmAdapter<DrizzleDB, CompiledDrizzleQue
     this.operators = config.operators;
     this.relations = config.relations ?? {};
     this.modelFilter = config.models;
+    this.aggregateFn = config.aggregateFn;
 
     // Build table map from schema
     const tables: Record<string, DrizzleTableRef> = {};
@@ -201,6 +225,9 @@ export class DrizzleAdapter extends BaseOrmAdapter<DrizzleDB, CompiledDrizzleQue
       injectedFilters: decision.injectedFilters,
       policyDecisions: decision.decisions,
       timeoutMs: decision.budget?.statementTimeoutMs,
+      redactionRules: Object.keys(decision.redactionRules).length > 0
+        ? decision.redactionRules
+        : undefined,
     };
   }
 
@@ -236,9 +263,11 @@ export class DrizzleAdapter extends BaseOrmAdapter<DrizzleDB, CompiledDrizzleQue
 
       const rows = await builder as Record<string, unknown>[];
 
-      // Rows are already filtered to allowedFields via the compiled query
+      // Apply redaction rules
+      const redactedRows = applyRedactionToRecords(rows, compiled.redactionRules);
+
       return {
-        data: rows,
+        data: redactedRows,
         nextCursor: null,
         hasMore: rows.length >= request.take,
         totalCount: null,
@@ -288,6 +317,9 @@ export class DrizzleAdapter extends BaseOrmAdapter<DrizzleDB, CompiledDrizzleQue
       injectedFilters: decision.injectedFilters,
       policyDecisions: decision.decisions,
       timeoutMs: decision.budget?.statementTimeoutMs,
+      redactionRules: Object.keys(decision.redactionRules).length > 0
+        ? decision.redactionRules
+        : undefined,
     };
   }
 
@@ -346,13 +378,53 @@ export class DrizzleAdapter extends BaseOrmAdapter<DrizzleDB, CompiledDrizzleQue
     compiled: CompiledQuery<CompiledDrizzleQuery>,
     ctx: RunContext<DrizzleDB>
   ): Promise<AggregateResult> {
-    // For aggregates, we need to execute and compute client-side
-    // A real implementation would use raw SQL or Drizzle's aggregation APIs
     const { query } = compiled;
     const request = compiled.request as AggregateRequest;
     const db = ctx.db ?? this.db;
 
     try {
+      // For count, use a filtered query and get row count efficiently
+      if (request.operation === 'count') {
+        let builder = db.select().from(query.table);
+        if (query.where) {
+          builder = builder.where(query.where);
+        }
+        // If the select builder supports a count-like approach, use that;
+        // otherwise fall back to fetching rows for the count
+        const rows = await builder as Record<string, unknown>[];
+        return {
+          value: rows.length,
+          operation: 'count',
+          field: request.field ?? null,
+          rowCount: rows.length,
+        };
+      }
+
+      // For sum/avg/min/max, use server-side aggregation if aggregateFn is provided
+      if (this.aggregateFn) {
+        const result = await this.aggregateFn(
+          query.table,
+          request.field ?? null,
+          request.operation,
+          query.where,
+        );
+        const value = result['agg_value'] ?? result['value'] ?? null;
+        let rowCount = 0;
+        const rowCountVal = result['row_count'] ?? result['rowCount'];
+        if (typeof rowCountVal === 'number') {
+          rowCount = rowCountVal;
+        }
+        return {
+          value: value,
+          operation: request.operation,
+          field: request.field ?? null,
+          rowCount,
+        };
+      }
+
+      // Fallback: client-side aggregation (fetches all rows)
+      // NOTE: Provide aggregateFn in config for production use to avoid
+      // fetching entire result sets for sum/avg/min/max operations.
       let builder = db.select().from(query.table);
       if (query.where) {
         builder = builder.where(query.where);
@@ -360,12 +432,8 @@ export class DrizzleAdapter extends BaseOrmAdapter<DrizzleDB, CompiledDrizzleQue
       const rows = await builder as Record<string, unknown>[];
 
       let value: unknown = null;
-      const rowCount = rows.length;
 
       switch (request.operation) {
-        case 'count':
-          value = rowCount;
-          break;
         case 'sum':
           if (request.field) {
             value = rows.reduce((sum, row) => sum + (Number(row[request.field!]) || 0), 0);
@@ -378,12 +446,24 @@ export class DrizzleAdapter extends BaseOrmAdapter<DrizzleDB, CompiledDrizzleQue
           break;
         case 'min':
           if (request.field && rows.length > 0) {
-            value = Math.min(...rows.map((row) => Number(row[request.field!]) || 0));
+            value = rows.reduce(
+              (min, row) => {
+                const v = Number(row[request.field!]) || 0;
+                return v < min ? v : min;
+              },
+              Number(rows[0][request.field!]) || 0,
+            );
           }
           break;
         case 'max':
           if (request.field && rows.length > 0) {
-            value = Math.max(...rows.map((row) => Number(row[request.field!]) || 0));
+            value = rows.reduce(
+              (max, row) => {
+                const v = Number(row[request.field!]) || 0;
+                return v > max ? v : max;
+              },
+              Number(rows[0][request.field!]) || 0,
+            );
           }
           break;
       }
@@ -392,7 +472,7 @@ export class DrizzleAdapter extends BaseOrmAdapter<DrizzleDB, CompiledDrizzleQue
         value,
         operation: request.operation,
         field: request.field ?? null,
-        rowCount,
+        rowCount: rows.length,
       };
     } catch (error) {
       throw new Error(`Aggregate execution failed: ${(error as Error).message}`);

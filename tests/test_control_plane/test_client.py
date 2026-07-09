@@ -1,6 +1,6 @@
 """Tests for Control Plane Client."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 from uuid import uuid4
 
 import pytest
@@ -29,7 +29,7 @@ def make_record(
         tenant_id=tenant_id,
         principal_id=principal_id,
         request_id=str(uuid4()),
-        timestamp=datetime.utcnow(),
+        timestamp=datetime.now(timezone.utc),
         duration_ms=duration_ms,
         inputs={},
         error=error,

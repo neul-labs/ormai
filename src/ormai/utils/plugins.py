@@ -63,7 +63,9 @@ class ErrorPlugin(ABC):
         return None
 
     def on_error(  # noqa: B027
-        self, error: OrmAIError, context: ErrorContext  # noqa: ARG002
+        self,
+        error: OrmAIError,
+        context: ErrorContext,  # noqa: ARG002
     ) -> None:
         """
         Hook called when an error occurs.

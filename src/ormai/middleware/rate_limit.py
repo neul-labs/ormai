@@ -123,10 +123,20 @@ class InMemoryBackend(RateLimitBackend):
     def __init__(self) -> None:
         self._windows: dict[str, _WindowEntry] = {}
         self._lock = asyncio.Lock()
+        self._last_cleanup: float = time.time()
+        self._cleanup_interval: float = 60.0  # Clean up every 60 seconds
 
     async def increment(self, key: str, window_seconds: int) -> int:
         async with self._lock:
             now = time.time()
+
+            # Auto-cleanup expired entries periodically to prevent memory leaks
+            if now - self._last_cleanup >= self._cleanup_interval:
+                expired_keys = [k for k, entry in self._windows.items() if now >= entry.expires_at]
+                for k in expired_keys:
+                    del self._windows[k]
+                self._last_cleanup = now
+
             entry = self._windows.get(key)
 
             if entry is None or now >= entry.expires_at:
@@ -162,9 +172,7 @@ class InMemoryBackend(RateLimitBackend):
         """
         async with self._lock:
             now = time.time()
-            expired_keys = [
-                key for key, entry in self._windows.items() if now >= entry.expires_at
-            ]
+            expired_keys = [key for key, entry in self._windows.items() if now >= entry.expires_at]
             for key in expired_keys:
                 del self._windows[key]
             return len(expired_keys)

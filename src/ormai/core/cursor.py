@@ -8,6 +8,8 @@ unlike offset-based pagination which can skip or duplicate rows.
 import base64
 import hashlib
 import json
+import os
+import warnings
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
@@ -73,9 +75,21 @@ class CursorEncoder:
         Initialize the encoder.
 
         Args:
-            secret: Optional secret for cursor signing (prevents tampering)
+            secret: Secret for cursor signing (prevents tampering).
+                If not provided, a random secret is generated and a
+                warning is issued. For production, always provide an
+                explicit secret.
         """
-        self.secret = secret or "ormai-cursor-default"
+        if secret is None:
+            warnings.warn(
+                "CursorEncoder initialized without an explicit secret. "
+                "A random secret was generated, but cursors will not be "
+                "valid across restarts. Provide an explicit secret for "
+                "production use.",
+                stacklevel=2,
+            )
+            secret = os.urandom(32).hex()
+        self.secret = secret
 
     def encode_offset(self, offset: int) -> str:
         """
@@ -221,11 +235,13 @@ def build_keyset_condition(
         for j in range(i):
             field, _ = order_fields[j]
             if field in cursor_values:
-                and_parts.append({
-                    "field": field,
-                    "op": "eq",
-                    "value": cursor_values[field],
-                })
+                and_parts.append(
+                    {
+                        "field": field,
+                        "op": "eq",
+                        "value": cursor_values[field],
+                    }
+                )
 
         # Comparison condition for current field
         field, sort_dir = order_fields[i]
@@ -236,11 +252,13 @@ def build_keyset_condition(
             else:
                 op = "lt" if sort_dir.lower() == "asc" else "gt"
 
-            and_parts.append({
-                "field": field,
-                "op": op,
-                "value": cursor_values[field],
-            })
+            and_parts.append(
+                {
+                    "field": field,
+                    "op": op,
+                    "value": cursor_values[field],
+                }
+            )
 
         if and_parts:
             if len(and_parts) == 1:
@@ -255,5 +273,5 @@ def build_keyset_condition(
     return {"or": conditions}
 
 
-# Default encoder instance
-default_encoder = CursorEncoder()
+# Default encoder instance (uses auto-generated secret, warn in production)
+default_encoder = CursorEncoder(secret=os.urandom(32).hex())

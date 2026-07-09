@@ -195,11 +195,13 @@ class CallContext:
 
     def __enter__(self) -> RecordedCall:
         import time
+
         self._start_time = time.perf_counter()
         return self._call
 
     def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
         import time
+
         self._call.duration_ms = (time.perf_counter() - self._start_time) * 1000
 
         if exc_val is not None:

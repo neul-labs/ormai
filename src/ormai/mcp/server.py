@@ -3,6 +3,7 @@ MCP server factory.
 
 Creates MCP servers that expose OrmAI tools.
 """
+
 from __future__ import annotations
 
 import logging
@@ -147,7 +148,9 @@ class McpServer:
         self.context_builder = context_builder
         self.rate_limiter = rate_limiter
         # Use provided value or auto-detect from environment
-        self.enforce_auth = enforce_auth if enforce_auth is not None else _is_production_environment()
+        self.enforce_auth = (
+            enforce_auth if enforce_auth is not None else _is_production_environment()
+        )
 
     def get_tools(self) -> list[dict[str, Any]]:
         """
@@ -229,9 +232,7 @@ class McpServer:
             from mcp.server import Server
             from mcp.types import Tool as McpTool
         except ImportError as err:
-            raise ImportError(
-                "MCP SDK not installed. Install with: uv add ormai[mcp]"
-            ) from err
+            raise ImportError("MCP SDK not installed. Install with: uv add ormai[mcp]") from err
 
         server = Server("ormai")
 

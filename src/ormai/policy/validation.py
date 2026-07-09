@@ -34,9 +34,7 @@ class PolicyValidator:
     Contains validation methods that check requests against policies.
     """
 
-    def __init__(
-        self, policy: Policy, schema: SchemaMetadata, engine: "PolicyEngine"
-    ) -> None:
+    def __init__(self, policy: Policy, schema: SchemaMetadata, engine: "PolicyEngine") -> None:
         """Initialize with policy and schema references."""
         self._policy = policy
         self._schema = schema
@@ -136,9 +134,7 @@ class PolicyValidator:
             # Check relation policy
             relation_policy = model_policy.relations.get(include.relation)
             if relation_policy is None or not relation_policy.allowed:
-                allowed_relations = [
-                    r for r, p in model_policy.relations.items() if p.allowed
-                ]
+                allowed_relations = [r for r, p in model_policy.relations.items() if p.allowed]
                 raise RelationNotAllowedError(
                     relation=include.relation,
                     model=model,

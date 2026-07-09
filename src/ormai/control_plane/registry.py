@@ -11,7 +11,7 @@ Central storage for versioned policies with support for:
 import hashlib
 import json
 from abc import ABC, abstractmethod
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any
 
 from ormai.control_plane.models import PolicyDiff, PolicyVersion
@@ -235,7 +235,7 @@ class InMemoryPolicyRegistry(PolicyRegistry):
             version=version_id,
             name=name,
             policy=policy,
-            published_at=datetime.utcnow(),
+            published_at=datetime.now(timezone.utc),
             published_by=published_by,
             description=description,
             tags=tags or [],
@@ -385,7 +385,7 @@ class JsonFilePolicyRegistry(PolicyRegistry):
             version=version_id,
             name=name,
             policy=policy,
-            published_at=datetime.utcnow(),
+            published_at=datetime.now(timezone.utc),
             published_by=published_by,
             description=description,
             tags=tags or [],

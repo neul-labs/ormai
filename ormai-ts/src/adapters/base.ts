@@ -24,6 +24,7 @@ import type {
 } from '../core/dsl.js';
 import { AdapterNotImplementedError } from '../core/errors.js';
 import type { SchemaMetadata } from '../core/types.js';
+import { maskPartial } from '../policy/redaction.js';
 import type { Policy } from '../policy/models.js';
 
 /**
@@ -49,6 +50,9 @@ export interface CompiledQuery<T = unknown> {
 
   /** Statement timeout in milliseconds */
   timeoutMs?: number;
+
+  /** Redaction rules to apply to results (field -> action) */
+  redactionRules?: Record<string, string>;
 }
 
 /**
@@ -375,4 +379,53 @@ export abstract class BaseOrmAdapter<DB = unknown, CompiledT = unknown, Mutation
   ): Promise<BulkUpdateResult> {
     throw new AdapterNotImplementedError('Bulk update', this.constructor.name);
   }
+}
+
+/**
+ * Apply redaction rules to a record.
+ *
+ * Processes each field according to the redaction action:
+ * - 'deny': Remove the field entirely (set to null)
+ * - 'mask': Apply partial masking
+ * - 'hash': Not applied at this level (would need crypto)
+ */
+export function applyRedaction(
+  record: Record<string, unknown>,
+  rules: Record<string, string>
+): Record<string, unknown> {
+  if (!rules || Object.keys(rules).length === 0) {
+    return record;
+  }
+
+  const result: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(record)) {
+    const action = rules[key];
+    if (action === 'deny') {
+      result[key] = null;
+    } else if (action === 'mask') {
+      result[key] = value === null || value === undefined
+        ? null
+        : maskPartial(String(value));
+    } else if (action === 'hash') {
+      result[key] = value === null || value === undefined
+        ? null
+        : `[hashed]`;
+    } else {
+      result[key] = value;
+    }
+  }
+  return result;
+}
+
+/**
+ * Apply redaction rules to an array of records.
+ */
+export function applyRedactionToRecords(
+  records: Record<string, unknown>[],
+  rules: Record<string, string> | undefined
+): Record<string, unknown>[] {
+  if (!rules || Object.keys(rules).length === 0) {
+    return records;
+  }
+  return records.map((record) => applyRedaction(record, rules));
 }

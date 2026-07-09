@@ -220,14 +220,11 @@ class McpTemplates:
 
         Good for local development and testing.
         """
-        return (
-            McpConfigGenerator()
-            .add_ormai(
-                name=name,
-                database_url=database_url,
-                policy_preset="dev",
-                enable_writes=True,
-            )
+        return McpConfigGenerator().add_ormai(
+            name=name,
+            database_url=database_url,
+            policy_preset="dev",
+            enable_writes=True,
         )
 
     @staticmethod
@@ -240,14 +237,11 @@ class McpTemplates:
 
         Safe for querying production data without write access.
         """
-        return (
-            McpConfigGenerator()
-            .add_ormai(
-                name=name,
-                database_url=database_url,
-                policy_preset="prod",
-                enable_writes=False,
-            )
+        return McpConfigGenerator().add_ormai(
+            name=name,
+            database_url=database_url,
+            policy_preset="prod",
+            enable_writes=False,
         )
 
     @staticmethod
@@ -260,14 +254,11 @@ class McpTemplates:
 
         For internal dashboards with more access than production.
         """
-        return (
-            McpConfigGenerator()
-            .add_ormai(
-                name=name,
-                database_url=database_url,
-                policy_preset="internal",
-                enable_writes=False,
-            )
+        return McpConfigGenerator().add_ormai(
+            name=name,
+            database_url=database_url,
+            policy_preset="internal",
+            enable_writes=False,
         )
 
     @staticmethod

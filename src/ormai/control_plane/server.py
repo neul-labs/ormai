@@ -9,7 +9,7 @@ Provides the management API and backend for:
 
 import hashlib
 import secrets
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from ormai.control_plane.aggregator import AuditAggregator, InMemoryAuditAggregator
@@ -170,7 +170,7 @@ class ControlPlaneServer:
             name=name,
             endpoint=endpoint,
             tags=tags or [],
-            registered_at=datetime.utcnow(),
+            registered_at=datetime.now(timezone.utc),
             metadata=metadata or {},
             api_key_hash=api_key_hash,
         )
@@ -214,7 +214,7 @@ class ControlPlaneServer:
         instances = list(self._instances.values())
 
         # Update status based on heartbeat
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         for inst in instances:
             if inst.health.last_heartbeat:
                 elapsed = (now - inst.health.last_heartbeat).total_seconds()
@@ -346,11 +346,7 @@ class ControlPlaneServer:
         # Determine target instances
         targets: list[Instance] = []
         if target_instances:
-            targets = [
-                self._instances[iid]
-                for iid in target_instances
-                if iid in self._instances
-            ]
+            targets = [self._instances[iid] for iid in target_instances if iid in self._instances]
         elif target_tags:
             targets = [
                 inst
@@ -366,7 +362,7 @@ class ControlPlaneServer:
             policy_version=policy_version,
             target_instances=[i.id for i in targets],
             target_tags=target_tags or [],
-            deployed_at=datetime.utcnow(),
+            deployed_at=datetime.now(timezone.utc),
             deployed_by=deployed_by,
             instance_status={i.id: "pending" for i in targets},
             success=False,
@@ -393,9 +389,7 @@ class ControlPlaneServer:
         deployments = self._deployments
 
         if policy_version:
-            deployments = [
-                d for d in deployments if d.policy_version == policy_version
-            ]
+            deployments = [d for d in deployments if d.policy_version == policy_version]
 
         # Sort by deployed_at descending
         deployments.sort(key=lambda d: d.deployed_at, reverse=True)
@@ -417,14 +411,12 @@ class ControlPlaneServer:
         """
         Get a summary for dashboard display.
         """
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         hour_ago = now - timedelta(hours=1)
 
         # Get instance stats
         instances = await self.list_instances()
-        online_count = sum(
-            1 for i in instances if i.health.status == InstanceStatus.ONLINE
-        )
+        online_count = sum(1 for i in instances if i.health.status == InstanceStatus.ONLINE)
 
         # Get policy stats
         active_policy = await self.get_active_policy()

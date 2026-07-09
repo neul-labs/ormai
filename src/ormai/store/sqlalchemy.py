@@ -178,7 +178,7 @@ class SQLAlchemyAuditStore(AuditStore):
         if self.is_async:
             await self._store_async(record)
         else:
-            loop = asyncio.get_event_loop()
+            loop = asyncio.get_running_loop()
             await loop.run_in_executor(None, self._store_sync, record)
 
     def _store_sync(self, record: AuditRecord) -> None:
@@ -200,7 +200,7 @@ class SQLAlchemyAuditStore(AuditStore):
         if self.is_async:
             return await self._get_async(record_id)
         else:
-            loop = asyncio.get_event_loop()
+            loop = asyncio.get_running_loop()
             return await loop.run_in_executor(None, self._get_sync, record_id)
 
     def _get_sync(self, record_id: str) -> AuditRecord | None:
@@ -236,7 +236,7 @@ class SQLAlchemyAuditStore(AuditStore):
                 tenant_id, principal_id, tool_name, start_time, end_time, limit, offset
             )
         else:
-            loop = asyncio.get_event_loop()
+            loop = asyncio.get_running_loop()
             return await loop.run_in_executor(
                 None,
                 self._query_sync,
@@ -328,11 +328,9 @@ class SQLAlchemyAuditStore(AuditStore):
     ) -> int:
         """Count audit records matching filters."""
         if self.is_async:
-            return await self._count_async(
-                tenant_id, principal_id, tool_name, start_time, end_time
-            )
+            return await self._count_async(tenant_id, principal_id, tool_name, start_time, end_time)
         else:
-            loop = asyncio.get_event_loop()
+            loop = asyncio.get_running_loop()
             return await loop.run_in_executor(
                 None,
                 self._count_sync,
@@ -382,7 +380,7 @@ class SQLAlchemyAuditStore(AuditStore):
         if self.is_async:
             return await self._delete_before_async(before)
         else:
-            loop = asyncio.get_event_loop()
+            loop = asyncio.get_running_loop()
             return await loop.run_in_executor(None, self._delete_before_sync, before)
 
     def _delete_before_sync(self, before: datetime) -> int:
@@ -406,7 +404,7 @@ class SQLAlchemyAuditStore(AuditStore):
         if self.is_async:
             return await self._bulk_store_async(records)
         else:
-            loop = asyncio.get_event_loop()
+            loop = asyncio.get_running_loop()
             return await loop.run_in_executor(None, self._bulk_store_sync, records)
 
     def _bulk_store_sync(self, records: list[AuditRecord]) -> int:

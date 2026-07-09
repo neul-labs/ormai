@@ -15,10 +15,12 @@ __all__ = [
 def get_fastapi_integration():
     """Get FastAPI integration utilities."""
     from ormai.integrations import fastapi
+
     return fastapi
 
 
 def get_langgraph_integration():
     """Get LangGraph integration utilities."""
     from ormai.integrations import langgraph
+
     return langgraph

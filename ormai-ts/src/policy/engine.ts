@@ -140,13 +140,10 @@ export class PolicyEngine {
       decision.addDecision('Broad query guard passed');
     }
 
-    // 7. Collect redaction rules
-    for (const field of decision.allowedFields) {
-      const fieldPolicy = ModelPolicyUtils.getFieldPolicy(modelPolicy, field);
-      if (fieldPolicy.action !== 'allow') {
-        decision.redactionRules[field] = fieldPolicy.action;
-      }
-    }
+    // 7. Apply field redactions (field policies + global patterns)
+    decision.allowedFields = this.applyFieldRedactions(
+      decision.allowedFields, modelPolicy, decision
+    );
 
     return decision;
   }
@@ -192,6 +189,11 @@ export class PolicyEngine {
       rowPolicy,
       ctx,
       undefined
+    );
+
+    // Apply field redactions (field policies + global patterns)
+    decision.allowedFields = this.applyFieldRedactions(
+      decision.allowedFields, modelPolicy, decision
     );
 
     return decision;
@@ -445,6 +447,55 @@ export class PolicyEngine {
   // =========================================================================
 
   /**
+   * Apply global deny/mask patterns and collect redaction rules.
+   *
+   * Removes denied fields from allowedFields and populates redactionRules.
+   */
+  private applyFieldRedactions(
+    allowedFields: string[],
+    modelPolicy: ModelPolicy,
+    decision: PolicyDecision
+  ): string[] {
+    // Collect field-level redaction rules
+    for (const field of allowedFields) {
+      const fieldPolicy = ModelPolicyUtils.getFieldPolicy(modelPolicy, field);
+      if (fieldPolicy.action !== 'allow') {
+        decision.redactionRules[field] = fieldPolicy.action;
+      }
+    }
+
+    // Apply global deny patterns
+    if (this.policy.globalDenyPatterns) {
+      for (const field of allowedFields) {
+        for (const pattern of this.policy.globalDenyPatterns) {
+          const regex = new RegExp(pattern);
+          if (regex.test(field)) {
+            decision.redactionRules[field] = 'deny';
+            break;
+          }
+        }
+      }
+    }
+
+    // Apply global mask patterns (only if not already denied/redacted)
+    if (this.policy.globalMaskPatterns) {
+      for (const field of allowedFields) {
+        if (field in decision.redactionRules) continue;
+        for (const pattern of this.policy.globalMaskPatterns) {
+          const regex = new RegExp(pattern);
+          if (regex.test(field)) {
+            decision.redactionRules[field] = 'mask';
+            break;
+          }
+        }
+      }
+    }
+
+    // Remove denied fields from allowed fields
+    return allowedFields.filter((field) => decision.redactionRules[field] !== 'deny');
+  }
+
+  /**
    * Validate that a model is accessible.
    */
   private validateModelAccess(
@@ -553,7 +604,8 @@ export class PolicyEngine {
   private validateAndGetScopeFilters(
     model: string,
     rowPolicy: RowPolicy,
-    ctx: RunContext
+    ctx: RunContext,
+    where?: readonly FilterClause[]
   ): FilterClause[] {
     // Use ScopeInjector for filter generation
     const scopeInjector = createScopeInjector(rowPolicy);
@@ -562,6 +614,19 @@ export class PolicyEngine {
     // Check tenant scope requirement
     if (rowPolicy.tenantScopeField && this.policy.requireTenantScope && !ctx.principal.tenantId) {
       throw new TenantScopeRequiredError(model, rowPolicy.tenantScopeField);
+    }
+
+    // Validate that user-provided where filters don't conflict with scope filters
+    if (where && rowPolicy.tenantScopeField) {
+      const userOverridesScope = where.some(
+        (f) => f.field === rowPolicy.tenantScopeField
+      );
+      if (userOverridesScope && rowPolicy.requireScope) {
+        throw new QueryTooBroadError(
+          model,
+          `Cannot override tenant scope filter on field '${rowPolicy.tenantScopeField}'`
+        );
+      }
     }
 
     return filters;
@@ -655,14 +720,15 @@ export class PolicyEngine {
 
     // For bulk update, check max affected rows
     if (operation === 'bulk_update') {
-      if (request.ids.length > writePolicy.maxAffectedRows) {
+      const ids = (request as BulkUpdateRequest).ids;
+      if (ids.length > writePolicy.maxAffectedRows) {
         throw new MaxAffectedRowsExceededError(
           'bulk_update',
           writePolicy.maxAffectedRows,
-          request.ids.length
+          ids.length
         );
       }
-      decision.addDecision(`Bulk update size validated: ${request.ids.length} rows`);
+      decision.addDecision(`Bulk update size validated: ${ids.length} rows`);
     }
 
     const rowPolicy = PolicyUtils.getRowPolicy(this.policy, request.model);

@@ -289,10 +289,7 @@ class PersistentSchemaCache:
             return False
 
         # Check hash if expected
-        if expected_hash is not None and cached_hash != expected_hash:
-            return False
-
-        return True
+        return not (expected_hash is not None and cached_hash != expected_hash)
 
     def _serialize_schema(self, schema: SchemaMetadata) -> dict[str, Any]:
         """Serialize schema to JSON-compatible dict."""

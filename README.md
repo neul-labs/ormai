@@ -77,6 +77,7 @@ uv add ormai
 uv add ormai[sqlalchemy]    # SQLAlchemy support
 uv add ormai[tortoise]      # Tortoise ORM support
 uv add ormai[peewee]        # Peewee support
+uv add ormai[django]        # Django support
 uv add ormai[all]           # All adapters
 ```
 

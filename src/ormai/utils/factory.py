@@ -67,23 +67,19 @@ class ToolsetFactory:
         registry = ToolRegistry()
 
         # Always register describe_schema
-        registry.register(
-            DescribeSchemaTool(schema=self.schema, policy=self.policy)
-        )
+        registry.register(DescribeSchemaTool(schema=self.schema, policy=self.policy))
 
         # Register read tools
-        registry.register(
-            QueryTool(adapter=self.adapter, policy=self.policy, schema=self.schema)
-        )
-        registry.register(
-            GetTool(adapter=self.adapter, policy=self.policy, schema=self.schema)
-        )
+        registry.register(QueryTool(adapter=self.adapter, policy=self.policy, schema=self.schema))
+        registry.register(GetTool(adapter=self.adapter, policy=self.policy, schema=self.schema))
         registry.register(
             AggregateTool(adapter=self.adapter, policy=self.policy, schema=self.schema)
         )
 
         # Determine if writes should be included
-        writes_enabled = include_writes if include_writes is not None else self.policy.writes_enabled
+        writes_enabled = (
+            include_writes if include_writes is not None else self.policy.writes_enabled
+        )
 
         if writes_enabled:
             self._register_write_tools(registry)

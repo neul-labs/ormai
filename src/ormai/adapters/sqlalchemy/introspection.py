@@ -42,9 +42,7 @@ class SQLAlchemyIntrospector:
             models: List of SQLAlchemy declarative model classes
         """
         self.models = models
-        self._model_map: dict[str, type] = {
-            self._get_model_name(m): m for m in models
-        }
+        self._model_map: dict[str, type] = {self._get_model_name(m): m for m in models}
 
     def introspect(self) -> SchemaMetadata:
         """

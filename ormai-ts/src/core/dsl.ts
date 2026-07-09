@@ -305,6 +305,7 @@ export const DeleteRequestSchema = z
     id: z.unknown().describe('The primary key of the record to delete'),
     reason: z.string().optional().describe('Reason for the deletion'),
     hard: z.boolean().default(false).describe('If true, perform hard delete instead of soft delete'),
+    returnFields: z.array(z.string()).optional().describe('Fields to return after deletion'),
   })
   .readonly();
 

@@ -99,14 +99,16 @@ class Tool(ABC, Generic[InputT, OutputT]):
             if isinstance(e, OrmAIError):
                 return ToolResult.fail(e.to_dict())
             else:
-                return ToolResult.fail({
-                    "code": "INTERNAL_ERROR",
-                    "message": str(e),
-                    "details": {
-                        "exception_type": type(e).__name__,
-                        "traceback": traceback.format_exc(),
-                    },
-                })
+                return ToolResult.fail(
+                    {
+                        "code": "INTERNAL_ERROR",
+                        "message": str(e),
+                        "details": {
+                            "exception_type": type(e).__name__,
+                            "traceback": traceback.format_exc(),
+                        },
+                    }
+                )
 
     def get_json_schema(self) -> dict[str, Any]:
         """

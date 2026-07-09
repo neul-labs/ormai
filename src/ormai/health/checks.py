@@ -293,9 +293,7 @@ def create_health_router(
         from fastapi import APIRouter
         from fastapi.responses import JSONResponse
     except ImportError as err:
-        raise ImportError(
-            "FastAPI is not installed. Install with: pip install fastapi"
-        ) from err
+        raise ImportError("FastAPI is not installed. Install with: pip install fastapi") from err
 
     router = APIRouter(tags=["health"])
 

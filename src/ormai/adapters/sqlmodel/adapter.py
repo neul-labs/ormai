@@ -14,6 +14,7 @@ from ormai.core.types import SchemaMetadata
 
 try:
     from sqlmodel import SQLModel
+
     HAS_SQLMODEL = True
 except ImportError:
     HAS_SQLMODEL = False
@@ -41,6 +42,8 @@ class SQLModelAdapter(SQLAlchemyAdapter):
 
         adapter = SQLModelAdapter(
             engine=engine,
+            models=[Customer, Order],
+            policy=policy,
             session_factory=lambda: Session(engine),
         )
     """
@@ -48,36 +51,35 @@ class SQLModelAdapter(SQLAlchemyAdapter):
     def __init__(
         self,
         engine: Engine,
-        session_factory: Any = None,
         models: list[type] | None = None,
+        policy: Any = None,
+        session_factory: Any = None,
     ) -> None:
         """
         Initialize the SQLModel adapter.
 
         Args:
             engine: SQLAlchemy engine instance
-            session_factory: Factory function or class to create sessions
             models: Optional list of SQLModel classes to include
+            policy: Policy configuration (required by SQLAlchemyAdapter)
+            session_factory: Factory function or class to create sessions
         """
         if not HAS_SQLMODEL:
-            raise ImportError(
-                "SQLModel is not installed. Install with: pip install sqlmodel"
-            )
+            raise ImportError("SQLModel is not installed. Install with: pip install sqlmodel")
 
-        # Use SQLModel's metadata if no models specified
-        if models:
-            # Get metadata from model list
-            metadata = models[0].metadata if models else None
-        else:
-            metadata = SQLModel.metadata if SQLModel else None
+        if models is None:
+            models = []
 
         super().__init__(
             engine=engine,
-            session_factory=session_factory,
-            metadata=metadata,
+            models=models,
+            policy=policy,
         )
 
-        self._sqlmodel_classes = models or []
+        if session_factory is not None:
+            self._session_manager = _SQLModelSessionManager(engine, session_factory)
+
+        self._sqlmodel_classes = models
 
     async def introspect(self) -> SchemaMetadata:
         """Introspect SQLModel models."""
@@ -88,6 +90,7 @@ class SQLModelAdapter(SQLAlchemyAdapter):
         cls,
         engine: Engine,
         *model_classes: type,
+        policy: Any = None,
     ) -> "SQLModelAdapter":
         """
         Create an adapter from SQLModel classes.
@@ -97,13 +100,25 @@ class SQLModelAdapter(SQLAlchemyAdapter):
                 engine,
                 Customer,
                 Order,
-                Product,
+                policy=policy,
             )
         """
         from sqlmodel import Session
 
         return cls(
             engine=engine,
-            session_factory=lambda: Session(engine),
             models=list(model_classes),
+            policy=policy,
+            session_factory=lambda: Session(engine),
         )
+
+
+class _SQLModelSessionManager:
+    """Simple session manager that wraps a session factory."""
+
+    def __init__(self, engine: Engine, session_factory: Any) -> None:
+        self._engine = engine
+        self._session_factory = session_factory
+
+    def session(self):
+        return self._session_factory()

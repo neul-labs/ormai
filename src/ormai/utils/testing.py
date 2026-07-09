@@ -211,8 +211,7 @@ class BudgetAssertion:
             actual = len(result.data)
             if actual != expected:
                 raise AssertionError(
-                    f"Expected {expected} rows, got {actual}"
-                    + (f" ({context})" if context else "")
+                    f"Expected {expected} rows, got {actual}" + (f" ({context})" if context else "")
                 )
 
     def assert_max_rows(
@@ -267,20 +266,20 @@ class LeakDetector:
         for expected_tenant, results in self._records:
             for row in results:
                 if self.tenant_field in row and row[self.tenant_field] != expected_tenant:
-                    leaks.append({
-                        "expected_tenant": expected_tenant,
-                        "actual_tenant": row[self.tenant_field],
-                        "row": row,
-                    })
+                    leaks.append(
+                        {
+                            "expected_tenant": expected_tenant,
+                            "actual_tenant": row[self.tenant_field],
+                            "row": row,
+                        }
+                    )
         return leaks
 
     def assert_no_leaks(self) -> None:
         """Assert that no leaks were detected."""
         leaks = self.find_all_leaks()
         if leaks:
-            raise AssertionError(
-                f"Found {len(leaks)} cross-tenant data leaks: {leaks}"
-            )
+            raise AssertionError(f"Found {len(leaks)} cross-tenant data leaks: {leaks}")
 
 
 def create_test_harness(
@@ -311,6 +310,7 @@ def create_test_harness(
 
     # Add budget check
     from ormai.eval.harness import response_within_budget
+
     harness.add_invariant(
         "response_within_budget",
         response_within_budget(max_rows),
@@ -320,6 +320,7 @@ def create_test_harness(
 
 
 # Convenience functions for pytest fixtures
+
 
 def make_context(
     tenant_id: str = "test-tenant",

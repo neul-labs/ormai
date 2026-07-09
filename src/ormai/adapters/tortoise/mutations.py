@@ -7,7 +7,7 @@ This module contains the mutation compilation and execution logic
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import TYPE_CHECKING
 
 from ormai.adapters.base import CompiledQuery
@@ -53,9 +53,7 @@ class MutationExecutor:
         schema: SchemaMetadata,  # noqa: ARG002
     ) -> CompiledQuery:
         """Compile a create request."""
-        decision = self._adapter.compiler.policy_engine.validate_create(
-            request, ctx
-        )
+        decision = self._adapter.compiler.policy_engine.validate_create(request, ctx)
 
         model_class = self._adapter.compiler.model_map.get(request.model)
         if model_class is None:
@@ -83,9 +81,7 @@ class MutationExecutor:
         schema: SchemaMetadata,  # noqa: ARG002
     ) -> CompiledQuery:
         """Compile an update request."""
-        decision = self._adapter.compiler.policy_engine.validate_update(
-            request, ctx
-        )
+        decision = self._adapter.compiler.policy_engine.validate_update(request, ctx)
 
         model_class = self._adapter.compiler.model_map.get(request.model)
         if model_class is None:
@@ -114,9 +110,7 @@ class MutationExecutor:
         schema: SchemaMetadata,
     ) -> CompiledQuery:
         """Compile a delete request."""
-        decision = self._adapter.compiler.policy_engine.validate_delete(
-            request, ctx
-        )
+        decision = self._adapter.compiler.policy_engine.validate_delete(request, ctx)
 
         model_class = self._adapter.compiler.model_map.get(request.model)
         if model_class is None:
@@ -152,9 +146,7 @@ class MutationExecutor:
         schema: SchemaMetadata,  # noqa: ARG002
     ) -> CompiledQuery:
         """Compile a bulk update request."""
-        decision = self._adapter.compiler.policy_engine.validate_bulk_update(
-            request, ctx
-        )
+        decision = self._adapter.compiler.policy_engine.validate_bulk_update(request, ctx)
 
         model_class = self._adapter.compiler.model_map.get(request.model)
         if model_class is None:
@@ -201,9 +193,7 @@ class MutationExecutor:
         if not isinstance(request, CreateRequest):
             raise ValueError("Expected CreateRequest")
 
-        result_data = self._adapter._row_to_dict(
-            instance, compiled.select_fields, request.model
-        )
+        result_data = self._adapter._row_to_dict(instance, compiled.select_fields, request.model)
 
         return CreateResult(
             data=result_data,
@@ -245,9 +235,7 @@ class MutationExecutor:
         if not isinstance(request, UpdateRequest):
             raise ValueError("Expected UpdateRequest")
 
-        result_data = self._adapter._row_to_dict(
-            instance, compiled.select_fields, request.model
-        )
+        result_data = self._adapter._row_to_dict(instance, compiled.select_fields, request.model)
 
         return UpdateResult(data=result_data, success=True, found=True)
 
@@ -273,7 +261,7 @@ class MutationExecutor:
 
         if soft_delete_field and not hard:
             # Soft delete: set deleted_at timestamp
-            deleted_count = await queryset.update(**{soft_delete_field: datetime.utcnow()})
+            deleted_count = await queryset.update(**{soft_delete_field: datetime.now(timezone.utc)})
 
             return DeleteResult(
                 success=True,

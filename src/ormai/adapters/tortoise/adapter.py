@@ -73,6 +73,9 @@ class TortoiseAdapter(OrmAdapter):
         self._compiler: TortoiseCompiler | None = None
         self._mutation_executor: MutationExecutor | None = None
 
+        # Cache for Redactor instances per model
+        self._redactor_cache: dict[str, Redactor | None] = {}
+
     @property
     def schema(self) -> SchemaMetadata:
         """Get cached schema, introspecting if needed."""
@@ -247,8 +250,7 @@ class TortoiseAdapter(OrmAdapter):
         model_name: str,
     ) -> list[dict[str, Any]]:
         """Convert ORM rows to dicts with redaction."""
-        model_policy = self.policy.get_model_policy(model_name)
-        redactor = Redactor(model_policy) if model_policy else None
+        redactor = self._get_redactor(model_name)
 
         result = []
         for row in rows:
@@ -275,14 +277,26 @@ class TortoiseAdapter(OrmAdapter):
 
         # Apply redaction if we have a policy
         if redactor is None:
-            model_policy = self.policy.get_model_policy(model_name)
-            if model_policy:
-                redactor = Redactor(model_policy)
+            redactor = self._get_redactor(model_name)
 
         if redactor:
             data = redactor.redact_record(data)
 
         return data
+
+    def _get_redactor(self, model_name: str) -> Redactor | None:
+        """Get a cached Redactor instance for the given model."""
+        if model_name not in self._redactor_cache:
+            model_policy = self.policy.get_model_policy(model_name)
+            self._redactor_cache[model_name] = Redactor(model_policy) if model_policy else None
+        return self._redactor_cache[model_name]
+
+    def _invalidate_redactor_cache(self, model_name: str | None = None) -> None:
+        """Invalidate the redactor cache."""
+        if model_name is None:
+            self._redactor_cache.clear()
+        elif model_name in self._redactor_cache:
+            del self._redactor_cache[model_name]
 
     def _get_current_offset(self, cursor: str | None) -> int:
         """Get current offset from cursor."""

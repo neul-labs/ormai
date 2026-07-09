@@ -61,8 +61,8 @@ export interface TypeORMFindOptions {
  * TypeORM select query builder.
  */
 export interface TypeORMSelectQueryBuilder<T = unknown> {
-  select: (fields?: string[]) => TypeORMSelectQueryBuilder<T>;
-  addSelect: (field: string) => TypeORMSelectQueryBuilder<T>;
+   select: (selection: string | string[], selectionAliasName?: string) => TypeORMSelectQueryBuilder<T>;
+  addSelect: (field: string, selectionAliasName?: string) => TypeORMSelectQueryBuilder<T>;
   where: (condition: string, parameters?: Record<string, unknown>) => TypeORMSelectQueryBuilder<T>;
   andWhere: (condition: string, parameters?: Record<string, unknown>) => TypeORMSelectQueryBuilder<T>;
   orderBy: (field: string, order: 'ASC' | 'DESC') => TypeORMSelectQueryBuilder<T>;
@@ -73,6 +73,7 @@ export interface TypeORMSelectQueryBuilder<T = unknown> {
   getMany: () => Promise<T[]>;
   getOne: () => Promise<T | null>;
   getCount: () => Promise<number>;
+  getRawOne: () => Promise<Record<string, unknown> | undefined>;
 }
 
 /**
@@ -359,7 +360,7 @@ export class TypeORMAdapter extends BaseOrmAdapter<
   /**
    * Execute a compiled aggregate query.
    */
-  async executeAggregate(
+   async executeAggregate(
     compiled: CompiledQuery<CompiledTypeORMQuery>,
     ctx: RunContext<TypeORMAdapterDataSource>
   ): Promise<AggregateResult> {
@@ -385,37 +386,46 @@ export class TypeORMAdapter extends BaseOrmAdapter<
 
       switch (request.operation) {
         case 'count':
+          // Use database-level COUNT for efficiency
           value = await qb.getCount();
           rowCount = value as number;
           break;
-        default: {
-          // For other aggregates, fetch rows and compute client-side
-          const rows = await qb.getMany() as Record<string, unknown>[];
-          rowCount = rows.length;
-
+        case 'sum':
           if (request.field) {
-            switch (request.operation) {
-              case 'sum':
-                value = rows.reduce((sum, row) => sum + (Number(row[request.field!]) || 0), 0);
-                break;
-              case 'avg':
-                if (rows.length > 0) {
-                  value = rows.reduce((sum, row) => sum + (Number(row[request.field!]) || 0), 0) / rows.length;
-                }
-                break;
-              case 'min':
-                if (rows.length > 0) {
-                  value = Math.min(...rows.map((row) => Number(row[request.field!]) || 0));
-                }
-                break;
-              case 'max':
-                if (rows.length > 0) {
-                  value = Math.max(...rows.map((row) => Number(row[request.field!]) || 0));
-                }
-                break;
-            }
+            const result = await qb
+              .select(`SUM(${query.alias}.${request.field})`, 'agg_value')
+              .getRawOne();
+            value = result ? Number(result.agg_value) || 0 : 0;
+            rowCount = 0;
           }
-        }
+          break;
+        case 'avg':
+          if (request.field) {
+            const result = await qb
+              .select(`AVG(${query.alias}.${request.field})`, 'agg_value')
+              .getRawOne();
+            value = result ? Number(result.agg_value) || 0 : 0;
+            rowCount = 0;
+          }
+          break;
+        case 'min':
+          if (request.field) {
+            const result = await qb
+              .select(`MIN(${query.alias}.${request.field})`, 'agg_value')
+              .getRawOne();
+            value = result ? Number(result.agg_value) || 0 : 0;
+            rowCount = 0;
+          }
+          break;
+        case 'max':
+          if (request.field) {
+            const result = await qb
+              .select(`MAX(${query.alias}.${request.field})`, 'agg_value')
+              .getRawOne();
+            value = result ? Number(result.agg_value) || 0 : 0;
+            rowCount = 0;
+          }
+          break;
       }
 
       return {

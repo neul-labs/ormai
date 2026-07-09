@@ -132,9 +132,7 @@ def with_log_context(
 
     # Build new context
     if context is not None:
-        new_context = (
-            context.to_dict() if isinstance(context, LogContext) else context.copy()
-        )
+        new_context = context.to_dict() if isinstance(context, LogContext) else context.copy()
     else:
         new_context = previous.copy() if previous else {}
 

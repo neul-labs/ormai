@@ -13,6 +13,7 @@ from ormai.tools.registry import ToolRegistry
 try:
     from langchain_core.tools import BaseTool, StructuredTool
     from pydantic import BaseModel, Field, create_model
+
     HAS_LANGCHAIN = True
 except ImportError:
     HAS_LANGCHAIN = False
@@ -37,9 +38,7 @@ def ormai_to_langchain_tool(
         A LangChain StructuredTool
     """
     if not HAS_LANGCHAIN:
-        raise ImportError(
-            "LangChain is not installed. Install with: pip install langchain-core"
-        )
+        raise ImportError("LangChain is not installed. Install with: pip install langchain-core")
 
     schema = tool.get_schema()
 
@@ -54,9 +53,7 @@ def ormai_to_langchain_tool(
         elif context:
             ctx = context
         else:
-            ctx = RunContext(
-                principal=Principal(tenant_id="default", user_id="anonymous")
-            )
+            ctx = RunContext(principal=Principal(tenant_id="default", user_id="anonymous"))
 
         # Execute tool
         result = await tool.execute(kwargs, ctx)
@@ -88,9 +85,7 @@ def ormai_toolset_to_langchain(
         List of LangChain StructuredTool instances
     """
     if not HAS_LANGCHAIN:
-        raise ImportError(
-            "LangChain is not installed. Install with: pip install langchain-core"
-        )
+        raise ImportError("LangChain is not installed. Install with: pip install langchain-core")
 
     tools = []
     for tool in toolset.tools.values():

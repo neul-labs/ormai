@@ -82,18 +82,14 @@ class QueryExecutor:
         if not isinstance(request, QueryRequest):
             raise ValueError("Expected QueryRequest")
 
-        data = self._adapter._rows_to_dicts(
-            rows, compiled.select_fields, request.model
-        )
+        data = self._adapter._rows_to_dicts(rows, compiled.select_fields, request.model)
 
         # Build pagination info
         has_more = len(data) >= request.take
         next_cursor = None
         if has_more:
             current_offset = self._adapter._get_current_offset(request.cursor)
-            next_cursor = SQLAlchemyCompiler.encode_cursor(
-                current_offset + request.take
-            )
+            next_cursor = SQLAlchemyCompiler.encode_cursor(current_offset + request.take)
 
         return QueryResult(
             data=data,
@@ -149,9 +145,7 @@ class QueryExecutor:
         if not isinstance(request, GetRequest):
             raise ValueError("Expected GetRequest")
 
-        data = self._adapter._row_to_dict(
-            row, compiled.select_fields, request.model
-        )
+        data = self._adapter._row_to_dict(row, compiled.select_fields, request.model)
         return GetResult(data=data, found=True)
 
     def execute_aggregate(

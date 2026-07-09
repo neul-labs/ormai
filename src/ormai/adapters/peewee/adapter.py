@@ -74,6 +74,9 @@ class PeeweeAdapter(OrmAdapter):
         self._compiler: PeeweeCompiler | None = None
         self._mutation_executor: MutationExecutor | None = None
 
+        # Cache for Redactor instances per model
+        self._redactor_cache: dict[str, Redactor | None] = {}
+
     @property
     def schema(self) -> SchemaMetadata:
         """Get cached schema, introspecting if needed."""
@@ -137,10 +140,8 @@ class PeeweeAdapter(OrmAdapter):
     ) -> QueryResult:
         """Execute a compiled query."""
         # Run sync operation in thread pool
-        loop = asyncio.get_event_loop()
-        return await loop.run_in_executor(
-            None, self._execute_query_sync, compiled, ctx
-        )
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(None, self._execute_query_sync, compiled, ctx)
 
     def _execute_query_sync(
         self,
@@ -187,10 +188,8 @@ class PeeweeAdapter(OrmAdapter):
         ctx: RunContext,  # noqa: ARG002
     ) -> GetResult:
         """Execute a get request."""
-        loop = asyncio.get_event_loop()
-        return await loop.run_in_executor(
-            None, self._execute_get_sync, compiled, ctx
-        )
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(None, self._execute_get_sync, compiled, ctx)
 
     def _execute_get_sync(
         self,
@@ -220,10 +219,8 @@ class PeeweeAdapter(OrmAdapter):
         ctx: RunContext,  # noqa: ARG002
     ) -> AggregateResult:
         """Execute an aggregation."""
-        loop = asyncio.get_event_loop()
-        return await loop.run_in_executor(
-            None, self._execute_aggregate_sync, compiled, ctx
-        )
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(None, self._execute_aggregate_sync, compiled, ctx)
 
     def _execute_aggregate_sync(
         self,
@@ -257,7 +254,7 @@ class PeeweeAdapter(OrmAdapter):
         **kwargs: Any,
     ) -> T:
         """Execute a function within a transaction."""
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         return await loop.run_in_executor(
             None,
             self._run_in_transaction,
@@ -307,8 +304,7 @@ class PeeweeAdapter(OrmAdapter):
         model_name: str,
     ) -> list[dict[str, Any]]:
         """Convert ORM rows to dicts with redaction."""
-        model_policy = self.policy.get_model_policy(model_name)
-        redactor = Redactor(model_policy) if model_policy else None
+        redactor = self._get_redactor(model_name)
 
         result = []
         for row in rows:
@@ -335,14 +331,26 @@ class PeeweeAdapter(OrmAdapter):
 
         # Apply redaction if we have a policy
         if redactor is None:
-            model_policy = self.policy.get_model_policy(model_name)
-            if model_policy:
-                redactor = Redactor(model_policy)
+            redactor = self._get_redactor(model_name)
 
         if redactor:
             data = redactor.redact_record(data)
 
         return data
+
+    def _get_redactor(self, model_name: str) -> Redactor | None:
+        """Get a cached Redactor instance for the given model."""
+        if model_name not in self._redactor_cache:
+            model_policy = self.policy.get_model_policy(model_name)
+            self._redactor_cache[model_name] = Redactor(model_policy) if model_policy else None
+        return self._redactor_cache[model_name]
+
+    def _invalidate_redactor_cache(self, model_name: str | None = None) -> None:
+        """Invalidate the redactor cache."""
+        if model_name is None:
+            self._redactor_cache.clear()
+        elif model_name in self._redactor_cache:
+            del self._redactor_cache[model_name]
 
     def _get_current_offset(self, cursor: str | None) -> int:
         """Get current offset from cursor."""
@@ -403,7 +411,7 @@ class PeeweeAdapter(OrmAdapter):
         ctx: RunContext,
     ) -> CreateResult:
         """Execute a create request."""
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         return await loop.run_in_executor(
             None, self.mutation_executor.execute_create_sync, compiled, ctx
         )
@@ -414,7 +422,7 @@ class PeeweeAdapter(OrmAdapter):
         ctx: RunContext,
     ) -> UpdateResult:
         """Execute an update request."""
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         return await loop.run_in_executor(
             None, self.mutation_executor.execute_update_sync, compiled, ctx
         )
@@ -425,7 +433,7 @@ class PeeweeAdapter(OrmAdapter):
         ctx: RunContext,
     ) -> DeleteResult:
         """Execute a delete request."""
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         return await loop.run_in_executor(
             None, self.mutation_executor.execute_delete_sync, compiled, ctx
         )
@@ -436,7 +444,7 @@ class PeeweeAdapter(OrmAdapter):
         ctx: RunContext,
     ) -> BulkUpdateResult:
         """Execute a bulk update request."""
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         return await loop.run_in_executor(
             None, self.mutation_executor.execute_bulk_update_sync, compiled, ctx
         )

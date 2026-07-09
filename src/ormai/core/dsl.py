@@ -74,9 +74,7 @@ class OrderClause(BaseModel):
     """
 
     field: str = Field(..., description="The field name to order by")
-    direction: OrderDirection = Field(
-        default=OrderDirection.ASC, description="Sort direction"
-    )
+    direction: OrderDirection = Field(default=OrderDirection.ASC, description="Sort direction")
 
     model_config = {"frozen": True}
 
@@ -90,9 +88,7 @@ class IncludeClause(BaseModel):
     """
 
     relation: str = Field(..., description="The relation name to include")
-    select: list[str] | None = Field(
-        default=None, description="Fields to select from the relation"
-    )
+    select: list[str] | None = Field(default=None, description="Fields to select from the relation")
     where: list[FilterClause] | None = Field(
         default=None, description="Filters to apply to the relation"
     )
@@ -135,18 +131,12 @@ class QueryRequest(BaseModel):
     where: list[FilterClause] | None = Field(
         default=None, description="Filter conditions (AND-ed together)"
     )
-    order_by: list[OrderClause] | None = Field(
-        default=None, description="Sort order"
-    )
+    order_by: list[OrderClause] | None = Field(default=None, description="Sort order")
     take: int = Field(
         default=25, ge=1, description="Maximum number of rows to return (limited by budget)"
     )
-    cursor: str | None = Field(
-        default=None, description="Pagination cursor from previous response"
-    )
-    include: list[IncludeClause] | None = Field(
-        default=None, description="Relations to include"
-    )
+    cursor: str | None = Field(default=None, description="Pagination cursor from previous response")
+    include: list[IncludeClause] | None = Field(default=None, description="Relations to include")
 
     model_config = {"frozen": True}
 
@@ -166,12 +156,8 @@ class GetRequest(BaseModel):
 
     model: str = Field(..., description="The model/table name")
     id: Any = Field(..., description="The primary key value")
-    select: list[str] | None = Field(
-        default=None, description="Fields to select"
-    )
-    include: list[IncludeClause] | None = Field(
-        default=None, description="Relations to include"
-    )
+    select: list[str] | None = Field(default=None, description="Fields to select")
+    include: list[IncludeClause] | None = Field(default=None, description="Relations to include")
 
     model_config = {"frozen": True}
 
@@ -194,9 +180,7 @@ class AggregateRequest(BaseModel):
     field: str | None = Field(
         default=None, description="Field to aggregate (required for sum/avg/min/max)"
     )
-    where: list[FilterClause] | None = Field(
-        default=None, description="Filter conditions"
-    )
+    where: list[FilterClause] | None = Field(default=None, description="Filter conditions")
 
     model_config = {"frozen": True}
 

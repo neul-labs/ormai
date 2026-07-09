@@ -1,5 +1,5 @@
 {
-  "name": "ormai",
+  "name": "@ormai/core",
   "version": "0.1.0",
   "description": "Policy-governed, auditable database capabilities for TypeScript agents",
   "type": "module",
@@ -52,11 +52,17 @@
       "types": "./dist/utils/index.d.ts"
     }
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "files": [
     "dist",
+    "LICENSE",
     "README.md"
   ],
+  "sideEffects": false,
   "scripts": {
+    "prepublishOnly": "npm run build",
     "build": "tsup",
     "dev": "tsup --watch",
     "test": "vitest",
@@ -82,7 +88,7 @@
     "directory": "ormai-ts"
   },
   "dependencies": {
-    "zod": "^4.3.5",
+    "zod": "^3.23.5",
     "zod-to-json-schema": "^3.23.5"
   },
   "devDependencies": {

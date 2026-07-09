@@ -34,6 +34,7 @@ from ormai.core.errors import ModelNotAllowedError, NotFoundError
 from ormai.core.types import SchemaMetadata
 from ormai.policy.engine import PolicyEngine
 from ormai.policy.models import Policy
+from ormai.policy.redaction import Redactor
 from ormai.policy.scoping import ScopeInjector
 
 T = TypeVar("T")
@@ -68,6 +69,7 @@ class DjangoAdapter(OrmAdapter):
         self._models = models or []
         self._introspector = DjangoIntrospector(app_config, models)
         self._model_map: dict[str, type[models.Model]] = {}
+        self._redactor_cache: dict[str, Redactor | None] = {}
 
     async def introspect(self) -> SchemaMetadata:
         """Introspect Django models."""
@@ -102,15 +104,14 @@ class DjangoAdapter(OrmAdapter):
         engine = PolicyEngine(policy, schema)
         model_policy = engine.validate_model_access(request.model)
 
-        # Get Django model class
         model_class = self._get_model(request.model)
 
         # Start with base queryset
         queryset = model_class.objects.all()
 
         # Inject scope filters
-        injector = ScopeInjector(policy)
-        scope_filters = injector.get_scope_filters(request.model, ctx)
+        injector = self._get_scope_injector(policy, request.model)
+        scope_filters = injector.get_scope_filters(ctx)
 
         # Build Q objects for filters
         q_objects = []
@@ -148,7 +149,7 @@ class DjangoAdapter(OrmAdapter):
 
         # Apply pagination
         if request.take:
-            queryset = queryset[:request.take]
+            queryset = queryset[: request.take]
 
         return CompiledQuery(
             query=queryset,
@@ -156,6 +157,7 @@ class DjangoAdapter(OrmAdapter):
             select_fields=select_fields,
             injected_filters=scope_filters,
             policy_decisions=[f"model_allowed:{request.model}"],
+            policy=policy,
         )
 
     def compile_get(
@@ -173,8 +175,8 @@ class DjangoAdapter(OrmAdapter):
         queryset = model_class.objects.all()
 
         # Inject scope filters
-        injector = ScopeInjector(policy)
-        scope_filters = injector.get_scope_filters(request.model, ctx)
+        injector = self._get_scope_injector(policy, request.model)
+        scope_filters = injector.get_scope_filters(ctx)
 
         for f in scope_filters:
             queryset = queryset.filter(self._filter_to_q(f))
@@ -198,6 +200,7 @@ class DjangoAdapter(OrmAdapter):
             request=request,
             select_fields=select_fields,
             injected_filters=scope_filters,
+            policy=policy,
         )
 
     def compile_aggregate(
@@ -215,8 +218,8 @@ class DjangoAdapter(OrmAdapter):
         queryset = model_class.objects.all()
 
         # Inject scope filters
-        injector = ScopeInjector(policy)
-        scope_filters = injector.get_scope_filters(request.model, ctx)
+        injector = self._get_scope_injector(policy, request.model)
+        scope_filters = injector.get_scope_filters(ctx)
 
         for f in scope_filters:
             queryset = queryset.filter(self._filter_to_q(f))
@@ -231,6 +234,7 @@ class DjangoAdapter(OrmAdapter):
             query=queryset,
             request=request,
             injected_filters=scope_filters,
+            policy=policy,
         )
 
     async def execute_query(
@@ -252,10 +256,15 @@ class DjangoAdapter(OrmAdapter):
             else:
                 data.append(self._model_to_dict(item, compiled.select_fields))
 
+        # Apply redaction
+        model_name = compiled.request.model
+        if compiled.policy:
+            data = self._redact_records(data, model_name, compiled.policy)
+
         return QueryResult(
             data=data,
-            total=len(data),
-            has_more=False,  # Would need count query for accurate pagination
+            total_count=len(data),
+            has_more=False,
         )
 
     async def execute_get(
@@ -276,6 +285,11 @@ class DjangoAdapter(OrmAdapter):
                 data = result
             else:
                 data = self._model_to_dict(result, compiled.select_fields)
+
+            # Apply redaction
+            if compiled.policy:
+                redacted = self._redact_records([data], request.model, compiled.policy)
+                data = redacted[0]
 
             return GetResult(data=data, found=True)
         except Exception as e:
@@ -345,15 +359,16 @@ class DjangoAdapter(OrmAdapter):
         model_class = self._get_model(request.model)
 
         # Add tenant scope to data if configured
-        injector = ScopeInjector(policy)
+        injector = self._get_scope_injector(policy, request.model)
         data = dict(request.data)
-        for f in injector.get_scope_filters(request.model, ctx):
+        for f in injector.get_scope_filters(ctx):
             data[f.field] = f.value
 
         return CompiledQuery(
             query=(model_class, data),
             request=request,
             policy_decisions=["create_allowed"],
+            policy=policy,
         )
 
     async def execute_create(
@@ -388,8 +403,8 @@ class DjangoAdapter(OrmAdapter):
         queryset = model_class.objects.all()
 
         # Apply scope filters
-        injector = ScopeInjector(policy)
-        for f in injector.get_scope_filters(request.model, ctx):
+        injector = self._get_scope_injector(policy, request.model)
+        for f in injector.get_scope_filters(ctx):
             queryset = queryset.filter(self._filter_to_q(f))
 
         # Filter by ID
@@ -400,6 +415,7 @@ class DjangoAdapter(OrmAdapter):
             query=(queryset, request.data),
             request=request,
             policy_decisions=["update_allowed"],
+            policy=policy,
         )
 
     async def execute_update(
@@ -421,8 +437,8 @@ class DjangoAdapter(OrmAdapter):
 
         return UpdateResult(
             data=self._model_to_dict(instance) if instance else {},
-            updated_count=updated,
             success=True,
+            found=True,
         )
 
     def compile_delete(
@@ -441,8 +457,8 @@ class DjangoAdapter(OrmAdapter):
         queryset = model_class.objects.all()
 
         # Apply scope filters
-        injector = ScopeInjector(policy)
-        for f in injector.get_scope_filters(request.model, ctx):
+        injector = self._get_scope_injector(policy, request.model)
+        for f in injector.get_scope_filters(ctx):
             queryset = queryset.filter(self._filter_to_q(f))
 
         # Filter by ID
@@ -453,6 +469,7 @@ class DjangoAdapter(OrmAdapter):
             query=queryset,
             request=request,
             policy_decisions=["delete_allowed"],
+            policy=policy,
         )
 
     async def execute_delete(
@@ -470,8 +487,9 @@ class DjangoAdapter(OrmAdapter):
             raise NotFoundError(request.model, request.id)
 
         return DeleteResult(
-            deleted_count=deleted,
             success=True,
+            found=True,
+            soft_deleted=False,
         )
 
     def compile_bulk_update(
@@ -490,8 +508,8 @@ class DjangoAdapter(OrmAdapter):
         queryset = model_class.objects.all()
 
         # Apply scope filters
-        injector = ScopeInjector(policy)
-        scope_filters = injector.get_scope_filters(request.model, ctx)
+        injector = self._get_scope_injector(policy, request.model)
+        scope_filters = injector.get_scope_filters(ctx)
         for f in scope_filters:
             queryset = queryset.filter(self._filter_to_q(f))
 
@@ -504,6 +522,7 @@ class DjangoAdapter(OrmAdapter):
             request=request,
             injected_filters=scope_filters,
             policy_decisions=["bulk_update_allowed"],
+            policy=policy,
         )
 
     async def execute_bulk_update(
@@ -533,15 +552,16 @@ class DjangoAdapter(OrmAdapter):
             "eq": "",
             "ne": "",
             "lt": "__lt",
-            "le": "__lte",
+            "lte": "__lte",
             "gt": "__gt",
-            "ge": "__gte",
+            "gte": "__gte",
             "in": "__in",
-            "nin": "__in",
+            "not_in": "__in",
             "contains": "__icontains",
             "startswith": "__istartswith",
             "endswith": "__iendswith",
             "isnull": "__isnull",
+            "between": "__range",
         }
 
         lookup = lookup_map.get(op, "")
@@ -549,16 +569,49 @@ class DjangoAdapter(OrmAdapter):
 
         if op == "ne":
             return ~Q(**{field: value})
-        elif op == "nin":
+        elif op == "not_in":
             return ~Q(**{key: value})
         elif op == "isnull":
             return Q(**{key: value})
+        elif op == "between":
+            if not isinstance(value, (list, tuple)) or len(value) != 2:
+                raise ValueError(f"Between operator requires a 2-element list, got: {value}")
+            return Q(**{f"{field}__range": value})
         else:
             return Q(**{key: value})
+
+    def _get_scope_injector(self, policy: Policy, model_name: str) -> ScopeInjector:
+        """Get a ScopeInjector for the given model's row policy."""
+        row_policy = policy.get_row_policy(model_name)
+        return ScopeInjector(row_policy)
 
     def _get_pk_field(self, model_class: type[models.Model]) -> str:
         """Get the primary key field name for a model."""
         return model_class._meta.pk.name
+
+    def _get_redactor(
+        self,
+        model_name: str,
+        policy: Policy,
+    ) -> Redactor | None:
+        """Get a cached Redactor instance for the given model."""
+        cache_key = f"{id(policy)}:{model_name}"
+        if cache_key not in self._redactor_cache:
+            model_policy = policy.get_model_policy(model_name)
+            self._redactor_cache[cache_key] = Redactor(model_policy) if model_policy else None
+        return self._redactor_cache[cache_key]
+
+    def _redact_records(
+        self,
+        records: list[dict[str, Any]],
+        model_name: str,
+        policy: Policy,
+    ) -> list[dict[str, Any]]:
+        """Apply redaction to a list of records."""
+        redactor = self._get_redactor(model_name, policy)
+        if not redactor:
+            return records
+        return [redactor.redact_record(record) for record in records]
 
     def _model_to_dict(
         self,
