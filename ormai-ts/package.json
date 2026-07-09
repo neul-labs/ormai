@@ -88,13 +88,13 @@
     "directory": "ormai-ts"
   },
   "dependencies": {
-    "zod": "^3.23.5",
+    "zod": "^4.3.6",
     "zod-to-json-schema": "^3.23.5"
   },
   "devDependencies": {
     "@types/node": "^25.0.9",
     "tsup": "^8.3.5",
-    "typescript": "^5.7.2",
+    "typescript": "^6.0.2",
     "vitest": "^4.0.17"
   },
   "peerDependencies": {
